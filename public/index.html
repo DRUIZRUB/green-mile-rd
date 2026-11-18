@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0D223A" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Green Mile App — Maquinaria en República Dominicana</title>
+  <meta name="description" content="App móvil y plataforma web para alquilar maquinaria pesada, publicar licitaciones de obra y firmar contratos digitales con NCF en República Dominicana." />
+  <style>
+    :root {
+      --navy: #0D223A;
+      --navy-hover: #163558;
+      --navy-soft: #F1F5F9;
+      --orange: #B85A27;
+      --orange-hover: #9C491D;
+      --orange-soft: #FEF4EE;
+      --steel: #64748B;
+      --border: #E2E8F0;
+      --bg: #F4F6F9;
+      --surface: #FFFFFF;
+      --text: #0F172A;
+      --text-muted: #64748B;
+      --success: #059669;
+      --success-bg: #ECFDF5;
+      --warn: #D97706;
+      --whatsapp: #16A34A;
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+      --shadow-sm: 0 2px 8px rgba(13, 34, 58, 0.05);
+      --shadow-md: 0 12px 28px -6px rgba(13, 34, 58, 0.12);
+      --shadow-lg: 0 24px 52px -12px rgba(13, 34, 58, 0.25);
+      --bottom-nav-h: 72px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: calc(var(--bottom-nav-h) + 24px);
+    }
+
+    /* Simulator Mode: Preview Mobile Frame on Desktop */
+    body.mobile-frame-mode {
+      background: #081524;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 24px 12px;
+    }
+    body.mobile-frame-mode #appShell {
+      width: 412px;
+      max-width: 100%;
+      min-height: 840px;
+      max-height: 92vh;
+      background: var(--bg);
+      border-radius: 38px;
+      border: 8px solid #1E293B;
+      box-shadow: 0 32px 70px rgba(0, 0, 0, 0.55);
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      padding-bottom: calc(var(--bottom-nav-h) + 24px);
+    }
+
+    /* Top App Bar */
+    header.app-header {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 45;
+    }
+    .nav-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 18px;
+      height: 82px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .brand-logo-frame {
+      background: #FFFFFF;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 14px;
+      padding: 5px 10px;
+      box-shadow: 0 4px 14px rgba(13, 34, 58, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .brand:hover .brand-logo-frame {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(184, 90, 39, 0.18);
+      border-color: var(--orange);
+    }
+    .brand img {
+      height: 58px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+    .brand-meta strong {
+      display: block;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      color: var(--navy);
+      line-height: 1.1;
+    }
+    .brand-meta span {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      color: #fff;
+      background: var(--orange);
+      padding: 2px 8px;
+      border-radius: 99px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .hero-logo-card {
+      background: #FFFFFF;
+      border-radius: 18px;
+      padding: 10px 16px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+      border: 2px solid rgba(184, 90, 39, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .hero-logo-card img {
+      height: 76px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+    @media (max-width: 640px) {
+      .brand-meta { display: none; }
+      .hero-logo-card img { height: 60px; }
+    }
+
+    /* Desktop Tabs (Hidden in Mobile / App Frame) */
+    .desktop-tabs {
+      display: flex;
+      background: var(--navy-soft);
+      padding: 4px;
+      border-radius: 12px;
+      gap: 4px;
+    }
+    .d-tab {
+      border: none;
+      background: transparent;
+      padding: 7px 14px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--steel);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .d-tab.active {
+      background: var(--surface);
+      color: var(--navy);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 10px 15px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: transform 0.12s ease, background 0.15s ease;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .btn-primary {
+      background: var(--orange);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(184, 90, 39, 0.25);
+    }
+    .btn-primary:hover { background: var(--orange-hover); }
+    .btn-navy { background: var(--navy); color: #fff; }
+    .btn-navy:hover { background: var(--navy-hover); }
+    .btn-ghost {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--navy);
+    }
+    .btn-wa { background: var(--whatsapp); color: #fff; }
+
+    .badge {
+      background: var(--navy);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 99px;
+    }
+
+    /* Compact App Search Banner */
+    .app-hero {
+      background: linear-gradient(145deg, var(--navy) 0%, #143256 100%);
+      color: #fff;
+      padding: 20px 18px 26px;
+      position: relative;
+      overflow: hidden;
+    }
+    .app-hero-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .greeting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      gap: 12px;
+    }
+    .greeting-row h1 {
+      font-size: clamp(19px, 2.6vw, 28px);
+      font-weight: 800;
+      letter-spacing: -0.4px;
+    }
+    .greeting-row p {
+      font-size: 12px;
+      color: #CBD5E1;
+      margin-top: 2px;
+    }
+
+    .search-box-app {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 6px;
+      display: grid;
+      grid-template-columns: 1fr 190px;
+      gap: 6px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+    }
+    .s-input {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 12px;
+    }
+    .s-input svg { width: 18px; height: 18px; color: var(--steel); flex-shrink: 0; }
+    .s-input input, .s-input select {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .s-city { border-left: 1px solid var(--border); }
+
+    /* Horizontal Swipeable Category Stories / Chips */
+    .cat-scroller {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 14px 18px 8px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .cat-scroller::-webkit-scrollbar { display: none; }
+    .app-chip {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 15px;
+      border-radius: 99px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.15s;
+    }
+    .app-chip.active {
+      background: var(--orange);
+      border-color: var(--orange);
+      color: #fff;
+    }
+
+    /* Filter Sub-row */
+    .sub-filters {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6px 18px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .sub-toggles {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .mini-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 99px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .mini-toggle input { accent-color: var(--orange); }
+
+    /* Main Content Container */
+    .view-section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 4px 18px 24px;
+    }
+
+    /* Cards Grid (App Feed Style on Mobile, Masonry/Grid on Desktop) */
+    .feed-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 16px;
+    }
+    .eq-card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+    }
+    .eq-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .eq-media {
+      position: relative;
+      height: 195px;
+      background: var(--navy-soft);
+    }
+    .eq-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .fav-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--navy);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 2;
+    }
+    .fav-btn.saved { color: #E11D48; }
+    .pill-city {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(13, 34, 58, 0.86);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+    .pill-avail {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: var(--success);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .pill-avail.busy { background: var(--warn); }
+    .pill-op {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: var(--orange);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .eq-body {
+      padding: 14px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .eq-cat {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .eq-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--navy);
+      margin: 3px 0 6px;
+    }
+    .eq-owner {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .eq-foot {
+      margin-top: auto;
+      padding-top: 11px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .eq-price {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+    .eq-price small {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Native-Style Bottom Navigation Bar */
+    nav.bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--bottom-nav-h);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      display: none;
+      grid-template-columns: repeat(5, 1fr);
+      align-items: center;
+      z-index: 60;
+      padding: 0 6px env(safe-area-inset-bottom);
+      box-shadow: 0 -4px 20px rgba(13, 34, 58, 0.06);
+    }
+    body.mobile-frame-mode nav.bottom-nav {
+      display: grid;
+      position: sticky;
+      bottom: 0;
+    }
+    .b-item {
+      border: none;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: var(--steel);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 2px;
+      position: relative;
+    }
+    .b-item svg { width: 21px; height: 21px; stroke-width: 2.1; }
+    .b-item.active { color: var(--navy); }
+    .b-item.active svg { stroke: var(--orange); }
+
+    /* Center Floating Publish Button in Bottom Nav */
+    .b-fab-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: -22px;
+    }
+    .b-fab {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 3px solid var(--surface);
+      background: var(--orange);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 18px rgba(184, 90, 39, 0.38);
+      cursor: pointer;
+    }
+    .b-fab svg { width: 24px; height: 24px; }
+    .b-fab-label {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--navy);
+      margin-top: 3px;
+    }
+
+    /* Empty State Card */
+    .empty-state {
+      grid-column: 1 / -1;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      padding: 40px 22px;
+      text-align: center;
+      max-width: 560px;
+      margin: 8px auto;
+      box-shadow: var(--shadow-sm);
+    }
+    .empty-badge {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: var(--orange-soft);
+      color: var(--orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+    }
+    .empty-state h3 { font-size: 18px; color: var(--navy); margin-bottom: 6px; }
+    .empty-state p { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+
+    /* App Bottom-Sheet Modals */
+    .sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(13, 34, 58, 0.62);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 120;
+    }
+    .sheet-backdrop.open { display: flex; }
+
+    .sheet {
+      background: var(--surface);
+      width: 100%;
+      max-width: 680px;
+      max-height: 92vh;
+      border-radius: 24px 24px 0 0;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      animation: slideSheet 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @media (min-width: 768px) {
+      .sheet-backdrop { align-items: center; padding: 16px; }
+      .sheet { border-radius: 22px; }
+    }
+    @keyframes slideSheet {
+      from { transform: translateY(40px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      border-radius: 99px;
+      background: #CBD5E1;
+      margin: 10px auto 2px;
+      flex-shrink: 0;
+    }
+    .sheet-head {
+      padding: 12px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sheet-head h3 { font-size: 17px; font-weight: 800; color: var(--navy); }
+    .sheet-head p { font-size: 12px; color: var(--text-muted); }
+    .close-x {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--navy);
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .sheet-body { padding: 18px 20px; overflow-y: auto; }
+    .sheet-foot {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      background: #FAFCFF;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Modern App Form Inputs */
+    .stepper {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .s-pill {
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .s-pill.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .s-pill.done { background: var(--success-bg); border-color: #A7F3D0; color: var(--success); }
+
+    .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .f-field { display: flex; flex-direction: column; gap: 5px; }
+    .f-field.full { grid-column: 1 / -1; }
+    .f-field label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--navy);
+      display: flex;
+      justify-content: space-between;
+    }
+    .f-field label small { font-weight: 500; color: var(--text-muted); }
+    .f-box {
+      display: flex;
+      align-items: center;
+      background: #F8FAFC;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      transition: all 0.15s;
+    }
+    .f-box:focus-within {
+      background: #fff;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(13, 34, 58, 0.08);
+    }
+    .f-prefix {
+      padding-left: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--steel);
+    }
+    .f-box input, .f-box select, .f-box textarea {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      padding: 11px 12px;
+      font-size: 14px;
+      color: var(--text);
+      font-family: inherit;
+    }
+    .f-box textarea { min-height: 74px; resize: vertical; }
+
+    .cat-grid-tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .c-tile {
+      padding: 11px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--navy);
+      text-align: center;
+      cursor: pointer;
+      background: var(--surface);
+    }
+    .c-tile.selected { border-color: var(--orange); background: var(--orange-soft); }
+
+    .switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: #F8FAFC;
+      cursor: pointer;
+    }
+    .switch-row strong { display: block; font-size: 13px; color: var(--navy); }
+    .switch-row span { font-size: 11px; color: var(--text-muted); }
+    .sw-knob {
+      width: 42px;
+      height: 24px;
+      background: #CBD5E1;
+      border-radius: 99px;
+      position: relative;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .sw-knob::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s;
+    }
+    input:checked + .sw-knob { background: var(--orange); }
+    input:checked + .sw-knob::after { transform: translateX(18px); }
+
+    /* Camera / Gallery Upload Card */
+    .cam-drop {
+      border: 2px dashed #CBD5E1;
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      background: #FAFCFF;
+      cursor: pointer;
+      display: block;
+    }
+    .cam-preview {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      display: none;
+    }
+
+    /* Signature Canvas */
+    .sig-pad {
+      border: 1.5px dashed #94A3B8;
+      border-radius: 12px;
+      padding: 6px;
+      background: #fff;
+      text-align: center;
+    }
+    canvas#sigCanvas {
+      width: 100%;
+      height: 105px;
+      background: #F8FAFC;
+      border-radius: 8px;
+      touch-action: none;
+    }
+
+    /* Receipt Box */
+    .receipt {
+      background: var(--navy-soft);
+      border: 1px solid #DCE5F0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-top: 14px;
+    }
+    .r-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+    .r-total {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #CBD5E1;
+      margin-top: 8px;
+      padding-top: 8px;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 76px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--navy);
+      color: #fff;
+      padding: 11px 18px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: var(--shadow-lg);
+      display: none;
+      z-index: 300;
+      white-space: nowrap;
+    }
+
+    /* Responsive Rules & Mobile Frame Overrides */
+    @media (max-width: 820px) {
+      .desktop-tabs, .hide-mobile { display: none !important; }
+      nav.bottom-nav { display: grid; }
+      .search-box-app { grid-template-columns: 1fr; }
+      .s-city { border-left: none; border-top: 1px solid var(--border); }
+      .f-grid { grid-template-columns: 1fr; }
+    }
+    body.mobile-frame-mode .desktop-tabs,
+    body.mobile-frame-mode .hide-in-sim { display: none !important; }
+    body.mobile-frame-mode .search-box-app { grid-template-columns: 1fr; }
+    body.mobile-frame-mode .s-city { border-left: none; border-top: 1px solid var(--border); }
+    body.mobile-frame-mode .f-grid { grid-template-columns: 1fr; }
+    body.mobile-frame-mode .feed-grid { grid-template-columns: 1fr; }
+
+    /* Print Contract Cleanly */
+    @media print {
+      body * { visibility: hidden; }
+      #contractModal, #contractModal * { visibility: visible; }
+      #contractModal { position: absolute; inset: 0; background: #fff; padding: 0; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="appShell">
+    <!-- TOP APP HEADER -->
+    <header class="app-header">
+      <div class="nav-wrap">
+        <div class="brand" onclick="switchTab('catalog')">
+          <img id="brandLogo" alt="Green Mile Construction" src="data:image/webp;base64,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">
+          <div class="brand-meta">
+            <strong>GREEN MILE</strong>
+            <span>App RD</span>
+          </div>
+        </div>
+
+        <div class="desktop-tabs">
+          <button class="d-tab active" id="dTabCatalog" onclick="switchTab('catalog')">Explorar <span class="badge" id="dCountEq">0</span></button>
+          <button class="d-tab" id="dTabRequests" onclick="switchTab('requests')">Obras RD <span class="badge" id="dCountReq">0</span></button>
+          <button class="d-tab" id="dTabSaved" onclick="switchTab('saved')">Guardados <span class="badge" id="dCountSaved">0</span></button>
+          <button class="d-tab" id="dTabProfile" onclick="switchTab('profile')">Mi Panel <span class="badge" id="dCountBk">0</span></button>
+        </div>
+
+        <div class="top-actions">
+          <button class="btn btn-ghost hide-mobile" id="frameToggleBtn" onclick="toggleMobileFrame()" title="Alternar vista de App Móvil">
+            📱 Vista App
+          </button>
+          <button class="btn btn-primary hide-mobile hide-in-sim" onclick="openPublishSheet()">+ Publicar</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- COMPACT APP HERO & SEARCH -->
+    <section class="app-hero">
+      <div class="app-hero-inner">
+        <div class="greeting-row">
+          <div>
+            <h1>Maquinaria pesada al instante</h1>
+            <p>República Dominicana • Alquiler directo con NCF y firma digital</p>
+          </div>
+          <button class="btn btn-ghost" id="proBadgeBtn" style="padding:7px 12px; font-size:11px; background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.22);" onclick="openSheet('proSheet')">
+            ⭐ Pro
+          </button>
+        </div>
+
+        <div class="search-box-app">
+          <div class="s-input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="searchInput" placeholder="Buscar retroexcavadora, grúa, rodillo..." oninput="renderCurrentTab()">
+          </div>
+          <div class="s-input s-city">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <select id="cityFilter" onchange="renderCurrentTab()">
+              <option value="">Toda RD</option>
+              <option value="Santo Domingo">Santo Domingo</option>
+              <option value="Santiago">Santiago</option>
+              <option value="Punta Cana">Punta Cana</option>
+              <option value="La Romana">La Romana</option>
+              <option value="San Cristóbal">San Cristóbal</option>
+              <option value="Puerto Plata">Puerto Plata</option>
+              <option value="La Vega">La Vega</option>
+              <option value="Baní">Baní</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         TAB 1: EXPLORAR CATÁLOGO
+         ========================================================= -->
+    <div id="tabViewCatalog">
+      <div class="cat-scroller" id="catChips">
+        <button class="app-chip active" data-cat="Todos">Todos</button>
+        <button class="app-chip" data-cat="Movimiento de Tierra">Movimiento Tierra</button>
+        <button class="app-chip" data-cat="Izaje y Grúas">Grúas e Izaje</button>
+        <button class="app-chip" data-cat="Compactación">Compactación</button>
+        <button class="app-chip" data-cat="Energía e Iluminación">Plantas Eléctricas</button>
+        <button class="app-chip" data-cat="Concreto y Ligero">Concreto / Ligero</button>
+        <button class="app-chip" data-cat="Transporte Pesado">Camiones / Volteo</button>
+      </div>
+
+      <div class="sub-filters">
+        <div class="sub-toggles">
+          <label class="mini-toggle"><input type="checkbox" id="fOp" onchange="renderCatalog()"> Con Operador</label>
+          <label class="mini-toggle"><input type="checkbox" id="fAvail" onchange="renderCatalog()"> Disponible Hoy</label>
+        </div>
+        <select class="mini-toggle" id="fSort" onchange="renderCatalog()" style="outline:none;">
+          <option value="recent">Recientes</option>
+          <option value="asc">Menor RD$</option>
+          <option value="desc">Mayor RD$</option>
+        </select>
+      </div>
+
+      <div class="view-section">
+        <div class="feed-grid" id="catalogFeed"></div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         TAB 2: OBRAS BUSCANDO MÁQUINA ("SE BUSCA")
+         ========================================================= -->
+    <div id="tabViewRequests" style="display:none;">
+      <div class="view-section" style="padding-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:10px;">
+          <div>
+            <h2 style="font-size:18px; color:var(--navy);">Obras Buscando Equipo</h2>
+            <p style="font-size:12px; color:var(--text-muted);">Cotiza directo al WhatsApp del ingeniero</p>
+          </div>
+          <button class="btn btn-primary" style="padding:9px 14px; font-size:12px;" onclick="openSheet('reqSheet')">+ Pedir Máquina</button>
+        </div>
+        <div class="feed-grid" id="requestsFeed"></div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         TAB 3: FAVORITOS / GUARDADOS
+         ========================================================= -->
+    <div id="tabViewSaved" style="display:none;">
+      <div class="view-section" style="padding-top:16px;">
+        <h2 style="font-size:18px; color:var(--navy); margin-bottom:4px;">Equipos Guardados</h2>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Acceso rápido para comparar antes de contratar</p>
+        <div class="feed-grid" id="savedFeed"></div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         TAB 4: MI PERFIL / FLOTA / CONTRATOS
+         ========================================================= -->
+    <div id="tabViewProfile" style="display:none;">
+      <div class="view-section" style="padding-top:16px;">
+        <!-- KPI Summary Cards -->
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:18px;">
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center;">
+            <strong style="font-size:18px; color:var(--navy); display:block;" id="kpiFleet">0</strong>
+            <span style="font-size:11px; color:var(--text-muted);">Mi Flota</span>
+          </div>
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center;">
+            <strong style="font-size:18px; color:var(--navy); display:block;" id="kpiContracts">0</strong>
+            <span style="font-size:11px; color:var(--text-muted);">Contratos</span>
+          </div>
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center;">
+            <strong style="font-size:15px; color:var(--orange); display:block;" id="kpiVol">RD$ 0</strong>
+            <span style="font-size:11px; color:var(--text-muted);">Facturado</span>
+          </div>
+        </div>
+
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <strong style="font-size:15px; color:var(--navy);">Contratos Firmados (PDF)</strong>
+            <button class="btn btn-ghost" style="padding:5px 10px; font-size:11px;" onclick="exportBackup()">Respaldo JSON</button>
+          </div>
+          <div id="profileContracts"></div>
+        </div>
+
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <strong style="font-size:15px; color:var(--navy);">Mis Máquinas Publicadas</strong>
+            <button class="btn btn-primary" style="padding:6px 12px; font-size:11px;" onclick="openPublishSheet()">+ Agregar</button>
+          </div>
+          <div id="profileFleet"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         NATIVE MOBILE BOTTOM NAVIGATION BAR
+         ========================================================= -->
+    <nav class="bottom-nav">
+      <button class="b-item active" id="bNavCatalog" onclick="switchTab('catalog')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span>Explorar</span>
+      </button>
+
+      <button class="b-item" id="bNavRequests" onclick="switchTab('requests')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+        <span>Obras RD</span>
+      </button>
+
+      <div class="b-fab-wrap">
+        <button class="b-fab" onclick="openActionChooser()" aria-label="Publicar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <span class="b-fab-label">Publicar</span>
+      </div>
+
+      <button class="b-item" id="bNavSaved" onclick="switchTab('saved')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        <span>Guardados</span>
+      </button>
+
+      <button class="b-item" id="bNavProfile" onclick="switchTab('profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>Mi Panel</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- =========================================================
+       QUICK ACTION CHOOSER SHEET (+ BUTTON IN APP)
+       ========================================================= -->
+  <div class="sheet-backdrop" id="chooserSheet" onclick="if(event.target===this)closeSheet('chooserSheet')">
+    <div class="sheet" style="max-width:440px;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <div>
+          <h3>¿Qué deseas publicar hoy?</h3>
+          <p>Elige una acción rápida en Green Mile RD</p>
+        </div>
+        <button class="close-x" onclick="closeSheet('chooserSheet')">&times;</button>
+      </div>
+      <div class="sheet-body" style="display:flex; flex-direction:column; gap:12px;">
+        <button class="switch-row" style="text-align:left; width:100%;" onclick="closeSheet('chooserSheet'); openPublishSheet();">
+          <div>
+            <strong>🚜 Soy dueño: Publicar Máquina o Equipo</strong>
+            <span>Sube foto, fija tu tarifa en RD$ y recibe clientes</span>
+          </div>
+          <span style="font-weight:800; color:var(--orange);">→</span>
+        </button>
+        <button class="switch-row" style="text-align:left; width:100%;" onclick="closeSheet('chooserSheet'); openSheet('reqSheet');">
+          <div>
+            <strong>👷 Soy contratista: Pedir Máquina para Obra</strong>
+            <span>Publica lo que buscas y recibe ofertas en tu WhatsApp</span>
+          </div>
+          <span style="font-weight:800; color:var(--navy);">→</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       BOTTOM SHEET 1: PUBLICAR EQUIPO (3-STEP APP WIZARD)
+       ========================================================= -->
+  <div class="sheet-backdrop" id="publishSheet">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <div>
+          <h3>Publicar Equipo en RD</h3>
+          <p>Formulario rápido en 3 pasos</p>
+        </div>
+        <button class="close-x" onclick="closeSheet('publishSheet')">&times;</button>
+      </div>
+
+      <form id="publishForm" onsubmit="submitPublish(event)" style="display:flex; flex-direction:column; overflow:hidden; flex:1;">
+        <div class="sheet-body">
+          <div class="stepper">
+            <div class="s-pill active" id="ws1">1. Equipo</div>
+            <div class="s-pill" id="ws2">2. Tarifas RD$</div>
+            <div class="s-pill" id="ws3">3. Foto y Datos</div>
+          </div>
+
+          <!-- Step 1 -->
+          <div id="pStep1">
+            <div class="f-field full" style="margin-bottom:14px;">
+              <label>Categoría</label>
+              <div class="cat-grid-tiles" id="pubCatTiles">
+                <div class="c-tile selected" data-val="Movimiento de Tierra" onclick="pickTile(this)">Movimiento Tierra</div>
+                <div class="c-tile" data-val="Izaje y Grúas" onclick="pickTile(this)">Grúas e Izaje</div>
+                <div class="c-tile" data-val="Compactación" onclick="pickTile(this)">Compactación</div>
+                <div class="c-tile" data-val="Energía e Iluminación" onclick="pickTile(this)">Plantas Eléctricas</div>
+                <div class="c-tile" data-val="Concreto y Ligero" onclick="pickTile(this)">Concreto / Ligero</div>
+                <div class="c-tile" data-val="Transporte Pesado" onclick="pickTile(this)">Camiones / Volteo</div>
+              </div>
+              <input type="hidden" id="pubCat" value="Movimiento de Tierra">
+            </div>
+
+            <div class="f-grid">
+              <div class="f-field full">
+                <label>Marca y Modelo <small>Obligatorio</small></label>
+                <div class="f-box">
+                  <input type="text" id="pubTitle" placeholder="Ej. Retroexcavadora CAT 416F2" required>
+                </div>
+              </div>
+              <div class="f-field">
+                <label>Potencia / Capacidad</label>
+                <div class="f-box"><input type="text" id="pubPower" placeholder="Ej. 95 HP"></div>
+              </div>
+              <div class="f-field">
+                <label>Año</label>
+                <div class="f-box"><input type="number" id="pubYear" placeholder="2022"></div>
+              </div>
+              <div class="f-field full">
+                <label>Detalles y aditamentos incluidos</label>
+                <div class="f-box"><textarea id="pubDesc" placeholder="Ej. Incluye martillo hidráulico, seguro al día..."></textarea></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div id="pStep2" style="display:none;">
+            <div class="f-grid">
+              <div class="f-field">
+                <label>Tarifa por Día <small>Obligatorio</small></label>
+                <div class="f-box">
+                  <span class="f-prefix">RD$</span>
+                  <input type="number" id="pubPriceDay" placeholder="16500" oninput="suggestRates()">
+                </div>
+              </div>
+              <div class="f-field">
+                <label>Tarifa por Hora</label>
+                <div class="f-box">
+                  <span class="f-prefix">RD$</span>
+                  <input type="number" id="pubPriceHour" placeholder="2400">
+                </div>
+              </div>
+              <div class="f-field">
+                <label>Tarifa por Semana</label>
+                <div class="f-box">
+                  <span class="f-prefix">RD$</span>
+                  <input type="number" id="pubPriceWeek" placeholder="90000">
+                </div>
+              </div>
+              <div class="f-field">
+                <label>Traslado Lowboy (Ida)</label>
+                <div class="f-box">
+                  <span class="f-prefix">RD$</span>
+                  <input type="number" id="pubTransport" value="0" min="0">
+                </div>
+              </div>
+              <div class="f-field full">
+                <label>Provincia / Ciudad Base</label>
+                <div class="f-box">
+                  <select id="pubCity">
+                    <option value="Santo Domingo">Santo Domingo / DN</option>
+                    <option value="Santiago">Santiago</option>
+                    <option value="Punta Cana">Punta Cana / Bávaro</option>
+                    <option value="La Romana">La Romana</option>
+                    <option value="San Cristóbal">San Cristóbal</option>
+                    <option value="Puerto Plata">Puerto Plata</option>
+                    <option value="La Vega">La Vega</option>
+                    <option value="Baní">Baní</option>
+                  </select>
+                </div>
+              </div>
+              <div class="f-field full">
+                <label class="switch-row">
+                  <div>
+                    <strong>Incluye Operador Certificado</strong>
+                    <span>Operador incluido en el precio</span>
+                  </div>
+                  <input type="checkbox" id="pubOp" style="display:none;">
+                  <div class="sw-knob"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div id="pStep3" style="display:none;">
+            <div class="f-field full" style="margin-bottom:14px;">
+              <label>Foto del Equipo (Cámara o Galería)</label>
+              <label class="cam-drop" for="pubPhoto">
+                <img id="camPreview" class="cam-preview" alt="Vista previa">
+                <div id="camText">
+                  <strong style="color:var(--navy); display:block; font-size:14px;">📷 Tomar foto o elegir de galería</strong>
+                  <span style="font-size:12px; color:var(--text-muted);">Sube una foto real para generar más confianza</span>
+                </div>
+                <input type="file" id="pubPhoto" accept="image/*" style="display:none;" onchange="onPhotoPicked(event)">
+              </label>
+            </div>
+
+            <div class="f-grid">
+              <div class="f-field">
+                <label>Propietario / Empresa</label>
+                <div class="f-box"><input type="text" id="pubOwner" placeholder="Equipos Ozama SRL"></div>
+              </div>
+              <div class="f-field">
+                <label>RNC o Cédula</label>
+                <div class="f-box"><input type="text" id="pubRnc" placeholder="1-31-00000-1"></div>
+              </div>
+              <div class="f-field full">
+                <label>WhatsApp en RD</label>
+                <div class="f-box">
+                  <span class="f-prefix">+1</span>
+                  <input type="tel" id="pubPhone" placeholder="809-555-0199">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sheet-foot">
+          <button type="button" class="btn btn-ghost" id="wBack" style="visibility:hidden;" onclick="stepWizard(-1)">← Atrás</button>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn btn-navy" id="wNext" onclick="stepWizard(1)">Siguiente →</button>
+            <button type="submit" class="btn btn-primary" id="wSubmit" style="display:none;">Publicar Ahora</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       BOTTOM SHEET 2: SOLICITAR MÁQUINA PARA OBRA
+       ========================================================= -->
+  <div class="sheet-backdrop" id="reqSheet">
+    <div class="sheet" style="max-width:560px;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <div>
+          <h3>Pedir Máquina para Obra</h3>
+          <p>Recibe ofertas de dueños directos en tu WhatsApp</p>
+        </div>
+        <button class="close-x" onclick="closeSheet('reqSheet')">&times;</button>
+      </div>
+      <form onsubmit="submitReq(event)" style="display:flex; flex-direction:column; overflow:hidden; flex:1;">
+        <div class="sheet-body">
+          <div class="f-grid">
+            <div class="f-field full">
+              <label>¿Qué equipo buscas?</label>
+              <div class="f-box"><input type="text" id="rTitle" placeholder="Ej. Grúa telescópica 30 Ton por 4 días" required></div>
+            </div>
+            <div class="f-field">
+              <label>Provincia de la Obra</label>
+              <div class="f-box">
+                <select id="rCity">
+                  <option value="Santo Domingo">Santo Domingo</option>
+                  <option value="Santiago">Santiago</option>
+                  <option value="Punta Cana">Punta Cana</option>
+                  <option value="La Romana">La Romana</option>
+                  <option value="San Cristóbal">San Cristóbal</option>
+                  <option value="Puerto Plata">Puerto Plata</option>
+                  <option value="La Vega">La Vega</option>
+                </select>
+              </div>
+            </div>
+            <div class="f-field">
+              <label>Presupuesto Diario</label>
+              <div class="f-box"><span class="f-prefix">RD$</span><input type="number" id="rBudget" placeholder="18000" required></div>
+            </div>
+            <div class="f-field">
+              <label>Ingeniero / Empresa</label>
+              <div class="f-box"><input type="text" id="rAuthor" placeholder="Ing. Luis Pérez" required></div>
+            </div>
+            <div class="f-field">
+              <label>WhatsApp</label>
+              <div class="f-box"><span class="f-prefix">+1</span><input type="tel" id="rPhone" placeholder="829-555-0122" required></div>
+            </div>
+            <div class="f-field full">
+              <label>Urgencia y detalles de obra</label>
+              <div class="f-box"><textarea id="rNotes" placeholder="Para iniciar este lunes, terreno compacto..."></textarea></div>
+            </div>
+          </div>
+        </div>
+        <div class="sheet-foot" style="justify-content:flex-end;">
+          <button type="submit" class="btn btn-primary" style="width:100%;">Publicar Solicitud</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       BOTTOM SHEET 3: COTIZAR, NCF Y FIRMAR CONTRATO
+       ========================================================= -->
+  <div class="sheet-backdrop" id="detailSheet">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <div>
+          <h3>Cotizar y Contratar</h3>
+          <p>Cálculo con ITBIS (NCF B01) y firma táctil</p>
+        </div>
+        <button class="close-x" onclick="closeSheet('detailSheet')">&times;</button>
+      </div>
+      <div class="sheet-body" id="detailBody"></div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       BOTTOM SHEET 4: CONTRATO PDF IMPRIMIBLE
+       ========================================================= -->
+  <div class="sheet-backdrop" id="contractModal">
+    <div class="sheet">
+      <div class="sheet-handle no-print"></div>
+      <div class="sheet-head no-print">
+        <div>
+          <h3>Contrato Digital Firmado</h3>
+          <p>Listo para guardar en PDF o compartir</p>
+        </div>
+        <button class="close-x" onclick="closeSheet('contractModal')">&times;</button>
+      </div>
+      <div class="sheet-body" id="contractBody"></div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       BOTTOM SHEET 5: GREEN MILE PRO
+       ========================================================= -->
+  <div class="sheet-backdrop" id="proSheet">
+    <div class="sheet" style="max-width:440px;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <div>
+          <h3>Green Mile Pro RD</h3>
+          <p>Beneficios para contratistas frecuentes</p>
+        </div>
+        <button class="close-x" onclick="closeSheet('proSheet')">&times;</button>
+      </div>
+      <div class="sheet-body">
+        <div style="background:var(--navy-soft); border:1.5px solid var(--navy); border-radius:16px; padding:18px; margin-bottom:16px;">
+          <div style="font-size:26px; font-weight:800; color:var(--navy);">RD$ 2,900 <span style="font-size:12px; font-weight:500; color:var(--text-muted);">/ mes</span></div>
+          <ul style="list-style:none; margin-top:12px; font-size:13px; display:flex; flex-direction:column; gap:7px;">
+            <li>✓ <strong>10% de descuento</strong> automático en alquileres</li>
+            <li>✓ Contratos digitales ilimitados con NCF</li>
+            <li>✓ Prioridad de soporte en obra</li>
+          </ul>
+        </div>
+        <button class="btn btn-primary" style="width:100%;" onclick="activatePro()">Activar Plan Pro</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const LOGO_URI = document.getElementById('brandLogo').src;
+    let equipment = JSON.parse(localStorage.getItem('gm_rd_v3_eq')) || [];
+    let requests = JSON.parse(localStorage.getItem('gm_rd_v3_req')) || [];
+    let bookings = JSON.parse(localStorage.getItem('gm_rd_v3_bk')) || [];
+    let savedIds = JSON.parse(localStorage.getItem('gm_rd_v4_saved')) || [];
+    let isPro = localStorage.getItem('gm_rd_v3_pro') === 'true';
+
+    let activeTab = 'catalog';
+    let activeCat = 'Todos';
+    let wizStep = 1;
+    let photoData = '';
+    let selectedEq = null;
+    let sigSigned = false;
+
+    function fmtRD(n) {
+      return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('es-DO');
+    }
+
+    function cleanWA(p) {
+      const d = String(p || '').replace(/\D/g, '');
+      if (d.length === 10) return '1' + d;
+      if (d.length === 11 && d.startsWith('1')) return d;
+      return '1809' + d;
+    }
+
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 2800);
+    }
+
+    function openSheet(id) { document.getElementById(id).classList.add('open'); }
+    function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
+    function openActionChooser() { openSheet('chooserSheet'); }
+
+    function toggleMobileFrame() {
+      document.body.classList.toggle('mobile-frame-mode');
+      const isSim = document.body.classList.contains('mobile-frame-mode');
+      document.getElementById('frameToggleBtn').textContent = isSim ? '💻 Vista Web Completa' : '📱 Vista App';
+    }
+
+    function syncCounters() {
+      localStorage.setItem('gm_rd_v3_eq', JSON.stringify(equipment));
+      localStorage.setItem('gm_rd_v3_req', JSON.stringify(requests));
+      localStorage.setItem('gm_rd_v3_bk', JSON.stringify(bookings));
+      localStorage.setItem('gm_rd_v4_saved', JSON.stringify(savedIds));
+      localStorage.setItem('gm_rd_v3_pro', String(isPro));
+
+      document.getElementById('dCountEq').textContent = equipment.length;
+      document.getElementById('dCountReq').textContent = requests.length;
+      document.getElementById('dCountSaved').textContent = savedIds.length;
+      document.getElementById('dCountBk').textContent = bookings.length;
+
+      document.getElementById('kpiFleet').textContent = equipment.length;
+      document.getElementById('kpiContracts').textContent = bookings.length;
+      const vol = bookings.reduce((s, b) => s + (b.total || 0), 0);
+      document.getElementById('kpiVol').textContent = fmtRD(vol);
+
+      const proBtn = document.getElementById('proBadgeBtn');
+      if (isPro) {
+        proBtn.textContent = '⭐ Pro (-10%)';
+        proBtn.style.background = 'var(--orange)';
+      }
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      ['Catalog', 'Requests', 'Saved', 'Profile'].forEach(name => {
+        const key = name.toLowerCase();
+        document.getElementById('tabView' + name).style.display = (key === tab) ? 'block' : 'none';
+        const dBtn = document.getElementById('dTab' + name);
+        if (dBtn) dBtn.classList.toggle('active', key === tab);
+        const bBtn = document.getElementById('bNav' + name);
+        if (bBtn) bBtn.classList.toggle('active', key === tab);
+      });
+      renderCurrentTab();
+    }
+
+    function renderCurrentTab() {
+      if (activeTab === 'catalog') renderCatalog();
+      if (activeTab === 'requests') renderRequests();
+      if (activeTab === 'saved') renderSaved();
+      if (activeTab === 'profile') renderProfile();
+    }
+
+    document.querySelectorAll('#catChips .app-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#catChips .app-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        activeCat = chip.dataset.cat;
+        renderCatalog();
+      });
+    });
+
+    function defaultCover(cat) {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+        <rect width="600" height="400" fill="#0D223A"/>
+        <circle cx="490" cy="70" r="140" fill="#B85A27" opacity="0.24"/>
+        <text x="38" y="200" fill="#FFFFFF" font-family="sans-serif" font-size="24" font-weight="bold">${cat}</text>
+        <text x="38" y="232" fill="#94A3B8" font-family="sans-serif" font-size="14">GREEN MILE APP • RD</text>
+      </svg>`;
+      return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    }
+
+    function toggleSave(evt, id) {
+      evt.stopPropagation();
+      if (savedIds.includes(id)) {
+        savedIds = savedIds.filter(x => x !== id);
+        toast('Eliminado de guardados');
+      } else {
+        savedIds.push(id);
+        toast('Guardado en favoritos');
+      }
+      syncCounters();
+      renderCurrentTab();
+    }
+
+    function cardHTML(item) {
+      const isSaved = savedIds.includes(item.id);
+      return `
+        <article class="eq-card" onclick="openDetail(${item.id})">
+          <div class="eq-media">
+            <img src="${item.img || defaultCover(item.category)}" alt="${item.title}">
+            <span class="pill-city">${item.city}</span>
+            <button class="fav-btn ${isSaved ? 'saved' : ''}" onclick="toggleSave(event, ${item.id})" aria-label="Guardar">
+              ${isSaved ? '♥' : '♡'}
+            </button>
+            <span class="pill-avail ${item.busy ? 'busy' : ''}">${item.busy ? 'En Obra' : 'Disponible'}</span>
+            ${item.operator ? '<span class="pill-op">Con Operador</span>' : ''}
+          </div>
+          <div class="eq-body">
+            <div class="eq-cat">${item.category}</div>
+            <div class="eq-title">${item.title}</div>
+            <div class="eq-owner">
+              <span>${item.owner}</span>
+              <span>${item.year || ''}</span>
+            </div>
+            <div class="eq-foot">
+              <div class="eq-price">${fmtRD(item.priceDay)} <small>/ día</small></div>
+              <button class="btn btn-navy" style="padding:8px 14px; font-size:12px;">Rentar</button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderCatalog() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const city = document.getElementById('cityFilter').value;
+      const op = document.getElementById('fOp').checked;
+      const avail = document.getElementById('fAvail').checked;
+      const sort = document.getElementById('fSort').value;
+
+      let list = equipment.filter(e => {
+        const mq = !q || e.title.toLowerCase().includes(q) || (e.desc || '').toLowerCase().includes(q) || (e.owner || '').toLowerCase().includes(q);
+        const mc = activeCat === 'Todos' || e.category === activeCat;
+        const mcity = !city || e.city === city;
+        const mop = !op || e.operator;
+        const mav = !avail || !e.busy;
+        return mq && mc && mcity && mop && mav;
+      });
+
+      if (sort === 'asc') list.sort((a, b) => a.priceDay - b.priceDay);
+      if (sort === 'desc') list.sort((a, b) => b.priceDay - a.priceDay);
+
+      const box = document.getElementById('catalogFeed');
+      if (list.length === 0) {
+        box.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-badge">🚜</div>
+            <h3>Tu App Green Mile RD está lista</h3>
+            <p>Sin anuncios falsos. Toca el botón naranja <strong>+ Publicar</strong> para subir tu primera máquina o solicitar un equipo para tu obra.</p>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="openPublishSheet()">+ Publicar Equipo</button>
+              <button class="btn btn-ghost" onclick="openSheet('reqSheet')">Pedir Máquina</button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+      box.innerHTML = list.map(cardHTML).join('');
+    }
+
+    function renderSaved() {
+      const box = document.getElementById('savedFeed');
+      const list = equipment.filter(e => savedIds.includes(e.id));
+      if (list.length === 0) {
+        box.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-badge">♡</div>
+            <h3>Aún no tienes equipos guardados</h3>
+            <p>Toca el corazón en cualquier equipo del catálogo para guardarlo aquí.</p>
+            <button class="btn btn-navy" onclick="switchTab('catalog')">Ir al Catálogo</button>
+          </div>
+        `;
+        return;
+      }
+      box.innerHTML = list.map(cardHTML).join('');
+    }
+
+    function renderRequests() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const city = document.getElementById('cityFilter').value;
+      const list = requests.filter(r => (!q || r.title.toLowerCase().includes(q)) && (!city || r.city === city));
+      const box = document.getElementById('requestsFeed');
+
+      if (list.length === 0) {
+        box.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-badge">👷</div>
+            <h3>No hay solicitudes abiertas</h3>
+            <p>Publica qué máquina necesitas en obra para recibir cotizaciones directas en tu WhatsApp.</p>
+            <button class="btn btn-primary" onclick="openSheet('reqSheet')">+ Pedir Máquina Ahora</button>
+          </div>
+        `;
+        return;
+      }
+
+      box.innerHTML = list.map(r => {
+        const msg = encodeURIComponent(`Hola ${r.author}, vi tu solicitud "${r.title}" en Green Mile App RD (${r.city}) y tengo disponibilidad.`);
+        return `
+          <div style="background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--orange); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow-sm);">
+            <div style="font-size:11px; font-weight:800; color:var(--orange); text-transform:uppercase;">${r.city} • Presupuesto ${fmtRD(r.budget)}/día</div>
+            <strong style="font-size:16px; color:var(--navy);">${r.title}</strong>
+            <p style="font-size:13px; color:var(--text-muted);">${r.notes || 'Disponibilidad inmediata requerida.'}</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid var(--border); margin-top:auto;">
+              <span style="font-size:12px; font-weight:700; color:var(--navy);">${r.author}</span>
+              <a class="btn btn-wa" style="padding:8px 14px; font-size:12px;" target="_blank" rel="noopener" href="https://wa.me/${cleanWA(r.phone)}?text=${msg}">WhatsApp</a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderProfile() {
+      const cBox = document.getElementById('profileContracts');
+      if (bookings.length === 0) {
+        cBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No hay contratos generados todavía.</p>`;
+      } else {
+        cBox.innerHTML = bookings.map(b => `
+          <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+            <div>
+              <strong style="font-size:14px; color:var(--navy); display:block;">${b.title}</strong>
+              <span style="font-size:11px; color:var(--text-muted);">${b.renter} • ${fmtRD(b.total)}</span>
+            </div>
+            <button class="btn btn-navy" style="padding:7px 12px; font-size:11px;" onclick="openContract(${b.id})">Ver PDF</button>
+          </div>
+        `).join('');
+      }
+
+      const fBox = document.getElementById('profileFleet');
+      if (equipment.length === 0) {
+        fBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Aún no has publicado equipos en tu flota.</p>`;
+      } else {
+        fBox.innerHTML = equipment.map(e => `
+          <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+            <div>
+              <strong style="font-size:14px; color:var(--navy); display:block;">${e.title}</strong>
+              <span style="font-size:11px; color:var(--text-muted);">${e.city} • ${fmtRD(e.priceDay)}/día</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="flipBusy(${e.id})">${e.busy ? 'Liberar' : 'Ocupar'}</button>
+              <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px; color:#DC2626;" onclick="removeEq(${e.id})">Borrar</button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function flipBusy(id) {
+      const it = equipment.find(x => x.id === id);
+      if (it) { it.busy = !it.busy; syncCounters(); renderProfile(); toast('Estado actualizado'); }
+    }
+
+    function removeEq(id) {
+      equipment = equipment.filter(x => x.id !== id);
+      syncCounters();
+      renderProfile();
+      toast('Equipo eliminado');
+    }
+
+    /* Publish Wizard */
+    function openPublishSheet() {
+      wizStep = 1;
+      photoData = '';
+      document.getElementById('publishForm').reset();
+      document.getElementById('camPreview').style.display = 'none';
+      updateWiz();
+      openSheet('publishSheet');
+    }
+
+    function pickTile(el) {
+      document.querySelectorAll('#pubCatTiles .c-tile').forEach(t => t.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('pubCat').value = el.dataset.val;
+    }
+
+    function suggestRates() {
+      const d = Number(document.getElementById('pubPriceDay').value) || 0;
+      if (d > 0) {
+        document.getElementById('pubPriceHour').placeholder = Math.round(d / 7);
+        document.getElementById('pubPriceWeek').placeholder = Math.round(d * 6 * 0.9);
+      }
+    }
+
+    function onPhotoPicked(e) {
+      const f = e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = ev => {
+        photoData = ev.target.result;
+        const img = document.getElementById('camPreview');
+        img.src = photoData;
+        img.style.display = 'block';
+      };
+      r.readAsDataURL(f);
+    }
+
+    function stepWizard(dir) {
+      if (dir === 1 && wizStep === 1 && !document.getElementById('pubTitle').value.trim()) {
+        toast('Ingresa la marca y modelo'); return;
+      }
+      if (dir === 1 && wizStep === 2 && !(Number(document.getElementById('pubPriceDay').value) >= 100)) {
+        toast('Ingresa una tarifa diaria en RD$'); return;
+      }
+      wizStep = Math.min(3, Math.max(1, wizStep + dir));
+      updateWiz();
+    }
+
+    function updateWiz() {
+      [1, 2, 3].forEach(n => {
+        document.getElementById('pStep' + n).style.display = n === wizStep ? 'block' : 'none';
+        const pill = document.getElementById('ws' + n);
+        pill.classList.remove('active', 'done');
+        if (n === wizStep) pill.classList.add('active');
+        if (n < wizStep) pill.classList.add('done');
+      });
+      document.getElementById('wBack').style.visibility = wizStep > 1 ? 'visible' : 'hidden';
+      document.getElementById('wNext').style.display = wizStep < 3 ? 'inline-flex' : 'none';
+      document.getElementById('wSubmit').style.display = wizStep === 3 ? 'inline-flex' : 'none';
+    }
+
+    function submitPublish(e) {
+      e.preventDefault();
+      const owner = document.getElementById('pubOwner').value.trim();
+      const phone = document.getElementById('pubPhone').value.trim();
+      if (!owner || !phone) { toast('Completa propietario y WhatsApp'); return; }
+
+      const day = Number(document.getElementById('pubPriceDay').value);
+      const cat = document.getElementById('pubCat').value;
+      equipment.unshift({
+        id: Date.now(),
+        category: cat,
+        title: document.getElementById('pubTitle').value.trim(),
+        power: document.getElementById('pubPower').value.trim() || 'Estándar',
+        year: document.getElementById('pubYear').value.trim() || 'Verificado',
+        desc: document.getElementById('pubDesc').value.trim() || 'Disponible para entrega en obra.',
+        priceDay: day,
+        priceHour: Number(document.getElementById('pubPriceHour').value) || Math.round(day / 7),
+        priceWeek: Number(document.getElementById('pubPriceWeek').value) || Math.round(day * 6 * 0.9),
+        transportCost: Number(document.getElementById('pubTransport').value) || 0,
+        city: document.getElementById('pubCity').value,
+        operator: document.getElementById('pubOp').checked,
+        owner,
+        rnc: document.getElementById('pubRnc').value.trim() || 'N/A',
+        phone,
+        busy: false,
+        img: photoData || defaultCover(cat)
+      });
+      syncCounters();
+      closeSheet('publishSheet');
+      switchTab('catalog');
+      toast('¡Equipo publicado en el catálogo!');
+    }
+
+    function submitReq(e) {
+      e.preventDefault();
+      requests.unshift({
+        id: Date.now(),
+        title: document.getElementById('rTitle').value.trim(),
+        city: document.getElementById('rCity').value,
+        budget: Number(document.getElementById('rBudget').value) || 0,
+        author: document.getElementById('rAuthor').value.trim(),
+        phone: document.getElementById('rPhone').value.trim(),
+        notes: document.getElementById('rNotes').value.trim()
+      });
+      syncCounters();
+      e.target.reset();
+      closeSheet('reqSheet');
+      switchTab('requests');
+      toast('Solicitud publicada en Obras RD');
+    }
+
+    /* Quote + Signature + NCF */
+    function openDetail(id) {
+      const it = equipment.find(x => x.id === id);
+      if (!it) return;
+      selectedEq = it;
+      sigSigned = false;
+
+      const today = new Date().toISOString().split('T')[0];
+      const waText = encodeURIComponent(`Hola ${it.owner}, vi "${it.title}" en Green Mile App RD (${it.city}) y quiero consultar disponibilidad.`);
+
+      document.getElementById('detailBody').innerHTML = `
+        <img src="${it.img || defaultCover(it.category)}" alt="${it.title}" style="width:100%; height:180px; object-fit:cover; border-radius:14px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;">
+          <div>
+            <div class="eq-cat">${it.category} • ${it.city}</div>
+            <h4 style="font-size:18px; color:var(--navy);">${it.title}</h4>
+          </div>
+          <a class="btn btn-wa" style="padding:8px 12px; font-size:12px;" target="_blank" rel="noopener" href="https://wa.me/${cleanWA(it.phone)}?text=${waText}">WhatsApp</a>
+        </div>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">${it.desc}</p>
+
+        <form onsubmit="confirmRent(event)">
+          <div class="f-grid">
+            <div class="f-field">
+              <label>Modalidad</label>
+              <div class="f-box">
+                <select id="qMode" onchange="calcReceipt()">
+                  <option value="day">Por Días (${fmtRD(it.priceDay)})</option>
+                  <option value="hour">Por Horas (${fmtRD(it.priceHour)})</option>
+                  <option value="week">Por Semanas (${fmtRD(it.priceWeek)})</option>
+                </select>
+              </div>
+            </div>
+            <div class="f-field">
+              <label>Cantidad</label>
+              <div class="f-box"><input type="number" id="qQty" value="3" min="1" oninput="calcReceipt()" required></div>
+            </div>
+            <div class="f-field">
+              <label>Inicio en Obra</label>
+              <div class="f-box"><input type="date" id="qStart" value="${today}" min="${today}" required></div>
+            </div>
+            <div class="f-field">
+              <label>Traslado Lowboy</label>
+              <div class="f-box">
+                <select id="qTrans" onchange="calcReceipt()">
+                  <option value="yes">Con traslado (${fmtRD(it.transportCost)})</option>
+                  <option value="no">Retiro en patio</option>
+                </select>
+              </div>
+            </div>
+            <div class="f-field">
+              <label>Contratista / Empresa</label>
+              <div class="f-box"><input type="text" id="qRenter" placeholder="Constructora Cibao SRL" required></div>
+            </div>
+            <div class="f-field">
+              <label>RNC / Cédula</label>
+              <div class="f-box"><input type="text" id="qRnc" placeholder="1-30-12345-6" required></div>
+            </div>
+            <div class="f-field full">
+              <label>Dirección de Obra en RD</label>
+              <div class="f-box"><input type="text" id="qAddr" placeholder="Sector, calle o referencia del proyecto" required></div>
+            </div>
+
+            <div class="f-field full">
+              <label class="switch-row">
+                <div>
+                  <strong>Comprobante Crédito Fiscal (NCF B01)</strong>
+                  <span>Agrega ITBIS 18% desglosado</span>
+                </div>
+                <input type="checkbox" id="qNcf" checked style="display:none;" onchange="calcReceipt()">
+                <div class="sw-knob"></div>
+              </label>
+            </div>
+
+            <div class="f-field full">
+              <label>Firma Táctil del Contratista <small style="color:var(--orange); cursor:pointer;" onclick="clearSig()">Limpiar</small></label>
+              <div class="sig-pad">
+                <canvas id="sigCanvas" width="560" height="105"></canvas>
+                <div style="font-size:11px; color:var(--text-muted);">Firma aquí con el dedo o cursor</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="receipt" id="qReceipt"></div>
+          <button type="submit" class="btn btn-primary" style="width:100%; margin-top:14px; padding:13px;">Firmar y Generar Contrato</button>
+        </form>
+      `;
+
+      setupSig();
+      calcReceipt();
+      openSheet('detailSheet');
+    }
+
+    function setupSig() {
+      const c = document.getElementById('sigCanvas');
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      ctx.strokeStyle = '#0D223A';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      let draw = false;
+
+      const pt = e => {
+        const r = c.getBoundingClientRect();
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: (cx - r.left) * (c.width / r.width), y: (cy - r.top) * (c.height / r.height) };
+      };
+      const down = e => { draw = true; sigSigned = true; const p = pt(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); };
+      const move = e => { if (!draw) return; const p = pt(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); };
+      const up = () => { draw = false; };
+
+      c.addEventListener('mousedown', down);
+      c.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', up);
+      c.addEventListener('touchstart', down, { passive: false });
+      c.addEventListener('touchmove', move, { passive: false });
+      c.addEventListener('touchend', up);
+    }
+
+    function clearSig() {
+      const c = document.getElementById('sigCanvas');
+      if (c) { c.getContext('2d').clearRect(0, 0, c.width, c.height); sigSigned = false; }
+    }
+
+    function currentBreakdown() {
+      const it = selectedEq;
+      const mode = document.getElementById('qMode').value;
+      const qty = Math.max(1, Number(document.getElementById('qQty').value) || 1);
+      const trans = document.getElementById('qTrans').value === 'yes' ? (it.transportCost || 0) : 0;
+      const ncf = document.getElementById('qNcf').checked;
+
+      let unit = it.priceDay, label = 'días';
+      if (mode === 'hour') { unit = it.priceHour; label = 'horas'; }
+      if (mode === 'week') { unit = it.priceWeek; label = 'semanas'; }
+
+      const base = unit * qty;
+      const disc = isPro ? Math.round(base * 0.10) : 0;
+      const net = base - disc + trans;
+      const itbis = ncf ? Math.round(net * 0.18) : 0;
+      const total = net + itbis;
+      return { qty, unit, label, base, disc, trans, net, itbis, total, ncf };
+    }
+
+    function calcReceipt() {
+      if (!selectedEq) return;
+      const b = currentBreakdown();
+      document.getElementById('qReceipt').innerHTML = `
+        <div class="r-row"><span>${fmtRD(b.unit)} × ${b.qty} ${b.label}</span><span>${fmtRD(b.base)}</span></div>
+        ${b.disc > 0 ? `<div class="r-row" style="color:var(--success); font-weight:700;"><span>Descuento Pro (-10%)</span><span>- ${fmtRD(b.disc)}</span></div>` : ''}
+        ${b.trans > 0 ? `<div class="r-row"><span>Traslado Lowboy</span><span>${fmtRD(b.trans)}</span></div>` : ''}
+        ${b.ncf ? `<div class="r-row"><span>ITBIS 18% (B01)</span><span>${fmtRD(b.itbis)}</span></div>` : ''}
+        <div class="r-total"><span>Total a Pagar</span><span>${fmtRD(b.total)}</span></div>
+      `;
+    }
+
+    function confirmRent(e) {
+      e.preventDefault();
+      if (!sigSigned) { toast('Dibuja tu firma en pantalla para continuar'); return; }
+      const b = currentBreakdown();
+      const sig = document.getElementById('sigCanvas').toDataURL('image/png');
+      const rec = {
+        id: Date.now(),
+        title: selectedEq.title,
+        city: selectedEq.city,
+        owner: selectedEq.owner,
+        ownerRnc: selectedEq.rnc,
+        ownerPhone: selectedEq.phone,
+        renter: document.getElementById('qRenter').value.trim(),
+        renterRnc: document.getElementById('qRnc').value.trim(),
+        address: document.getElementById('qAddr').value.trim(),
+        startDate: document.getElementById('qStart').value,
+        qty: b.qty,
+        unitLabel: b.label,
+        netSubtotal: b.net,
+        itbis: b.itbis,
+        total: b.total,
+        ncf: b.ncf,
+        signature: sig
+      };
+      bookings.unshift(rec);
+      selectedEq.busy = true;
+      syncCounters();
+      closeSheet('detailSheet');
+      renderCurrentTab();
+      openContract(rec.id);
+      toast('¡Contrato emitido y firmado!');
+    }
+
+    function openContract(id) {
+      const b = bookings.find(x => x.id === id);
+      if (!b) return;
+      document.getElementById('contractBody').innerHTML = `
+        <div style="border:1.5px solid var(--border); border-radius:14px; padding:20px; background:#fff;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--navy); padding-bottom:12px; margin-bottom:14px;">
+            <div>
+              <strong style="font-size:16px; color:var(--navy);">GREEN MILE CONSTRUCTION RD</strong>
+              <div style="font-size:11px; font-weight:800; color:var(--orange);">CONTRATO #GM-${String(b.id).slice(-6)}</div>
+            </div>
+            <img src="${LOGO_URI}" style="height:40px;" alt="Logo">
+          </div>
+          <div style="font-size:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+            <div style="background:var(--bg); padding:10px; border-radius:10px;">
+              <strong style="color:var(--navy); display:block;">ARRENDADOR</strong>
+              ${b.owner}<br>RNC: ${b.ownerRnc}<br>Tel: +1 ${b.ownerPhone}
+            </div>
+            <div style="background:var(--bg); padding:10px; border-radius:10px;">
+              <strong style="color:var(--navy); display:block;">CONTRATISTA</strong>
+              ${b.renter}<br>RNC: ${b.renterRnc}<br>Obra: ${b.address}
+            </div>
+          </div>
+          <p style="font-size:13px; margin-bottom:6px;"><strong>Equipo:</strong> ${b.title} (${b.city})</p>
+          <p style="font-size:13px; margin-bottom:12px;"><strong>Plazo:</strong> ${b.qty} ${b.unitLabel} desde ${b.startDate}</p>
+          <div style="background:var(--navy-soft); padding:12px; border-radius:10px; font-size:13px; margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between;"><span>Subtotal Neto:</span><span>${fmtRD(b.netSubtotal)}</span></div>
+            ${b.ncf ? `<div style="display:flex; justify-content:space-between;"><span>ITBIS 18% (NCF B01):</span><span>${fmtRD(b.itbis)}</span></div>` : ''}
+            <div style="display:flex; justify-content:space-between; font-weight:800; color:var(--navy); border-top:1px solid #CBD5E1; margin-top:6px; padding-top:6px;">
+              <span>Total Acordado:</span><span>${fmtRD(b.total)}</span>
+            </div>
+          </div>
+          <div style="text-align:center; margin-top:12px;">
+            ${b.signature ? `<img src="${b.signature}" alt="Firma" style="height:52px; border-bottom:1px solid var(--navy); margin:0 auto 4px; display:block;">` : ''}
+            <span style="font-size:11px; font-weight:700; color:var(--navy);">Firma Digital — ${b.renter}</span>
+          </div>
+          <button class="btn btn-navy no-print" style="width:100%; margin-top:16px;" onclick="window.print()">Imprimir / Guardar PDF</button>
+        </div>
+      `;
+      openSheet('contractModal');
+    }
+
+    function activatePro() {
+      isPro = true;
+      syncCounters();
+      closeSheet('proSheet');
+      toast('Plan Pro activado (-10%)');
+    }
+
+    function exportBackup() {
+      const blob = new Blob([JSON.stringify({ equipment, requests, bookings }, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'green-mile-app-rd.json';
+      a.click();
+    }
+
+    syncCounters();
+    renderCurrentTab();
+  </script>
+</body>
+</html>

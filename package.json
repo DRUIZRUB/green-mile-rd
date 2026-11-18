@@ -1,0 +1,9 @@
+{
+  "name": "green-mile-rd",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Green Mile Construction RD — Marketplace de Maquinaria Pesada",
+  "scripts": {
+    "deploy": "npx firebase-tools deploy --only hosting"
+  }
+}
