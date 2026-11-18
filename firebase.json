@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "green-mile-rd",
     "public": "public",
     "ignore": [
       "firebase.json",
