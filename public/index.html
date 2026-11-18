@@ -1395,11 +1395,537 @@
 
   <script>
     const LOGO_URI = document.getElementById('brandLogo').src;
+    const SEED_VERSION = 'gm_rd_seed_v1';
+
+    const DEFAULT_EQUIPMENT = [
+      {
+        id: 1001,
+        category: 'Movimiento de Tierra',
+        title: 'Retroexcavadora CAT 416F2 4x4',
+        power: '95 HP • Pala 1.0 m³',
+        year: '2022',
+        desc: 'Tracción 4x4 con brazo extensible, kit hidráulico listo para martillo rompedor y seguro vigente. Ideal para zanjas, carga de material y movimiento urbano.',
+        priceDay: 16500,
+        priceHour: 2400,
+        priceWeek: 89000,
+        transportCost: 6500,
+        city: 'Santo Domingo',
+        operator: true,
+        owner: 'Equipos Ozama SRL',
+        rnc: '1-31-48291-5',
+        phone: '809-555-0141',
+        busy: false,
+        img: 'img/eq_retroexcavadora.webp'
+      },
+      {
+        id: 1002,
+        category: 'Movimiento de Tierra',
+        title: 'Excavadora Hidráulica JCB JS210LC',
+        power: '165 HP • 21 Ton',
+        year: '2022',
+        desc: 'Excavadora de orugas con cucharón de 1.2 m³ para excavación profunda, cortes de terreno, cisternas y movimiento masivo en proyectos turísticos.',
+        priceDay: 28500,
+        priceHour: 4100,
+        priceWeek: 154000,
+        transportCost: 12000,
+        city: 'Punta Cana',
+        operator: true,
+        owner: 'Constructora del Este RD',
+        rnc: '1-32-19402-8',
+        phone: '829-555-0182',
+        busy: false,
+        img: 'img/eq_excavadora.webp'
+      },
+      {
+        id: 1003,
+        category: 'Movimiento de Tierra',
+        title: 'Minicargador de Orugas Bobcat T750',
+        power: '85 HP • Orugas Goma',
+        year: '2023',
+        desc: 'Compacto de alta tracción en terrenos blandos. Incluye cucharón estándar, horquillas porta-pallets y acoplamiento rápido para aditamentos.',
+        priceDay: 12500,
+        priceHour: 1850,
+        priceWeek: 67500,
+        transportCost: 4500,
+        city: 'Santiago',
+        operator: false,
+        owner: 'Maquinarias Cibao SRL',
+        rnc: '1-02-66318-4',
+        phone: '809-555-0133',
+        busy: false,
+        img: 'img/eq_minicargador.webp'
+      },
+      {
+        id: 1004,
+        category: 'Movimiento de Tierra',
+        title: 'Bulldozer CAT D8T XL con Ripper',
+        power: '310 HP • Hoja Semi-U',
+        year: '2021',
+        desc: 'Tractor de orugas pesado con ripper trasero de 3 vástagos para desmonte, apertura de caminos, canteras y nivelación de grandes explanadas.',
+        priceDay: 38000,
+        priceHour: 5400,
+        priceWeek: 205000,
+        transportCost: 16500,
+        city: 'La Romana',
+        operator: true,
+        owner: 'Terracería Romana SRL',
+        rnc: '1-31-77210-9',
+        phone: '849-555-0194',
+        busy: true,
+        img: 'img/eq_bulldozer.webp'
+      },
+      {
+        id: 1005,
+        category: 'Izaje y Grúas',
+        title: 'Grúa Telescópica Todoterreno 40 Ton',
+        power: '40 Ton • Pluma 31 m',
+        year: '2021',
+        desc: 'Grúa hidráulica certificada con estabilizadores, indicador de momento de carga y rigger auxiliar. Montaje de vigas metálicas, chillers y prefabricados.',
+        priceDay: 48000,
+        priceHour: 7200,
+        priceWeek: 259000,
+        transportCost: 14000,
+        city: 'Santo Domingo',
+        operator: true,
+        owner: 'Izajes Metropolitanos RD',
+        rnc: '1-30-91844-2',
+        phone: '809-555-0155',
+        busy: false,
+        img: 'img/eq_grua_telescopica.webp'
+      },
+      {
+        id: 1006,
+        category: 'Izaje y Grúas',
+        title: 'Camión Grúa Palfinger PK 34002',
+        power: '12 Ton • Cama 6.5 m',
+        year: '2022',
+        desc: 'Camión plataforma con brazo articulado hidráulico y control remoto. Solución integral para transporte, descarga e izaje directo en obra.',
+        priceDay: 24000,
+        priceHour: 3600,
+        priceWeek: 129000,
+        transportCost: 0,
+        city: 'Santiago',
+        operator: true,
+        owner: 'Grúas Norteñas SRL',
+        rnc: '1-31-55109-6',
+        phone: '829-555-0166',
+        busy: false,
+        img: 'img/eq_camion_grua.webp'
+      },
+      {
+        id: 1007,
+        category: 'Izaje y Grúas',
+        title: 'Plataforma Tijera Haulotte Compact 12 DX',
+        power: 'Altura 12 m • Eléctrica',
+        year: '2023',
+        desc: 'Elevador de tijera eléctrico silencioso con llantas anti-huella. Perfecto para instalaciones eléctricas, climatización y pintura en hoteles y naves.',
+        priceDay: 7200,
+        priceHour: 1100,
+        priceWeek: 38500,
+        transportCost: 3500,
+        city: 'Punta Cana',
+        operator: false,
+        owner: 'Elevación Bávaro SRL',
+        rnc: '1-32-44018-3',
+        phone: '809-555-0177',
+        busy: false,
+        img: 'img/eq_plataforma_tijera.webp'
+      },
+      {
+        id: 1008,
+        category: 'Izaje y Grúas',
+        title: 'Brazo Articulado Haulotte HA16 RTJ 4x4',
+        power: 'Altura 16 m • 4x4 Diésel',
+        year: '2022',
+        desc: 'Plataforma elevadora articulada todoterreno con alcance horizontal de 8.3 m y giro continuo 360°. Ideal para fachadas, cristalería y estructuras altas.',
+        priceDay: 14500,
+        priceHour: 2200,
+        priceWeek: 78000,
+        transportCost: 5500,
+        city: 'San Cristóbal',
+        operator: false,
+        owner: 'Alturas del Sur RD',
+        rnc: '1-31-80923-1',
+        phone: '849-555-0188',
+        busy: false,
+        img: 'img/eq_brazo_articulado.webp'
+      },
+      {
+        id: 1009,
+        category: 'Compactación',
+        title: 'Rodillo Vibratorio Bomag BW 211 (11 Ton)',
+        power: '131 HP • 11 Ton Liso',
+        year: '2022',
+        desc: 'Compactador de suelos de tambor liso con doble amplitud vibratoria y cabina climatizada. Kit pata de cabra opcional para arcillas y terracería.',
+        priceDay: 19500,
+        priceHour: 2900,
+        priceWeek: 105000,
+        transportCost: 8500,
+        city: 'La Vega',
+        operator: true,
+        owner: 'Vialidad Vegana SRL',
+        rnc: '1-05-41209-7',
+        phone: '809-555-0199',
+        busy: false,
+        img: 'img/eq_rodillo_vibratorio.webp'
+      },
+      {
+        id: 1010,
+        category: 'Compactación',
+        title: 'Rodillo Doble Tambor Bomag BW 120 AD-5',
+        power: '33 HP • 2.8 Ton Asfalto',
+        year: '2023',
+        desc: 'Compactador tándem articulado con sistema de rociado de agua a presión. Especial para carpetas asfálticas, parqueos, aceras y bacheo urbano.',
+        priceDay: 12800,
+        priceHour: 1900,
+        priceWeek: 69000,
+        transportCost: 4500,
+        city: 'Santo Domingo',
+        operator: true,
+        owner: 'Asfaltos y Equipos DN',
+        rnc: '1-30-62815-4',
+        phone: '829-555-0210',
+        busy: false,
+        img: 'img/eq_rodillo_asfalto.webp'
+      },
+      {
+        id: 1011,
+        category: 'Compactación',
+        title: 'Compactador Bailarina Ammann AVS 68-2',
+        power: '4 Tiempos • 18 kN',
+        year: '2024',
+        desc: 'Apisonador percutor de bajo consumo y mantenimiento al día. Excelente para compactación en zanjas de tuberías, zapatas y espacios reducidos.',
+        priceDay: 2600,
+        priceHour: 450,
+        priceWeek: 14000,
+        transportCost: 1200,
+        city: 'Puerto Plata',
+        operator: false,
+        owner: 'Renta Equipos Costa Norte',
+        rnc: '1-32-11904-5',
+        phone: '809-555-0211',
+        busy: false,
+        img: 'img/eq_bailarina.webp'
+      },
+      {
+        id: 1012,
+        category: 'Compactación',
+        title: 'Plancha Reversible Bomag BPR 55/65 D',
+        power: '455 kg • Motor Hatz Diésel',
+        year: '2023',
+        desc: 'Plancha vibratoria reversible de alta fuerza centrífuga para bases granulares, caliche, adoquines y preparación de losas de concreto.',
+        priceDay: 4500,
+        priceHour: 700,
+        priceWeek: 24000,
+        transportCost: 1800,
+        city: 'Baní',
+        operator: false,
+        owner: 'Equipos Peravia SRL',
+        rnc: '1-31-90432-6',
+        phone: '849-555-0212',
+        busy: false,
+        img: 'img/eq_plancha_compactadora.webp'
+      },
+      {
+        id: 1013,
+        category: 'Energía e Iluminación',
+        title: 'Planta Eléctrica Insonorizada 150 kW',
+        power: '150 kW • Remolque + ATS',
+        year: '2023',
+        desc: 'Generador industrial diésel en cabina silenciosa sobre remolque doble eje. Incluye cableado principal, transferencia automática y tanque 24h.',
+        priceDay: 18500,
+        priceHour: 2700,
+        priceWeek: 99500,
+        transportCost: 6000,
+        city: 'Punta Cana',
+        operator: true,
+        owner: 'Energía Pro Caribe SRL',
+        rnc: '1-32-55821-1',
+        phone: '809-555-0213',
+        busy: false,
+        img: 'img/eq_planta_electrica.webp'
+      },
+      {
+        id: 1014,
+        category: 'Energía e Iluminación',
+        title: 'Generador Portátil CAT RP7500E (7.5 kW)',
+        power: '7.5 kW • 120/240V',
+        year: '2024',
+        desc: 'Generador compacto de arranque eléctrico con ruedas todo terreno y salidas industriales para soldadoras ligeras, sierras y herramientas en obra.',
+        priceDay: 3200,
+        priceHour: 500,
+        priceWeek: 17200,
+        transportCost: 1000,
+        city: 'Santo Domingo',
+        operator: false,
+        owner: 'Herramientas y Fuerza RD',
+        rnc: '1-31-33781-9',
+        phone: '829-555-0214',
+        busy: false,
+        img: 'img/eq_generador_portatil.webp'
+      },
+      {
+        id: 1015,
+        category: 'Energía e Iluminación',
+        title: 'Torre de Iluminación LED 4000D Diésel',
+        power: '4×320W LED • Mástil 7 m',
+        year: '2023',
+        desc: 'Torre móvil remolcable con 4 reflectores LED de alto rendimiento y hasta 90 horas de autonomía. Ideal para trabajos nocturnos en carreteras y vaciados.',
+        priceDay: 4800,
+        priceHour: 750,
+        priceWeek: 25900,
+        transportCost: 2500,
+        city: 'Santiago',
+        operator: false,
+        owner: 'Maquinarias Cibao SRL',
+        rnc: '1-02-66318-4',
+        phone: '809-555-0215',
+        busy: false,
+        img: 'img/eq_torre_iluminacion.webp'
+      },
+      {
+        id: 1016,
+        category: 'Energía e Iluminación',
+        title: 'Compresor Portátil Sullair 185 CFM',
+        power: '185 CFM • 100 PSI Diésel',
+        year: '2021',
+        desc: 'Compresor remolcable de tornillo rotativo. Incluye 2 mangueras de 50 pies y 2 martillos neumáticos rompepavimentos listos para demolición.',
+        priceDay: 8500,
+        priceHour: 1300,
+        priceWeek: 45900,
+        transportCost: 3500,
+        city: 'La Romana',
+        operator: false,
+        owner: 'Terracería Romana SRL',
+        rnc: '1-31-77210-9',
+        phone: '849-555-0216',
+        busy: false,
+        img: 'img/eq_compresor_aire.webp'
+      },
+      {
+        id: 1017,
+        category: 'Concreto y Ligero',
+        title: 'Bomba de Concreto Schwing SP 500',
+        power: '35 m³/h • Tubería 80 m',
+        year: '2022',
+        desc: 'Bomba estacionaria remolcable para vaciado rápido de losas, columnas y muros de edificios. Incluye 80 metros de tubería, codos y operador experto.',
+        priceDay: 32000,
+        priceHour: 4800,
+        priceWeek: 172000,
+        transportCost: 7500,
+        city: 'Santo Domingo',
+        operator: true,
+        owner: 'Bombeos Hormigón RD',
+        rnc: '1-30-74912-3',
+        phone: '809-555-0217',
+        busy: false,
+        img: 'img/eq_bomba_concreto.webp'
+      },
+      {
+        id: 1018,
+        category: 'Concreto y Ligero',
+        title: 'Mezcladora de Concreto 2 Fundas Gasolina',
+        power: '350 L • Motor 9 HP',
+        year: '2024',
+        desc: 'Hormigonera remolcable con tambor reforzado y ruedas neumáticas. Lista para mezcla continua en obras residenciales, aceras y remodelaciones.',
+        priceDay: 2400,
+        priceHour: 400,
+        priceWeek: 12900,
+        transportCost: 1200,
+        city: 'San Cristóbal',
+        operator: false,
+        owner: 'Alturas del Sur RD',
+        rnc: '1-31-80923-1',
+        phone: '829-555-0218',
+        busy: false,
+        img: 'img/eq_mezcladora_concreto.webp'
+      },
+      {
+        id: 1019,
+        category: 'Concreto y Ligero',
+        title: 'Allanadora Helicóptero MQ Whiteman 36"',
+        power: '36" • Motor Honda 8 HP',
+        year: '2023',
+        desc: 'Fratasadora profesional con aspas combinadas para pulido industrial de pisos en almacenes, parqueos, naves logísticas y losas de alto tráfico.',
+        priceDay: 3800,
+        priceHour: 600,
+        priceWeek: 20500,
+        transportCost: 1500,
+        city: 'Punta Cana',
+        operator: false,
+        owner: 'Constructora del Este RD',
+        rnc: '1-32-19402-8',
+        phone: '849-555-0219',
+        busy: false,
+        img: 'img/eq_allanadora.webp'
+      },
+      {
+        id: 1020,
+        category: 'Concreto y Ligero',
+        title: 'Cortadora de Pavimento Husqvarna FS 500',
+        power: 'Disco 18" • Prof. 16 cm',
+        year: '2023',
+        desc: 'Cortadora de piso con tanque de agua integrado y control de profundidad para juntas de dilatación, cortes en concreto armado y asfalto.',
+        priceDay: 3400,
+        priceHour: 550,
+        priceWeek: 18300,
+        transportCost: 1500,
+        city: 'La Vega',
+        operator: false,
+        owner: 'Vialidad Vegana SRL',
+        rnc: '1-05-41209-7',
+        phone: '809-555-0220',
+        busy: false,
+        img: 'img/eq_cortadora_pavimento.webp'
+      },
+      {
+        id: 1021,
+        category: 'Transporte Pesado',
+        title: 'Camión Volteo Freightliner 18 m³',
+        power: '410 HP • 18 m³ Doble Eje',
+        year: '2021',
+        desc: 'Volteo con lona eléctrica y caja reforzada para acarreo de arena, grava, caliche, material de relleno y bote de escombros con permiso vigente.',
+        priceDay: 18000,
+        priceHour: 2600,
+        priceWeek: 97000,
+        transportCost: 0,
+        city: 'Santo Domingo',
+        operator: true,
+        owner: 'Transporte y Agregados Ozama',
+        rnc: '1-30-88241-6',
+        phone: '809-555-0221',
+        busy: false,
+        img: 'img/eq_camion_volteo.webp'
+      },
+      {
+        id: 1022,
+        category: 'Transporte Pesado',
+        title: 'Cabezote Kenworth + Lowboy 50 Ton',
+        power: '50 Ton • Cama Baja 3 Ejes',
+        year: '2022',
+        desc: 'Servicio de traslado pesado con rampas hidráulicas, cadenas certificadas y escolta opcional para movilizar excavadoras y bulldozers en toda RD.',
+        priceDay: 26000,
+        priceHour: 3900,
+        priceWeek: 140000,
+        transportCost: 0,
+        city: 'Santiago',
+        operator: true,
+        owner: 'Logística Pesada Cibao SRL',
+        rnc: '1-31-60218-8',
+        phone: '829-555-0222',
+        busy: false,
+        img: 'img/eq_lowboy.webp'
+      },
+      {
+        id: 1023,
+        category: 'Transporte Pesado',
+        title: 'Camión Cisterna de Agua 3,000 Galones',
+        power: '3,000 Gal • Barra Riego',
+        year: '2022',
+        desc: 'Camión tanquero equipado con barra regadora trasera a presión y motobomba de 3 pulgadas para control de polvo y compactación de caminos.',
+        priceDay: 14000,
+        priceHour: 2100,
+        priceWeek: 75500,
+        transportCost: 0,
+        city: 'Baní',
+        operator: true,
+        owner: 'Equipos Peravia SRL',
+        rnc: '1-31-90432-6',
+        phone: '849-555-0223',
+        busy: false,
+        img: 'img/eq_camion_cisterna.webp'
+      },
+      {
+        id: 1024,
+        category: 'Transporte Pesado',
+        title: 'Camión Mezclador (Trompo) 8 m³',
+        power: '8 m³ • 350 HP',
+        year: '2022',
+        desc: 'Camión mixer con canaletas extensibles para transporte y vaciado continuo de hormigón premezclado en proyectos residenciales y hoteleros.',
+        priceDay: 22500,
+        priceHour: 3400,
+        priceWeek: 121000,
+        transportCost: 0,
+        city: 'Puerto Plata',
+        operator: true,
+        owner: 'Concretos del Atlántico SRL',
+        rnc: '1-31-99415-2',
+        phone: '809-555-0224',
+        busy: true,
+        img: 'img/eq_camion_trompo.webp'
+      }
+    ];
+
+    const DEFAULT_REQUESTS = [
+      {
+        id: 2001,
+        title: 'Excavadora 20 Ton + 2 Volteos para movimiento de tierra',
+        city: 'Punta Cana',
+        budget: 27000,
+        author: 'Ing. Carlos Mejía — Grupo Bávaro',
+        phone: '829-555-0301',
+        notes: 'Proyecto residencial en Verón, duración estimada 10 días con operador incluido y factura con NCF B01.'
+      },
+      {
+        id: 2002,
+        title: 'Grúa telescópica 35-40 Ton para montaje de estructura metálica',
+        city: 'Santo Domingo',
+        budget: 46000,
+        author: 'Arq. Laura Peña — Nave Industrial Haina',
+        phone: '809-555-0302',
+        notes: 'Se requiere para 3 días corridos, certificación de izaje al día y acceso amplio en patio pavimentado.'
+      },
+      {
+        id: 2003,
+        title: 'Rodillo vibratorio 10-12 Ton para compactación de calle',
+        city: 'Santiago',
+        budget: 19000,
+        author: 'Ing. Rafael Taveras — Constructora Norte',
+        phone: '809-555-0303',
+        notes: 'Compactación de sub-base de caliche en urbanización, inicio inmediato por 1 semana.'
+      },
+      {
+        id: 2004,
+        title: 'Planta eléctrica insonorizada 125-150 kW con ATS',
+        city: 'La Romana',
+        budget: 18000,
+        author: 'Ing. Miguel Santana — Obras Turísticas Este',
+        phone: '849-555-0304',
+        notes: 'Respaldo continuo por 14 días para campamento de obra y grúa torre.'
+      },
+      {
+        id: 2005,
+        title: 'Bomba de concreto estacionaria para vaciado de losa 3er nivel',
+        city: 'San Cristóbal',
+        budget: 31000,
+        author: 'Ing. José Almonte — Edificaciones Sur',
+        phone: '829-555-0305',
+        notes: 'Vaciado de 65 m³ de hormigón programado para el viernes a las 7:00 AM, necesitamos 60 m de tubería.'
+      },
+      {
+        id: 2006,
+        title: 'Brazo articulado 16-20 m para instalación de luminarias',
+        city: 'Puerto Plata',
+        budget: 14000,
+        author: 'Ing. Ana Domínguez — Electromecánica Costa',
+        phone: '809-555-0306',
+        notes: 'Trabajo exterior en plaza comercial por 5 días, pago inmediato contra NCF.'
+      }
+    ];
+
     let equipment = JSON.parse(localStorage.getItem('gm_rd_v3_eq')) || [];
     let requests = JSON.parse(localStorage.getItem('gm_rd_v3_req')) || [];
     let bookings = JSON.parse(localStorage.getItem('gm_rd_v3_bk')) || [];
     let savedIds = JSON.parse(localStorage.getItem('gm_rd_v4_saved')) || [];
     let isPro = localStorage.getItem('gm_rd_v3_pro') === 'true';
+
+    if (localStorage.getItem(SEED_VERSION) !== '1') {
+      const existingEqIds = new Set(equipment.map(e => e.id));
+      equipment = [...equipment, ...DEFAULT_EQUIPMENT.filter(e => !existingEqIds.has(e.id))];
+      const existingReqIds = new Set(requests.map(r => r.id));
+      requests = [...requests, ...DEFAULT_REQUESTS.filter(r => !existingReqIds.has(r.id))];
+      localStorage.setItem(SEED_VERSION, '1');
+    }
 
     let activeTab = 'catalog';
     let activeCat = 'Todos';
@@ -1517,7 +2043,7 @@
       return `
         <article class="eq-card" onclick="openDetail(${item.id})">
           <div class="eq-media">
-            <img src="${item.img || defaultCover(item.category)}" alt="${item.title}">
+            <img src="${item.img || defaultCover(item.category)}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src=defaultCover('${item.category.replace(/'/g, "\\'")}')">
             <span class="pill-city">${item.city}</span>
             <button class="fav-btn ${isSaved ? 'saved' : ''}" onclick="toggleSave(event, ${item.id})" aria-label="Guardar">
               ${isSaved ? '♥' : '♡'}
@@ -1526,7 +2052,7 @@
             ${item.operator ? '<span class="pill-op">Con Operador</span>' : ''}
           </div>
           <div class="eq-body">
-            <div class="eq-cat">${item.category}</div>
+            <div class="eq-cat">${item.category}${item.power ? ' • ' + item.power : ''}</div>
             <div class="eq-title">${item.title}</div>
             <div class="eq-owner">
               <span>${item.owner}</span>
@@ -1541,6 +2067,23 @@
       `;
     }
 
+    function clearCatalogFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('cityFilter').value = '';
+      document.getElementById('fOp').checked = false;
+      document.getElementById('fAvail').checked = false;
+      activeCat = 'Todos';
+      document.querySelectorAll('#catChips .app-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === 'Todos'));
+      renderCatalog();
+    }
+
+    function restoreCatalog() {
+      equipment = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
+      syncCounters();
+      clearCatalogFilters();
+      toast('Catálogo de equipos restaurado');
+    }
+
     function renderCatalog() {
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
       const city = document.getElementById('cityFilter').value;
@@ -1549,7 +2092,7 @@
       const sort = document.getElementById('fSort').value;
 
       let list = equipment.filter(e => {
-        const mq = !q || e.title.toLowerCase().includes(q) || (e.desc || '').toLowerCase().includes(q) || (e.owner || '').toLowerCase().includes(q);
+        const mq = !q || e.title.toLowerCase().includes(q) || (e.desc || '').toLowerCase().includes(q) || (e.owner || '').toLowerCase().includes(q) || (e.category || '').toLowerCase().includes(q) || (e.power || '').toLowerCase().includes(q);
         const mc = activeCat === 'Todos' || e.category === activeCat;
         const mcity = !city || e.city === city;
         const mop = !op || e.operator;
@@ -1562,17 +2105,31 @@
 
       const box = document.getElementById('catalogFeed');
       if (list.length === 0) {
-        box.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-badge">🚜</div>
-            <h3>Tu App Green Mile RD está lista</h3>
-            <p>Sin anuncios falsos. Toca el botón naranja <strong>+ Publicar</strong> para subir tu primera máquina o solicitar un equipo para tu obra.</p>
-            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-              <button class="btn btn-primary" onclick="openPublishSheet()">+ Publicar Equipo</button>
-              <button class="btn btn-ghost" onclick="openSheet('reqSheet')">Pedir Máquina</button>
+        if (equipment.length > 0) {
+          box.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-badge">🔍</div>
+              <h3>No encontramos equipos con esos filtros</h3>
+              <p>Prueba quitando algún filtro o solicita exactamente la máquina que necesitas para tu obra en RD.</p>
+              <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn btn-navy" onclick="clearCatalogFilters()">Ver Todos los Equipos</button>
+                <button class="btn btn-primary" onclick="openSheet('reqSheet')">Pedir Máquina</button>
+              </div>
             </div>
-          </div>
-        `;
+          `;
+        } else {
+          box.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-badge">🚜</div>
+              <h3>Catálogo vacío</h3>
+              <p>Publica tu propia maquinaria o restaura el catálogo de equipos disponibles en República Dominicana.</p>
+              <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="openPublishSheet()">+ Publicar Equipo</button>
+                <button class="btn btn-ghost" onclick="restoreCatalog()">Restaurar Catálogo</button>
+              </div>
+            </div>
+          `;
+        }
         return;
       }
       box.innerHTML = list.map(cardHTML).join('');
@@ -1799,11 +2356,12 @@
       const waText = encodeURIComponent(`Hola ${it.owner}, vi "${it.title}" en Green Mile App RD (${it.city}) y quiero consultar disponibilidad.`);
 
       document.getElementById('detailBody').innerHTML = `
-        <img src="${it.img || defaultCover(it.category)}" alt="${it.title}" style="width:100%; height:180px; object-fit:cover; border-radius:14px; margin-bottom:12px;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;">
+        <img src="${it.img || defaultCover(it.category)}" alt="${it.title}" onerror="this.onerror=null;this.src=defaultCover('${it.category.replace(/'/g, "\\'")}')" style="width:100%; height:190px; object-fit:cover; border-radius:14px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px;">
           <div>
             <div class="eq-cat">${it.category} • ${it.city}</div>
             <h4 style="font-size:18px; color:var(--navy);">${it.title}</h4>
+            <div style="font-size:12px; color:var(--steel); margin-top:2px;">${it.power || 'Estándar'} • Año ${it.year || 'Verificado'} • ${it.owner}${it.operator ? ' • Con Operador' : ''}</div>
           </div>
           <a class="btn btn-wa" style="padding:8px 12px; font-size:12px;" target="_blank" rel="noopener" href="https://wa.me/${cleanWA(it.phone)}?text=${waText}">WhatsApp</a>
         </div>
