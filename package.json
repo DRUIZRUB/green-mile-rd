@@ -4,6 +4,7 @@
   "private": true,
   "description": "Green Mile Construction RD — Marketplace de Maquinaria Pesada",
   "scripts": {
-    "deploy": "npx firebase-tools deploy --only hosting"
+    "build:pages": "node scripts/generate-pages.mjs",
+    "deploy": "npm run build:pages && npx firebase-tools deploy --only hosting"
   }
 }
