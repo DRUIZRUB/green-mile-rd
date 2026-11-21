@@ -126,7 +126,11 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
   <script>
     window.GM_PAGE = { basePrefix: ${JSON.stringify(basePrefix)}, equipmentId: ${JSON.stringify(equipmentId)} };
   </script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="${dataJs}"></script>
+  <script src="${basePrefix}js/firebase-config.js"></script>
   <script src="${pageJs}"></script>
 </body>
 </html>

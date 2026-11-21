@@ -237,6 +237,9 @@
     if (localEq) localEq.busy = true;
     currentItem.busy = true;
     GM.saveState(state);
+    if (window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
+      window.GM_FIREBASE.saveBooking(rec, currentItem.id).catch(() => {});
+    }
 
     const pill = document.getElementById('availPill');
     if (pill) {
