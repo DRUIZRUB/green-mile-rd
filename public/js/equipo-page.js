@@ -1363,6 +1363,9 @@
     const initialStage = selectedNcfType === 'E45'
       ? (isCardPaid ? 'invoiced_dispatched' : 'gov_review')
       : (isCardPaid ? 'invoiced_dispatched' : 'pending_validation');
+    const activeAcc = (window.GM_FIREBASE && window.GM_FIREBASE.getCurrentAccount)
+      ? window.GM_FIREBASE.getCurrentAccount()
+      : null;
     let rec = {
       id: Date.now(),
       equipmentId: currentItem.id,
@@ -1372,6 +1375,7 @@
       owner: currentItem.owner,
       ownerRnc: currentItem.rnc || 'N/A',
       ownerPhone: currentItem.phone,
+      contractorId: activeAcc ? activeAcc.id : null,
       renter: document.getElementById('qRenter').value.trim(),
       renterRnc: document.getElementById('qRnc').value.trim(),
       dgiiVerified: true,
@@ -1493,6 +1497,9 @@
     if (localEq) localEq.busy = true;
     currentItem.busy = true;
     GM.saveState(state);
+    if (window.GM_FIREBASE && window.GM_FIREBASE.rememberGuestBookingId) {
+      window.GM_FIREBASE.rememberGuestBookingId(rec.id);
+    }
     if (!serverPersisted && window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
       window.GM_FIREBASE.saveBooking(rec, currentItem.id).catch(() => {});
     }
@@ -2238,6 +2245,24 @@
           }
         }
       });
+    }
+
+    // Autocompletar RNC y Razón Social si el contratista ya inició sesión en su cuenta
+    const loggedAcc = (window.GM_FIREBASE && window.GM_FIREBASE.getCurrentAccount)
+      ? window.GM_FIREBASE.getCurrentAccount()
+      : null;
+    if (loggedAcc) {
+      const rncInp = document.getElementById('qRnc');
+      const nameInp = document.getElementById('qRenter');
+      if (rncInp && !rncInp.value && loggedAcc.rncFormatted) {
+        rncInp.value = loggedAcc.rncFormatted;
+      }
+      if (nameInp && !nameInp.value && loggedAcc.name) {
+        nameInp.value = loggedAcc.name;
+      }
+      if (rncInp && rncInp.value) {
+        rncInp.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     }
   }
 

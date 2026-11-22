@@ -933,6 +933,55 @@
       color: var(--steel);
       cursor: pointer;
     }
+    .role-pick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 480px) {
+      .role-pick-grid { grid-template-columns: 1fr; }
+    }
+    .role-card {
+      border: 1.5px solid var(--border);
+      background: #F8FAFC;
+      border-radius: 12px;
+      padding: 10px 9px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .role-card strong {
+      display: block;
+      font-size: 12.5px;
+      color: var(--navy);
+      margin-bottom: 2px;
+    }
+    .role-card span {
+      display: block;
+      font-size: 10.5px;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+    .role-card.active {
+      border-color: var(--orange);
+      background: #FEF4EE;
+      box-shadow: 0 0 0 3px rgba(217, 107, 43, 0.14);
+    }
+    #contractModal .sheet {
+      max-width: 980px;
+      width: 96vw;
+      max-height: 95vh;
+    }
+    #contractModal .sheet-head {
+      padding: 18px 26px;
+    }
+    #contractModal .sheet-head h3 {
+      font-size: 20px;
+    }
+    #contractModal .sheet-body {
+      padding: 22px 26px;
+    }
     .auth-tab.active {
       background: var(--surface);
       color: var(--navy);
@@ -1067,9 +1116,9 @@
 
         <div class="top-actions">
           <button class="btn btn-ghost" id="ownerHeaderBtn" onclick="openOwnerAccountModal()" style="padding:9px 13px; font-size:12.5px;">
-            👤 Cuenta Propietario
+            👤 Mi Cuenta
           </button>
-          <button class="btn btn-primary" onclick="openPublishSheet()">+ Publicar</button>
+          <button class="btn btn-primary" onclick="openActionChooser()">+ Publicar</button>
         </div>
       </div>
     </header>
@@ -1164,7 +1213,7 @@
             <h2 style="font-size:18px; color:var(--navy);">Obras Buscando Equipo</h2>
             <p style="font-size:12px; color:var(--text-muted);">Postula tu equipo vía Green Mile RD • Cobro garantizado y e-NCF</p>
           </div>
-          <button class="btn btn-primary" style="padding:9px 14px; font-size:12px;" onclick="openSheet('reqSheet')">+ Pedir Máquina</button>
+          <button class="btn btn-primary" style="padding:9px 14px; font-size:12px;" onclick="openReqSheetPrefilled()">+ Pedir Máquina</button>
         </div>
         <div class="feed-grid" id="requestsFeed"></div>
       </div>
@@ -1182,59 +1231,95 @@
     </div>
 
     <!-- =========================================================
-         TAB 4: MI PERFIL / FLOTA / CONTRATOS
+         TAB 4: MI PANEL (CONTRATISTA / PROPIETARIO / AMBOS)
          ========================================================= -->
     <div id="tabViewProfile" style="display:none;">
       <div class="view-section" style="padding-top:16px;">
-        <!-- Owner Account Card -->
-        <div id="profileOwnerCard" style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;"></div>
+        <!-- Account & Role Card -->
+        <div id="profileOwnerCard" style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px; margin-bottom:16px;"></div>
 
-        <!-- KPI Summary Cards -->
+        <!-- KPI Summary Cards (adaptados al rol activo) -->
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:18px;">
           <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center;">
             <strong style="font-size:18px; color:var(--navy); display:block;" id="kpiFleet">0</strong>
-            <span style="font-size:11px; color:var(--text-muted);">Mi Flota</span>
+            <span style="font-size:11px; color:var(--text-muted);" id="kpiLabel1">Mis Alquileres</span>
           </div>
           <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center;">
             <strong style="font-size:18px; color:var(--navy); display:block;" id="kpiContracts">0</strong>
-            <span style="font-size:11px; color:var(--text-muted);">Contratos</span>
+            <span style="font-size:11px; color:var(--text-muted);" id="kpiLabel2">Mis Contratos</span>
           </div>
           <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center;">
             <strong style="font-size:15px; color:var(--orange); display:block;" id="kpiVol">RD$ 0</strong>
-            <span style="font-size:11px; color:var(--text-muted);">Facturado</span>
+            <span style="font-size:11px; color:var(--text-muted);" id="kpiLabel3">Volumen e-CF</span>
           </div>
         </div>
 
         <!-- Live GPS Tracking Banner Card -->
         <div style="background:linear-gradient(135deg, #0D223A 0%, #163558 100%); color:#fff; border-radius:16px; padding:16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
           <div>
-            <strong style="font-size:15px; display:block;">🚚 Rastreo GPS en Vivo (Tipo Uber)</strong>
-            <span style="font-size:12px; color:#CBD5E1;">Sigue el recorrido del operador en el mapa con ETA real, ruta por carretera y vista satélite.</span>
+            <strong style="font-size:15px; display:block;">🚚 Rastreo GPS de Despacho en Vivo</strong>
+            <span style="font-size:12px; color:#CBD5E1;" id="profileTrackingSubtitle">Sigue la llegada de tus equipos en el mapa con ETA real, ruta por carretera y vista satélite.</span>
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <a class="btn btn-primary" href="./tracking.html" style="padding:8px 13px; font-size:12px; text-decoration:none;">🗺️ Ver Mapa en Vivo</a>
-            <a class="btn btn-ghost" href="./tracking.html?role=operator" style="padding:8px 13px; font-size:12px; background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.22); text-decoration:none;">🚚 Consola Operador</a>
+            <a class="btn btn-ghost" id="btnOperatorConsoleBanner" href="./tracking.html?role=operator" style="display:none; padding:8px 13px; font-size:12px; background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.22); text-decoration:none;">🚚 Consola Operador</a>
             <button class="btn btn-ghost" id="btnInstallPwa" onclick="handleInstallPwa()" style="display:none; padding:8px 13px; font-size:12px; background:#059669; color:#fff; border-color:transparent;">📲 Instalar App</button>
           </div>
         </div>
 
-        <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
+        <!-- SECCIÓN CONTRATISTA: MIS ALQUILERES, FACTURAS e-CF Y DESPACHOS -->
+        <div id="contractorPanelSection" style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
-            <strong style="font-size:15px; color:var(--navy);">Contratos, Facturas e-CF y Despachos</strong>
+            <div>
+              <strong style="font-size:15px; color:var(--navy); display:block;">👷 Mis Alquileres, Contratos y Facturas e-CF</strong>
+              <span style="font-size:11.5px; color:var(--text-muted);">Solo se muestran los contratos asociados a tu RNC/Cédula o sesión actual</span>
+            </div>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <a class="btn btn-navy" style="padding:5px 10px; font-size:11px; text-decoration:none;" href="admin.html">⚙️ Centro Administrativo</a>
-              <button class="btn btn-ghost" style="padding:5px 10px; font-size:11px;" onclick="exportBackup()">Respaldo JSON</button>
+              <button class="btn btn-primary" style="padding:6px 12px; font-size:11px;" onclick="switchTab('catalog')">+ Alquilar Equipo</button>
             </div>
           </div>
           <div id="profileContracts"></div>
         </div>
 
-        <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px;">
+        <!-- SECCIÓN CONTRATISTA: MIS SOLICITUDES EN OBRAS RD -->
+        <div id="contractorRequestsSection" style="display:none; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+            <div>
+              <strong style="font-size:15px; color:var(--navy); display:block;">📋 Mis Solicitudes de Obra (Obras RD)</strong>
+              <span style="font-size:11.5px; color:var(--text-muted);">Requerimientos de maquinaria publicados para tus proyectos</span>
+            </div>
+            <button class="btn btn-primary" style="padding:6px 12px; font-size:11px;" onclick="openReqSheetPrefilled()">+ Pedir Máquina</button>
+          </div>
+          <div id="profileMyRequests"></div>
+        </div>
+
+        <!-- SECCIÓN PROPIETARIO: ALQUILERES Y DESPACHOS DE MI FLOTA -->
+        <div id="ownerRentalsSection" style="display:none; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+            <div>
+              <strong style="font-size:15px; color:var(--navy); display:block;">🚜 Alquileres, Despachos y Liquidaciones de Mi Flota</strong>
+              <span style="font-size:11.5px; color:var(--text-muted);">Contratos de tus unidades, acceso Modo Operador para tu chofer y estado de pago</span>
+            </div>
+          </div>
+          <div id="profileOwnerRentals"></div>
+        </div>
+
+        <!-- SECCIÓN PROPIETARIO: MIS MÁQUINAS PUBLICADAS -->
+        <div id="ownerFleetSection" style="display:none; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <strong style="font-size:15px; color:var(--navy);">Mis Máquinas Publicadas</strong>
+            <strong style="font-size:15px; color:var(--navy);">🚜 Mis Máquinas Publicadas</strong>
             <button class="btn btn-primary" style="padding:6px 12px; font-size:11px;" onclick="openPublishSheet()">+ Publicar Equipo</button>
           </div>
           <div id="profileFleet"></div>
+        </div>
+
+        <!-- ACCESO RÁPIDO ADMINISTRACIÓN INTERNA -->
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 4px; font-size:12px; color:var(--text-muted);">
+          <span>¿Eres del equipo administrativo de Green Mile RD?</span>
+          <div style="display:flex; gap:6px;">
+            <a class="btn btn-ghost" style="padding:6px 11px; font-size:11.5px; text-decoration:none;" href="admin.html">⚙️ Centro Administrativo (PIN)</a>
+            <button class="btn btn-ghost" style="padding:6px 11px; font-size:11.5px;" onclick="exportBackup()">💾 Respaldo Local</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1303,7 +1388,7 @@
           </div>
           <span style="font-weight:800; color:var(--orange);">→</span>
         </button>
-        <button class="switch-row" style="text-align:left; width:100%;" onclick="closeSheet('chooserSheet'); openSheet('reqSheet');">
+        <button class="switch-row" style="text-align:left; width:100%;" onclick="closeSheet('chooserSheet'); openReqSheetPrefilled();">
           <div>
             <strong>👷 Soy contratista: Pedir Máquina para Obra</strong>
             <span>Publica lo que buscas y recibe propuestas verificadas</span>
@@ -1315,15 +1400,15 @@
   </div>
 
   <!-- =========================================================
-       BOTTOM SHEET 0: CUENTA PREVIA DE PROPIETARIO (REGISTRO / LOGIN)
+       BOTTOM SHEET 0: MI CUENTA GREEN MILE RD (CONTRATISTA / PROPIETARIO / AMBOS)
        ========================================================= -->
   <div class="sheet-backdrop" id="ownerAuthSheet" onclick="if(event.target===this)closeSheet('ownerAuthSheet')">
-    <div class="sheet" style="max-width:520px;">
+    <div class="sheet" style="max-width:560px;">
       <div class="sheet-handle"></div>
       <div class="sheet-head">
         <div>
-          <h3>Cuenta de Propietario</h3>
-          <p>Regístrate o inicia sesión antes de publicar maquinaria</p>
+          <h3 id="authSheetTitle">Mi Cuenta Green Mile RD</h3>
+          <p id="authSheetSubtitle">Accede como Contratista, Propietario de Flota o Ambos</p>
         </div>
         <button type="button" class="close-x" onclick="closeSheet('ownerAuthSheet')">&times;</button>
       </div>
@@ -1336,6 +1421,9 @@
 
         <!-- LOGIN FORM -->
         <form id="ownerLoginForm" onsubmit="submitOwnerLogin(event)">
+          <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:11px; padding:10px 12px; font-size:12px; color:var(--text-muted); margin-bottom:14px;">
+            🔐 Tu cuenta muestra <strong>únicamente tus contratos, facturas e-CF, obras y/o flota</strong> según tu rol (Contratista o Propietario).
+          </div>
           <div class="f-grid">
             <div class="f-field full">
               <label>RNC / Cédula o Correo Electrónico <small>* Obligatorio</small></label>
@@ -1350,15 +1438,31 @@
               </div>
             </div>
           </div>
-          <button type="submit" class="btn btn-navy" style="width:100%; margin-top:16px; min-height:48px; font-size:15px;">Entrar a mi Cuenta</button>
+          <button type="submit" class="btn btn-navy" style="width:100%; margin-top:16px; min-height:48px; font-size:15px;">Entrar a Mi Panel</button>
           <p style="text-align:center; font-size:12px; color:var(--text-muted); margin-top:12px;">
-            ¿Aún no tienes cuenta de propietario?
-            <a href="#" onclick="event.preventDefault(); switchOwnerAuthMode('register');" style="color:var(--orange); font-weight:800;">Regístrate gratis aquí</a>
+            ¿Aún no tienes cuenta?
+            <a href="#" onclick="event.preventDefault(); switchOwnerAuthMode('register');" style="color:var(--orange); font-weight:800;">Regístrate gratis como Contratista o Propietario</a>
           </p>
         </form>
 
-        <!-- REGISTER FORM (VALIDADO EN DGII) -->
+        <!-- REGISTER FORM (VALIDADO EN DGII CON SELECTOR DE ROL) -->
         <form id="ownerRegisterForm" style="display:none;" onsubmit="submitOwnerRegister(event)" autocomplete="off">
+          <input type="hidden" id="regRole" value="contractor">
+          <div style="font-size:11px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:7px;">¿Cómo usarás Green Mile RD? *</div>
+          <div class="role-pick-grid" id="regRoleGrid">
+            <button type="button" class="role-card active" data-role="contractor" onclick="selectRegRole('contractor')">
+              <strong>👷 Contratista</strong>
+              <span>Alquila equipos, ve tus contratos, e-CF y tracking</span>
+            </button>
+            <button type="button" class="role-card" data-role="owner" onclick="selectRegRole('owner')">
+              <strong>🚜 Propietario</strong>
+              <span>Publica maquinaria, gestiona despachos y cobros</span>
+            </button>
+            <button type="button" class="role-card" data-role="both" onclick="selectRegRole('both')">
+              <strong>🏢 Ambos Roles</strong>
+              <span>Alquila para tus obras y renta tu propia flota</span>
+            </button>
+          </div>
           <div class="f-grid">
             <div class="f-field full">
               <label>RNC (9 dígitos) o Cédula <small>* Validación DGII</small></label>
@@ -1796,13 +1900,13 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
-  <script src="js/catalog-data.js"></script>
-  <script src="js/firebase-config.js"></script>
-  <script src="js/native-bridge.js"></script>
-  <script src="js/dgii-validator.js"></script>
-  <script src="js/billing-engine.js?v=20261122-4"></script>
-  <script src="js/geo-map.js?v=20261122-4"></script>
-  <script src="js/reviews.js"></script>
+  <script src="js/catalog-data.js?v=20261122-5"></script>
+  <script src="js/firebase-config.js?v=20261122-5"></script>
+  <script src="js/native-bridge.js?v=20261122-5"></script>
+  <script src="js/dgii-validator.js?v=20261122-5"></script>
+  <script src="js/billing-engine.js?v=20261122-5"></script>
+  <script src="js/geo-map.js?v=20261122-5"></script>
+  <script src="js/reviews.js?v=20261122-5"></script>
   <script>
     const GM = window.GM_CATALOG;
     const LOGO_URI = document.getElementById('brandLogo').src;
@@ -1853,18 +1957,122 @@
     function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
     function openActionChooser() { openSheet('chooserSheet'); }
 
+    function cleanRncDigits(v) {
+      return String(v == null ? '' : v).replace(/\D/g, '');
+    }
+
+    function getAccountRole() {
+      return currentOwner ? (currentOwner.role || 'owner') : 'guest';
+    }
+
+    function hasContractorRole() {
+      const r = getAccountRole();
+      return r === 'contractor' || r === 'both';
+    }
+
+    function hasOwnerRole() {
+      const r = getAccountRole();
+      return r === 'owner' || r === 'both';
+    }
+
+    function getMyFleet() {
+      if (!currentOwner || !hasOwnerRole()) return [];
+      const myRnc = cleanRncDigits(currentOwner.rncDigits);
+      return equipment.filter(e =>
+        String(e.ownerId || '') === String(currentOwner.id) ||
+        (myRnc && cleanRncDigits(e.rnc) === myRnc)
+      );
+    }
+
+    function getMyContractorBookings() {
+      if (currentOwner) {
+        const myRnc = cleanRncDigits(currentOwner.rncDigits);
+        return bookings.filter(b =>
+          String(b.contractorId || '') === String(currentOwner.id) ||
+          (myRnc && cleanRncDigits(b.renterRnc) === myRnc)
+        );
+      }
+      // Si no ha iniciado sesión, solo mostrar reservas hechas en ESTE mismo navegador (jamás de otros clientes)
+      const guestIds = (window.GM_FIREBASE && window.GM_FIREBASE.getGuestBookingIds)
+        ? window.GM_FIREBASE.getGuestBookingIds()
+        : [];
+      if (!guestIds.length) return [];
+      const set = new Set(guestIds.map(String));
+      return bookings.filter(b => set.has(String(b.id)));
+    }
+
+    function getMyOwnerBookings() {
+      if (!currentOwner || !hasOwnerRole()) return [];
+      const myRnc = cleanRncDigits(currentOwner.rncDigits);
+      const myFleetIds = new Set(getMyFleet().map(e => String(e.id)));
+      return bookings.filter(b =>
+        (myRnc && cleanRncDigits(b.ownerRnc) === myRnc) ||
+        myFleetIds.has(String(b.equipmentId))
+      );
+    }
+
+    function getMyRequests() {
+      if (!currentOwner) return [];
+      const myRnc = cleanRncDigits(currentOwner.rncDigits);
+      return requests.filter(r =>
+        String(r.contractorId || '') === String(currentOwner.id) ||
+        (myRnc && cleanRncDigits(r.contractorRnc) === myRnc)
+      );
+    }
+
     function syncCounters() {
       GM.saveState({ equipment, requests, bookings, savedIds, isPro });
+
+      const myContractorBks = getMyContractorBookings();
+      const myOwnerBks = getMyOwnerBookings();
+      const myFleet = getMyFleet();
+      const myReqs = getMyRequests();
+
+      // Combinar sin duplicados para el badge superior "Mi Panel"
+      const uniqueIds = new Set();
+      if (hasContractorRole() || !currentOwner) myContractorBks.forEach(b => uniqueIds.add(String(b.id)));
+      if (hasOwnerRole()) myOwnerBks.forEach(b => uniqueIds.add(String(b.id)));
 
       document.getElementById('dCountEq').textContent = equipment.length;
       document.getElementById('dCountReq').textContent = requests.length;
       document.getElementById('dCountSaved').textContent = savedIds.length;
-      document.getElementById('dCountBk').textContent = bookings.length;
+      document.getElementById('dCountBk').textContent = uniqueIds.size;
 
-      document.getElementById('kpiFleet').textContent = equipment.length;
-      document.getElementById('kpiContracts').textContent = bookings.length;
-      const vol = bookings.reduce((s, b) => s + (b.total || 0), 0);
-      document.getElementById('kpiVol').textContent = fmtRD(vol);
+      const l1 = document.getElementById('kpiLabel1');
+      const l2 = document.getElementById('kpiLabel2');
+      const l3 = document.getElementById('kpiLabel3');
+
+      if (currentOwner && getAccountRole() === 'owner') {
+        if (l1) l1.textContent = 'Mi Flota';
+        if (l2) l2.textContent = 'Alquileres Flota';
+        if (l3) l3.textContent = 'Ingresos Flota';
+        document.getElementById('kpiFleet').textContent = myFleet.length;
+        document.getElementById('kpiContracts').textContent = myOwnerBks.length;
+        const vol = myOwnerBks.reduce((s, b) => s + (b.total || 0), 0);
+        document.getElementById('kpiVol').textContent = fmtRD(vol);
+      } else if (currentOwner && getAccountRole() === 'both') {
+        if (l1) l1.textContent = 'Mi Flota';
+        if (l2) l2.textContent = 'Mis Operaciones';
+        if (l3) l3.textContent = 'Volumen Propio';
+        document.getElementById('kpiFleet').textContent = myFleet.length;
+        document.getElementById('kpiContracts').textContent = uniqueIds.size;
+        const vol = [...myContractorBks, ...myOwnerBks].reduce((acc, b) => {
+          if (!acc.seen.has(String(b.id))) {
+            acc.seen.add(String(b.id));
+            acc.sum += (b.total || 0);
+          }
+          return acc;
+        }, { seen: new Set(), sum: 0 }).sum;
+        document.getElementById('kpiVol').textContent = fmtRD(vol);
+      } else {
+        if (l1) l1.textContent = 'Mis Alquileres';
+        if (l2) l2.textContent = 'Mis Obras RD';
+        if (l3) l3.textContent = 'Total Contratado';
+        document.getElementById('kpiFleet').textContent = myContractorBks.length;
+        document.getElementById('kpiContracts').textContent = myReqs.length;
+        const vol = myContractorBks.reduce((s, b) => s + (b.total || 0), 0);
+        document.getElementById('kpiVol').textContent = fmtRD(vol);
+      }
 
       const proBtn = document.getElementById('proBadgeBtn');
       if (isPro) {
@@ -2137,6 +2345,36 @@
         })
       : null;
 
+    function selectRegRole(role) {
+      const safe = ['contractor', 'owner', 'both'].includes(role) ? role : 'contractor';
+      const inp = document.getElementById('regRole');
+      if (inp) inp.value = safe;
+      document.querySelectorAll('#regRoleGrid .role-card').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.role === safe);
+      });
+    }
+
+    function openAuthForRole(role = 'contractor', mode = 'register') {
+      pendingOpenPublishAfterAuth = false;
+      selectRegRole(role);
+      switchOwnerAuthMode(mode);
+      openSheet('ownerAuthSheet');
+    }
+
+    function openReqSheetPrefilled() {
+      if (currentOwner) {
+        const aInp = document.getElementById('rAuthor');
+        const pInp = document.getElementById('rPhone');
+        const cSel = document.getElementById('rCity');
+        if (aInp && !aInp.value && currentOwner.name) aInp.value = currentOwner.name;
+        if (pInp && !pInp.value && currentOwner.phone) pInp.value = currentOwner.phone;
+        if (cSel && currentOwner.city && Array.from(cSel.options).some(o => o.value === currentOwner.city)) {
+          cSel.value = currentOwner.city;
+        }
+      }
+      openSheet('reqSheet');
+    }
+
     function syncOwnerUI() {
       currentOwner = (window.GM_FIREBASE && window.GM_FIREBASE.getCurrentOwner)
         ? window.GM_FIREBASE.getCurrentOwner()
@@ -2145,13 +2383,25 @@
       const hdrBtn = document.getElementById('ownerHeaderBtn');
       if (hdrBtn) {
         if (currentOwner) {
-          const shortName = currentOwner.name.length > 18 ? currentOwner.name.slice(0, 18) + '…' : currentOwner.name;
-          hdrBtn.innerHTML = `✓ ${shortName}`;
-          hdrBtn.style.borderColor = '#6EE7B7';
-          hdrBtn.style.background = '#ECFDF5';
-          hdrBtn.style.color = '#065F46';
+          const role = getAccountRole();
+          const roleIcon = role === 'contractor' ? '👷' : (role === 'both' ? '🏢' : '🚜');
+          const shortName = currentOwner.name.length > 16 ? currentOwner.name.slice(0, 16) + '…' : currentOwner.name;
+          hdrBtn.innerHTML = `${roleIcon} ${shortName}`;
+          if (role === 'contractor') {
+            hdrBtn.style.borderColor = '#93C5FD';
+            hdrBtn.style.background = '#EFF6FF';
+            hdrBtn.style.color = '#1E40AF';
+          } else if (role === 'both') {
+            hdrBtn.style.borderColor = '#FDBA74';
+            hdrBtn.style.background = '#FEF4EE';
+            hdrBtn.style.color = '#B85A27';
+          } else {
+            hdrBtn.style.borderColor = '#6EE7B7';
+            hdrBtn.style.background = '#ECFDF5';
+            hdrBtn.style.color = '#065F46';
+          }
         } else {
-          hdrBtn.innerHTML = `👤 Cuenta Propietario`;
+          hdrBtn.innerHTML = `👤 Mi Cuenta`;
           hdrBtn.style.borderColor = '';
           hdrBtn.style.background = '';
           hdrBtn.style.color = '';
@@ -2168,6 +2418,7 @@
           <button type="button" class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="closeSheet('publishSheet'); handleLogoutOwner();">Cambiar cuenta</button>
         `;
       }
+      syncCounters();
     }
 
     function openOwnerAccountModal() {
@@ -2200,12 +2451,13 @@
         currentOwner = await window.GM_FIREBASE.loginOwnerAccount({ identifier, password });
         syncOwnerUI();
         closeSheet('ownerAuthSheet');
-        toast(`¡Bienvenido, ${currentOwner.name}!`);
+        const roleLabel = currentOwner.role === 'contractor' ? 'Contratista' : (currentOwner.role === 'both' ? 'Contratista & Propietario' : 'Propietario');
+        toast(`¡Bienvenido, ${currentOwner.name}! (${roleLabel})`);
         if (pendingOpenPublishAfterAuth) {
           pendingOpenPublishAfterAuth = false;
           openPublishSheet();
         } else {
-          renderCurrentTab();
+          switchTab('profile');
         }
       } catch (err) {
         toast(err.message || 'No se pudo iniciar sesión');
@@ -2219,6 +2471,7 @@
       const phone = document.getElementById('regPhone').value.trim();
       const city = document.getElementById('regCity').value;
       const password = document.getElementById('regPassword').value;
+      const role = document.getElementById('regRole')?.value || 'contractor';
 
       if (phone.replace(/\D/g, '').length < 10) {
         toast('Ingresa un número de WhatsApp válido de 10 dígitos');
@@ -2253,19 +2506,34 @@
           email,
           phone,
           city,
-          password
+          password,
+          role
         });
         syncOwnerUI();
         closeSheet('ownerAuthSheet');
-        toast('✓ Cuenta de propietario creada y verificada');
-        if (pendingOpenPublishAfterAuth) {
+        const roleLabel = role === 'contractor' ? 'Contratista' : (role === 'both' ? 'Contratista y Propietario' : 'Propietario');
+        toast(`✓ Cuenta ${roleLabel} creada y verificada en DGII`);
+        if (pendingOpenPublishAfterAuth && (role === 'owner' || role === 'both')) {
           pendingOpenPublishAfterAuth = false;
           openPublishSheet();
         } else {
-          renderCurrentTab();
+          pendingOpenPublishAfterAuth = false;
+          switchTab('profile');
         }
       } catch (err) {
         toast(err.message || 'Error al registrar la cuenta');
+      }
+    }
+
+    async function handleUpgradeRole(targetRole) {
+      if (!currentOwner || !window.GM_FIREBASE || !window.GM_FIREBASE.updateAccountRole) return;
+      try {
+        currentOwner = await window.GM_FIREBASE.updateAccountRole(targetRole);
+        syncOwnerUI();
+        renderProfile();
+        toast('✓ Rol dual activado: ahora tienes acceso como Contratista y Propietario');
+      } catch (err) {
+        toast(err.message || 'No se pudo actualizar el rol');
       }
     }
 
@@ -2276,113 +2544,247 @@
       currentOwner = null;
       syncOwnerUI();
       renderCurrentTab();
-      toast('Sesión de propietario cerrada');
+      toast('Sesión cerrada correctamente');
+    }
+
+    function buildTrackingPillHtml(b) {
+      const tr = allTrackingMap[String(b.id)];
+      if (tr && tr.status === 'en_route') {
+        const etaLabel = Number.isFinite(Number(tr.etaMin)) ? ` • ~${Math.max(1, Math.round(tr.etaMin))} min` : '';
+        return `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#FEF4EE; color:#B85A27;">🟢 En camino${etaLabel}</span>`;
+      }
+      if (tr && tr.status === 'arrived') {
+        return `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#ECFDF5; color:#059669;">📍 En obra</span>`;
+      }
+      if (tr && (tr.status === 'completed' || tr.status === 'operating')) {
+        return `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#ECFDF5; color:#065F46;">✅ Operando</span>`;
+      }
+      return `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#F1F5F9; color:#475569;">⏱ Despacho programado</span>`;
+    }
+
+    function isBookingDispatchReady(b) {
+      return (
+        b.paymentStatus === 'paid' ||
+        b.stage === 'invoiced_dispatched' ||
+        b.stage === 'conduce_signed' ||
+        b.stage === 'gov_filed' ||
+        b.stage === 'settled'
+      );
     }
 
     function renderProfile() {
+      const role = getAccountRole();
       const oCard = document.getElementById('profileOwnerCard');
       if (oCard) {
         if (currentOwner) {
+          const badgeCfg = role === 'contractor'
+            ? { label: '👷 Contratista Verificado DGII', bg: '#EFF6FF', color: '#1E40AF' }
+            : (role === 'both'
+                ? { label: '🏢 Contratista + Propietario Verificado DGII', bg: '#FEF4EE', color: '#B85A27' }
+                : { label: '🚜 Propietario de Flota Verificado DGII', bg: '#ECFDF5', color: '#059669' });
+          const upgradeBtn = role === 'contractor'
+            ? `<button class="btn btn-ghost" style="padding:8px 12px; font-size:12px;" onclick="handleUpgradeRole('both')">+ Activar Rol Propietario</button>`
+            : (role === 'owner'
+                ? `<button class="btn btn-ghost" style="padding:8px 12px; font-size:12px;" onclick="handleUpgradeRole('both')">+ Activar Rol Contratista</button>`
+                : '');
           oCard.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
               <div>
-                <span style="font-size:10.5px; font-weight:800; color:#059669; background:#ECFDF5; padding:3px 9px; border-radius:99px; text-transform:uppercase;">✓ Propietario Verificado DGII</span>
-                <strong style="font-size:17px; color:var(--navy); display:block; margin-top:6px;">${currentOwner.name}</strong>
+                <span style="font-size:10.5px; font-weight:800; color:${badgeCfg.color}; background:${badgeCfg.bg}; padding:4px 10px; border-radius:99px; text-transform:uppercase;">${badgeCfg.label}</span>
+                <strong style="font-size:18px; color:var(--navy); display:block; margin-top:7px;">${currentOwner.name}</strong>
                 <span style="font-size:12.5px; color:var(--text-muted);">RNC/Cédula: <strong>${currentOwner.rncFormatted}</strong> • ${currentOwner.email || ''} • +1 ${currentOwner.phone}</span>
               </div>
-              <div style="display:flex; gap:8px;">
-                <button class="btn btn-primary" style="padding:8px 13px; font-size:12px;" onclick="openPublishSheet()">+ Subir Equipo</button>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                ${hasOwnerRole() ? `<button class="btn btn-primary" style="padding:8px 13px; font-size:12px;" onclick="openPublishSheet()">+ Subir Equipo</button>` : `<button class="btn btn-primary" style="padding:8px 13px; font-size:12px;" onclick="switchTab('catalog')">🔍 Alquilar Equipo</button>`}
+                ${upgradeBtn}
                 <button class="btn btn-ghost" style="padding:8px 13px; font-size:12px; color:#DC2626;" onclick="handleLogoutOwner()">Cerrar Sesión</button>
               </div>
             </div>
           `;
         } else {
           oCard.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-              <div>
-                <strong style="font-size:16px; color:var(--navy); display:block;">¿Eres propietario de maquinaria?</strong>
-                <span style="font-size:12.5px; color:var(--text-muted);">Registra tu cuenta verificada con RNC/DGII para publicar tus equipos y gestionar tu flota.</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+              <div style="flex:1; min-width:240px;">
+                <strong style="font-size:17px; color:var(--navy); display:block;">Accede a tu Cuenta para ver solo tus operaciones</strong>
+                <span style="font-size:12.5px; color:var(--text-muted); display:block; margin-top:3px;">
+                  Por privacidad, tus contratos, facturas e-CF, solicitudes en Obras RD y flota se filtran automáticamente por tu <strong>RNC / Cédula</strong>.
+                </span>
               </div>
-              <div style="display:flex; gap:8px;">
-                <button class="btn btn-ghost" style="padding:8px 13px; font-size:12px;" onclick="switchOwnerAuthMode('login'); openSheet('ownerAuthSheet');">Iniciar Sesión</button>
-                <button class="btn btn-primary" style="padding:8px 13px; font-size:12px;" onclick="switchOwnerAuthMode('register'); openSheet('ownerAuthSheet');">Crear Cuenta</button>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-primary" style="padding:9px 14px; font-size:12.5px;" onclick="openAuthForRole('contractor', 'register')">👷 Cuenta Contratista</button>
+                <button class="btn btn-navy" style="padding:9px 14px; font-size:12.5px;" onclick="openAuthForRole('owner', 'register')">🚜 Cuenta Propietario</button>
+                <button class="btn btn-ghost" style="padding:9px 14px; font-size:12.5px;" onclick="openAuthForRole('contractor', 'login')">Iniciar Sesión</button>
               </div>
             </div>
           `;
         }
       }
 
+      // Mostrar Consola Operador en banner GPS únicamente a Propietarios o Ambos (nunca al Contratista puro)
+      const opBannerBtn = document.getElementById('btnOperatorConsoleBanner');
+      if (opBannerBtn) opBannerBtn.style.display = hasOwnerRole() ? 'inline-flex' : 'none';
+      const trSub = document.getElementById('profileTrackingSubtitle');
+      if (trSub) {
+        trSub.textContent = hasOwnerRole()
+          ? 'Sigue tus despachos en vivo o comparte el Modo Operador con tus choferes.'
+          : 'Cuando Administración autorice el despacho de tu equipo, sigue su llegada en tiempo real con ETA.';
+      }
+
       syncInstallPwaButton();
 
+      // Visibilidad de secciones según rol
+      const secContractor = document.getElementById('contractorPanelSection');
+      const secContractorReqs = document.getElementById('contractorRequestsSection');
+      const secOwnerRentals = document.getElementById('ownerRentalsSection');
+      const secOwnerFleet = document.getElementById('ownerFleetSection');
+
+      const showContractor = !currentOwner || hasContractorRole();
+      const showOwner = Boolean(currentOwner && hasOwnerRole());
+
+      if (secContractor) secContractor.style.display = showContractor ? 'block' : 'none';
+      if (secContractorReqs) secContractorReqs.style.display = (currentOwner && hasContractorRole()) ? 'block' : 'none';
+      if (secOwnerRentals) secOwnerRentals.style.display = showOwner ? 'block' : 'none';
+      if (secOwnerFleet) secOwnerFleet.style.display = showOwner ? 'block' : 'none';
+
+      // 1. SECCIÓN CONTRATISTA: SOLO SUS PROPIOS CONTRATOS Y FACTURAS (SIN MODO OPERADOR)
       const cBox = document.getElementById('profileContracts');
-      if (bookings.length === 0) {
-        cBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No hay contratos ni facturas e-CF generados todavía. Al confirmar un alquiler aparecerá aquí con su enlace de tracking GPS en tiempo real.</p>`;
-      } else {
-        cBox.innerHTML = bookings.map(raw => {
-          const b = window.GM_BILLING ? window.GM_BILLING.normalizeBooking(raw) : raw;
-          const pBadge = window.GM_BILLING ? window.GM_BILLING.paymentStatusBadge(b) : { text: 'REGISTRADO', bg: '#F1F5F9', color: '#0D223A' };
-          const tr = allTrackingMap[String(b.id)];
-          let trackBadgeHtml = `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#F1F5F9; color:#475569;">⏱ Despacho programado</span>`;
-          if (tr && tr.status === 'en_route') {
-            const etaLabel = Number.isFinite(Number(tr.etaMin)) ? ` • ~${Math.max(1, Math.round(tr.etaMin))} min` : '';
-            trackBadgeHtml = `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#FEF4EE; color:#B85A27;">🟢 En camino${etaLabel}</span>`;
-          } else if (tr && tr.status === 'arrived') {
-            trackBadgeHtml = `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#ECFDF5; color:#059669;">📍 En obra</span>`;
-          } else if (tr && (tr.status === 'completed' || tr.status === 'operating')) {
-            trackBadgeHtml = `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#ECFDF5; color:#065F46;">✅ Operando</span>`;
-          }
-          return `
-            <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-              <div>
-                <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
-                  <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${b.ncfType === 'E45' ? '#EFF6FF' : '#0D223A'}; color:${b.ncfType === 'E45' ? '#1E40AF' : '#fff'};">${b.ncfType || 'E31'}</span>
-                  <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${pBadge.bg}; color:${pBadge.color};">${pBadge.text}</span>
-                  ${trackBadgeHtml}
-                  ${b.encfNumber ? `<span style="font-size:10px; font-family:monospace; font-weight:800; color:var(--orange);">${b.encfNumber}</span>` : ''}
-                </div>
-                <strong style="font-size:14px; color:var(--navy); display:block;">${b.title}</strong>
-                <span style="font-size:11px; color:var(--text-muted);">${b.renter} • ${fmtRD(b.total)}</span>
-              </div>
-              <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <a class="btn btn-primary" style="padding:7px 11px; font-size:11px; text-decoration:none;" href="./tracking.html?booking=${encodeURIComponent(b.id)}">🗺️ Tracking</a>
-                <a class="btn btn-ghost" style="padding:7px 11px; font-size:11px; text-decoration:none;" href="./tracking.html?booking=${encodeURIComponent(b.id)}&role=operator">🚚 Operador</a>
-                <button class="btn btn-navy" style="padding:7px 11px; font-size:11px;" onclick="openContract(${b.id}, 'invoice')">🧾 Factura e-CF</button>
-                <button class="btn btn-ghost" style="padding:7px 11px; font-size:11px;" onclick="openContract(${b.id}, 'contract')">📄 Contrato</button>
+      const myContractorBks = getMyContractorBookings();
+      if (cBox) {
+        if (!currentOwner && myContractorBks.length === 0) {
+          cBox.innerHTML = `
+            <div style="background:#F8FAFC; border:1px dashed #CBD5E1; border-radius:12px; padding:16px; text-align:center;">
+              <strong style="font-size:14px; color:var(--navy); display:block; margin-bottom:4px;">🔒 Tus contratos y facturas e-CF son privados</strong>
+              <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">Inicia sesión o crea tu <strong>Cuenta Contratista</strong> con tu RNC/Cédula para ver tu historial de alquileres, descargar facturas e-CF y seguir tus despachos desde cualquier dispositivo.</p>
+              <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-primary" style="padding:8px 14px; font-size:12px;" onclick="openAuthForRole('contractor', 'login')">Iniciar Sesión Contratista</button>
+                <button class="btn btn-ghost" style="padding:8px 14px; font-size:12px;" onclick="openAuthForRole('contractor', 'register')">Crear Cuenta Contratista</button>
               </div>
             </div>
           `;
-        }).join('');
+        } else if (myContractorBks.length === 0) {
+          cBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Aún no tienes alquileres registrados con el RNC <strong>${currentOwner.rncFormatted}</strong>. Cuando reserves un equipo aparecerá aquí con su Contrato Digital, Factura e-CF y seguimiento de despacho.</p>`;
+        } else {
+          const guestNotice = !currentOwner
+            ? `<div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:10px 12px; font-size:12px; color:#1E40AF; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+                 <span>Mostrando solo las reservas hechas en este navegador. Crea tu cuenta Contratista con tu RNC para verlas en todos tus dispositivos.</span>
+                 <button class="btn btn-navy" style="padding:6px 11px; font-size:11px;" onclick="openAuthForRole('contractor', 'register')">Crear Cuenta Contratista</button>
+               </div>`
+            : '';
+          cBox.innerHTML = guestNotice + myContractorBks.map(raw => {
+            const b = window.GM_BILLING ? window.GM_BILLING.normalizeBooking(raw) : raw;
+            const pBadge = window.GM_BILLING ? window.GM_BILLING.paymentStatusBadge(b) : { text: 'REGISTRADO', bg: '#F1F5F9', color: '#0D223A' };
+            const readyTrack = isBookingDispatchReady(b);
+            return `
+              <div style="border:1px solid var(--border); border-radius:12px; padding:13px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+                <div>
+                  <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
+                    <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${b.ncfType === 'E45' ? '#EFF6FF' : '#0D223A'}; color:${b.ncfType === 'E45' ? '#1E40AF' : '#fff'};">${b.ncfType || 'E31'}</span>
+                    <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${pBadge.bg}; color:${pBadge.color};">${pBadge.text}</span>
+                    ${readyTrack ? buildTrackingPillHtml(b) : `<span style="font-size:10px; font-weight:700; padding:2px 7px; border-radius:99px; background:#FFFBEB; color:#92400E;">⏳ En validación para despacho</span>`}
+                    ${b.encfNumber ? `<span style="font-size:10px; font-family:monospace; font-weight:800; color:var(--orange);">${b.encfNumber}</span>` : ''}
+                  </div>
+                  <strong style="font-size:14.5px; color:var(--navy); display:block;">${b.title}</strong>
+                  <span style="font-size:11.5px; color:var(--text-muted);">${b.address || b.city} • ${b.startDate || ''} • <strong>${fmtRD(b.total)}</strong></span>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  ${readyTrack ? `<a class="btn btn-primary" style="padding:7px 12px; font-size:11.5px; text-decoration:none;" href="./tracking.html?booking=${encodeURIComponent(b.id)}">🗺️ Seguir Despacho</a>` : ''}
+                  <button class="btn btn-navy" style="padding:7px 12px; font-size:11.5px;" onclick="openContract(${b.id}, 'invoice')">🧾 Factura e-CF</button>
+                  <button class="btn btn-ghost" style="padding:7px 12px; font-size:11.5px;" onclick="openContract(${b.id}, 'contract')">📄 Contrato</button>
+                  ${b.ncfType === 'E45' ? `<button class="btn btn-ghost" style="padding:7px 12px; font-size:11.5px;" onclick="openContract(${b.id}, 'gov')">🏛️ Estado E45</button>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
       }
 
-      const fBox = document.getElementById('profileFleet');
-      const myFleet = currentOwner
-        ? equipment.filter(e => String(e.ownerId || '') === String(currentOwner.id) || String(e.rnc || '').replace(/\D/g, '') === String(currentOwner.rncDigits))
-        : [];
-
-      if (!currentOwner) {
-        fBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Inicia sesión en tu cuenta de propietario para administrar las máquinas que publiques.</p>`;
-      } else if (myFleet.length === 0) {
-        fBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Aún no has subido maquinaria con tu cuenta (${currentOwner.name}). Toca <strong>+ Publicar Equipo</strong> para subir hasta 5 fotos de tu primera unidad.</p>`;
-      } else {
-        fBox.innerHTML = myFleet.map(e => {
-          const url = GM.getEquipmentPath(e, '');
-          const countImgs = Array.isArray(e.images) && e.images.length ? e.images.length : 1;
-          return `
+      // 2. SECCIÓN CONTRATISTA: MIS SOLICITUDES DE OBRA (OBRAS RD)
+      const rBox = document.getElementById('profileMyRequests');
+      if (rBox && currentOwner && hasContractorRole()) {
+        const myReqs = getMyRequests();
+        if (myReqs.length === 0) {
+          rBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No tienes solicitudes publicadas en Obras RD todavía. Usa <strong>+ Pedir Máquina</strong> cuando necesites cotizaciones rápidas para una obra.</p>`;
+        } else {
+          rBox.innerHTML = myReqs.map(r => `
             <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
               <div>
-                <a href="${url}" style="font-size:14px; font-weight:800; color:var(--navy); display:block; text-decoration:none;">${e.title}</a>
-                <span style="font-size:11px; color:var(--text-muted);">${e.city} • ${fmtRD(e.priceDay)}/día • 📷 ${countImgs} foto(s)</span>
+                <strong style="font-size:14px; color:var(--navy); display:block;">${r.title}</strong>
+                <span style="font-size:11.5px; color:var(--text-muted);">${r.city} • Presupuesto: ${r.budget ? fmtRD(r.budget) + '/día' : 'A convenir'} ${r.placeTypeLabel ? '• ' + r.placeTypeLabel : ''}</span>
               </div>
-              <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <a class="btn btn-navy" style="padding:6px 10px; font-size:11px;" href="${url}">Ver</a>
-                <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="shareCard(event, ${e.id})">Compartir</button>
-                <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="flipBusy(${e.id})">${e.busy ? 'Liberar' : 'Ocupar'}</button>
-                <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px; color:#DC2626;" onclick="removeEq(${e.id})">Borrar</button>
-              </div>
+              <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px; color:#DC2626;" onclick="deleteMyRequest(${r.id})">Cerrar / Borrar</button>
             </div>
-          `;
-        }).join('');
+          `).join('');
+        }
       }
+
+      // 3. SECCIÓN PROPIETARIO: ALQUILERES Y DESPACHOS DE MI FLOTA (AQUÍ SÍ VA MODO OPERADOR)
+      const orBox = document.getElementById('profileOwnerRentals');
+      if (orBox && showOwner) {
+        const myOwnerBks = getMyOwnerBookings();
+        if (myOwnerBks.length === 0) {
+          orBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Aún no hay alquileres activos sobre tus máquinas registradas con el RNC <strong>${currentOwner.rncFormatted}</strong>.</p>`;
+        } else {
+          orBox.innerHTML = myOwnerBks.map(raw => {
+            const b = window.GM_BILLING ? window.GM_BILLING.normalizeBooking(raw) : raw;
+            const settled = b.settlement && b.settlement.status === 'paid';
+            return `
+              <div style="border:1px solid var(--border); border-radius:12px; padding:13px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+                <div>
+                  <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
+                    <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${settled ? '#ECFDF5' : '#FFFBEB'}; color:${settled ? '#065F46' : '#92400E'};">${settled ? '✓ Liquidado' : '💸 Liquidación pendiente'}</span>
+                    ${buildTrackingPillHtml(b)}
+                  </div>
+                  <strong style="font-size:14.5px; color:var(--navy); display:block;">${b.title}</strong>
+                  <span style="font-size:11.5px; color:var(--text-muted);">Cliente: ${b.renter} • Obra: ${b.city} • ${b.startDate || ''}</span>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <a class="btn btn-navy" style="padding:7px 11px; font-size:11.5px; text-decoration:none;" href="./tracking.html?booking=${encodeURIComponent(b.id)}&role=operator">🚚 Modo Operador</a>
+                  <a class="btn btn-ghost" style="padding:7px 11px; font-size:11.5px; text-decoration:none;" href="./tracking.html?booking=${encodeURIComponent(b.id)}">🗺️ Ver Mapa</a>
+                  <button class="btn btn-ghost" style="padding:7px 11px; font-size:11.5px;" onclick="openContract(${b.id}, 'contract')">📄 Contrato</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      // 4. SECCIÓN PROPIETARIO: MIS MÁQUINAS PUBLICADAS
+      const fBox = document.getElementById('profileFleet');
+      const myFleet = getMyFleet();
+      if (fBox && showOwner) {
+        if (myFleet.length === 0) {
+          fBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Aún no has subido maquinaria con tu cuenta (${currentOwner.name}). Toca <strong>+ Publicar Equipo</strong> para subir hasta 5 fotos de tu primera unidad.</p>`;
+        } else {
+          fBox.innerHTML = myFleet.map(e => {
+            const url = GM.getEquipmentPath(e, '');
+            const countImgs = Array.isArray(e.images) && e.images.length ? e.images.length : 1;
+            return `
+              <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+                <div>
+                  <a href="${url}" style="font-size:14px; font-weight:800; color:var(--navy); display:block; text-decoration:none;">${e.title}</a>
+                  <span style="font-size:11px; color:var(--text-muted);">${e.city} • ${fmtRD(e.priceDay)}/día • 📷 ${countImgs} foto(s)</span>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <a class="btn btn-navy" style="padding:6px 10px; font-size:11px;" href="${url}">Ver</a>
+                  <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="shareCard(event, ${e.id})">Compartir</button>
+                  <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="flipBusy(${e.id})">${e.busy ? 'Liberar' : 'Ocupar'}</button>
+                  <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px; color:#DC2626;" onclick="removeEq(${e.id})">Borrar</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    }
+
+    function deleteMyRequest(id) {
+      requests = requests.filter(r => String(r.id) !== String(id));
+      if (window.GM_FIREBASE && window.GM_FIREBASE.isReady && window.GM_FIREBASE.isReady()) {
+        window.GM_FIREBASE.deleteRequest(id).catch(() => {});
+      }
+      syncCounters();
+      renderProfile();
+      toast('Solicitud eliminada de Obras RD');
     }
 
     function flipBusy(id) {
@@ -2408,15 +2810,19 @@
       toast('Equipo eliminado');
     }
 
-    /* Publish Wizard — Gated by Pre-Registered Owner Account */
-    function openPublishSheet() {
+    /* Publish Wizard — Gated by Pre-Registered Owner or Dual-Role Account */
+    async function openPublishSheet() {
       syncOwnerUI();
       if (!currentOwner) {
         pendingOpenPublishAfterAuth = true;
+        selectRegRole('owner');
         switchOwnerAuthMode('register');
         openSheet('ownerAuthSheet');
-        toast('Primero crea o inicia sesión en tu Cuenta de Propietario');
+        toast('Crea o inicia sesión en una cuenta Propietario (o Ambos Roles) para publicar maquinaria');
         return;
+      }
+      if (!hasOwnerRole()) {
+        await handleUpgradeRole('both');
       }
 
       wizStep = 1;
@@ -2736,6 +3142,8 @@
       const reqPermits = Array.from(document.querySelectorAll('#reqDynamicPermitsBox .req-dyn-permit-cb:checked')).map(cb => cb.value).filter(Boolean);
       const newReq = {
         id: Date.now(),
+        contractorId: currentOwner ? currentOwner.id : null,
+        contractorRnc: currentOwner ? currentOwner.rncFormatted : '',
         title: document.getElementById('rTitle').value.trim(),
         city: document.getElementById('rCity').value,
         budget: Number(document.getElementById('rBudget').value) || 0,
@@ -2781,6 +3189,12 @@
       if (!BILL) return;
       const b = BILL.normalizeBooking(raw);
       const isGov = b.ncfType === 'E45';
+      const readyTrack = isBookingDispatchReady(b);
+      const viewerIsOwnerOfBooking = Boolean(
+        currentOwner && hasOwnerRole() &&
+        (cleanRncDigits(b.ownerRnc) === cleanRncDigits(currentOwner.rncDigits) ||
+         getMyFleet().some(e => String(e.id) === String(b.equipmentId)))
+      );
 
       let docHtml = '';
       if (activeHomeDocTab === 'invoice') {
@@ -2794,26 +3208,38 @@
       const trackClientHref = `./tracking.html?booking=${encodeURIComponent(b.id)}`;
       const trackOpHref = `./tracking.html?booking=${encodeURIComponent(b.id)}&role=operator`;
       const absTrackClient = new URL(trackClientHref, window.location.href).href;
-      const waTrackMsg = encodeURIComponent(`🚚 *Tracking GPS en Vivo — Green Mile RD*\nContrato #GM-${String(b.id).slice(-6)} • ${b.title}\nObra: ${b.address}\n\nSigue la unidad en el mapa en tiempo real:\n${absTrackClient}`);
+      const waTrackMsg = encodeURIComponent(`🚚 *Seguimiento de Despacho — Green Mile RD*\nContrato #GM-${String(b.id).slice(-6)} • ${b.title}\nObra: ${b.address}\n\nSigue la unidad rumbo a obra en tiempo real:\n${absTrackClient}`);
+
+      const dispatchStrip = readyTrack
+        ? `
+          <div class="no-print" style="margin-top:16px; padding:14px 16px; border-radius:14px; background:#F8FAFC; border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div style="min-width:220px; flex:1;">
+              <div style="font-size:11.5px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:0.04em;">🚚 Seguimiento de Despacho a Obra</div>
+              <div style="font-size:12.5px; color:var(--text-muted); margin-top:2px;">Consulta la ubicación en vivo y ETA de llegada de la maquinaria.</div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <a class="btn btn-primary" style="font-size:13px; padding:10px 15px; text-decoration:none;" href="${trackClientHref}">🗺️ Seguir Despacho</a>
+              ${viewerIsOwnerOfBooking ? `<a class="btn btn-navy" style="font-size:13px; padding:10px 15px; text-decoration:none;" href="${trackOpHref}">🚚 Modo Operador</a>` : ''}
+              <a class="btn btn-ghost" style="font-size:13px; padding:10px 14px; color:#15803D; border-color:#BBF7D0; background:#F0FDF4; text-decoration:none;" href="https://wa.me/?text=${waTrackMsg}" target="_blank" rel="noopener">📲 WhatsApp</a>
+            </div>
+          </div>
+        `
+        : `
+          <div class="no-print" style="margin-top:16px; padding:13px 16px; border-radius:14px; background:#FFFBEB; border:1px solid #FDE68A; font-size:12.5px; color:#92400E; line-height:1.5;">
+            <strong>📍 Despacho y Seguimiento GPS (etapa posterior al contrato):</strong> Se habilitará en cuanto Administración valide ${isGov ? 'la Orden de Compra estatal (e-CF 45)' : 'el pago'} y autorice la salida del equipo.
+          </div>
+        `;
 
       document.getElementById('contractBody').innerHTML = `
-        <div class="auth-tabs no-print" style="grid-template-columns:repeat(${isGov ? 3 : 2}, 1fr); margin-bottom:12px;">
+        <div class="auth-tabs no-print" style="grid-template-columns:repeat(${isGov ? 3 : 2}, 1fr); margin-bottom:14px;">
           <button type="button" class="auth-tab ${activeHomeDocTab === 'contract' ? 'active' : ''}" onclick="switchHomeDocTab('contract')">📄 Contrato</button>
           <button type="button" class="auth-tab ${activeHomeDocTab === 'invoice' ? 'active' : ''}" onclick="switchHomeDocTab('invoice')">🧾 Factura ${b.ncfType}</button>
           ${isGov ? `<button type="button" class="auth-tab ${activeHomeDocTab === 'gov' ? 'active' : ''}" onclick="switchHomeDocTab('gov')">🏛️ Estado E45</button>` : ''}
         </div>
         ${docHtml}
-        <div class="no-print" style="margin-top:14px; padding:12px; border-radius:12px; background:#F8FAFC; border:1px solid var(--border);">
-          <div style="font-size:11px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px;">Tracking GPS en Vivo (Tipo Uber)</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
-            <a class="btn btn-primary" style="text-align:center; font-size:12px; padding:10px; text-decoration:none;" href="${trackClientHref}">🗺️ Seguir en Mapa</a>
-            <a class="btn btn-navy" style="text-align:center; font-size:12px; padding:10px; text-decoration:none;" href="${trackOpHref}">🚚 Modo Operador</a>
-          </div>
-          <a class="btn btn-ghost" style="width:100%; text-align:center; font-size:12px; padding:9px; color:#15803D; border-color:#BBF7D0; background:#F0FDF4; text-decoration:none;" href="https://wa.me/?text=${waTrackMsg}" target="_blank" rel="noopener">📲 Compartir Tracking por WhatsApp</a>
-        </div>
-        <div class="no-print" style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
-          <button class="btn btn-navy" style="flex:1;" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
-          <a class="btn btn-ghost" href="admin.html" style="text-decoration:none;">⚙️ Gestionar en Admin</a>
+        ${dispatchStrip}
+        <div class="no-print" style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-navy" style="flex:1; min-height:46px; font-size:14.5px;" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
         </div>
       `;
     }

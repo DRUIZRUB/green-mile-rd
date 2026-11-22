@@ -11,6 +11,34 @@
 
   const OWNER_SESSION_KEY = 'gm_rd_owner_session_v1';
   const LOCAL_OWNERS_KEY = 'gm_rd_local_owners_v1';
+  const GUEST_BOOKINGS_KEY = 'gm_rd_guest_booking_ids_v1';
+  const VALID_ROLES = new Set(['contractor', 'owner', 'both']);
+
+  function normalizeRole(role, fallback = 'owner') {
+    const r = String(role || '').trim().toLowerCase();
+    return VALID_ROLES.has(r) ? r : fallback;
+  }
+
+  function rememberGuestBookingId(bookingId) {
+    if (bookingId == null) return;
+    try {
+      const list = getGuestBookingIds();
+      const idStr = String(bookingId);
+      if (!list.includes(idStr)) {
+        list.unshift(idStr);
+        localStorage.setItem(GUEST_BOOKINGS_KEY, JSON.stringify(list.slice(0, 60)));
+      }
+    } catch (_) {}
+  }
+
+  function getGuestBookingIds() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(GUEST_BOOKINGS_KEY) || '[]');
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch (_) {
+      return [];
+    }
+  }
 
   const isConfigured = Boolean(
     FIREBASE_CONFIG.apiKey &&
@@ -57,7 +85,11 @@
   function getCurrentOwner() {
     try {
       const raw = localStorage.getItem(OWNER_SESSION_KEY);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed) return null;
+      parsed.role = normalizeRole(parsed.role, 'owner');
+      return parsed;
     } catch (_) {
       return null;
     }
@@ -75,7 +107,8 @@
       name: owner.name,
       email: owner.email || '',
       phone: owner.phone || '',
-      city: owner.city || 'Santo Domingo'
+      city: owner.city || 'Santo Domingo',
+      role: normalizeRole(owner.role, 'owner')
     };
     localStorage.setItem(OWNER_SESSION_KEY, JSON.stringify(safeSession));
     return safeSession;
@@ -99,10 +132,11 @@
     localStorage.setItem(LOCAL_OWNERS_KEY, JSON.stringify(map));
   }
 
-  async function registerOwnerAccount({ rncDigits, rncFormatted, name, email, phone, city, password }) {
+  async function registerOwnerAccount({ rncDigits, rncFormatted, name, email, phone, city, password, role = 'contractor' }) {
     const cleanId = String(rncDigits || '').replace(/\D/g, '');
     if (!cleanId) throw new Error('RNC o Cédula inválido');
 
+    const safeRole = normalizeRole(role, 'contractor');
     const passwordHash = await hashPassword(password, cleanId);
     const ownerDoc = {
       id: cleanId,
@@ -112,6 +146,7 @@
       email: String(email || '').trim().toLowerCase(),
       phone: String(phone || '').trim(),
       city: city || 'Santo Domingo',
+      role: safeRole,
       passwordHash,
       verifiedDgii: true
     };
@@ -171,8 +206,29 @@
       throw new Error('Contraseña incorrecta.');
     }
 
+    found.role = normalizeRole(found.role, 'owner');
     saveLocalOwner(found);
     return setCurrentOwner(found);
+  }
+
+  async function updateAccountRole(newRole) {
+    const cur = getCurrentOwner();
+    if (!cur) throw new Error('Debes iniciar sesión primero.');
+    const safeRole = normalizeRole(newRole, cur.role || 'both');
+    const updated = Object.assign({}, cur, { role: safeRole });
+
+    if (db && cur.rncDigits) {
+      await db.collection('owners').doc(String(cur.rncDigits)).set({
+        role: safeRole,
+        updatedAt: global.firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+    const map = getLocalOwnersMap();
+    if (map[cur.rncDigits]) {
+      map[cur.rncDigits].role = safeRole;
+      localStorage.setItem(LOCAL_OWNERS_KEY, JSON.stringify(map));
+    }
+    return setCurrentOwner(updated);
   }
 
   /* Compress image so up to 5 HD photos fit well inside Firestore's 1 MiB document limit (~95 KB each) */
@@ -647,9 +703,16 @@
     isReady,
     compressImageFile,
     getCurrentOwner,
+    getCurrentAccount: getCurrentOwner,
     logoutOwner,
+    logoutAccount: logoutOwner,
     registerOwnerAccount,
+    registerAccount: registerOwnerAccount,
     loginOwnerAccount,
+    loginAccount: loginOwnerAccount,
+    updateAccountRole,
+    rememberGuestBookingId,
+    getGuestBookingIds,
     subscribeEquipment,
     subscribeRequests,
     subscribeBookings,
