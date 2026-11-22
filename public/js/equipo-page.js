@@ -52,9 +52,32 @@
     return null;
   }
 
+  function itemImagesList(item) {
+    if (Array.isArray(item.images) && item.images.length > 0) {
+      return item.images
+        .slice(0, 5)
+        .map(src => GM.resolveAsset(src, BASE) || GM.defaultCover(item.category));
+    }
+    const single = GM.resolveAsset(item.img, BASE) || GM.defaultCover(item.category);
+    return [single];
+  }
+
   function itemImageSrc(item) {
-    const resolved = GM.resolveAsset(item.img, BASE);
-    return resolved || GM.defaultCover(item.category);
+    return itemImagesList(item)[0];
+  }
+
+  function selectPhoto(idx) {
+    if (!currentItem) return;
+    const photos = itemImagesList(currentItem);
+    const chosen = photos[idx];
+    if (!chosen) return;
+    const heroImg = document.getElementById('mainHeroImg');
+    if (heroImg) heroImg.src = chosen;
+    const counter = document.getElementById('heroPhotoCounter');
+    if (counter) counter.textContent = `📷 ${idx + 1}/${photos.length}`;
+    document.querySelectorAll('#heroThumbs .media-thumb').forEach((btn, i) => {
+      btn.classList.toggle('active', i === idx);
+    });
   }
 
   function getShareText(item, url) {
@@ -891,6 +914,17 @@
     const fallbackCat = esc(it.category).replace(/'/g, "\\'");
     const weekSavings = it.priceDay > 0 ? Math.max(0, Math.round((1 - (it.priceWeek / (it.priceDay * 6))) * 100)) : 0;
 
+    const allPhotos = itemImagesList(it);
+    const thumbsHTML = allPhotos.length > 1
+      ? `<div class="media-thumbs" id="heroThumbs">
+          ${allPhotos.map((src, idx) => `
+            <button type="button" class="media-thumb ${idx === 0 ? 'active' : ''}" onclick="window.GM_DETAIL.selectPhoto(${idx})" aria-label="Ver foto ${idx + 1}">
+              <img src="${src}" alt="Foto ${idx + 1} de ${esc(it.title)}" onerror="this.onerror=null;this.src=window.GM_CATALOG.defaultCover('${fallbackCat}')">
+            </button>
+          `).join('')}
+        </div>`
+      : '';
+
     document.title = `${it.title} en ${it.city} — ${GM.fmtRD(it.priceDay)}/día | Green Mile RD`;
 
     document.getElementById('pageContent').innerHTML = `
@@ -909,16 +943,20 @@
         <div>
           <article class="panel">
             <div class="hero-media">
-              <img src="${itemImageSrc(it)}" alt="${esc(it.title)}" onerror="this.onerror=null;this.src=window.GM_CATALOG.defaultCover('${fallbackCat}')">
+              <img id="mainHeroImg" src="${allPhotos[0]}" alt="${esc(it.title)}" onerror="this.onerror=null;this.src=window.GM_CATALOG.defaultCover('${fallbackCat}')">
               <div class="media-badges-top">
                 <span class="pill pill-city">📍 ${esc(it.city)}, RD</span>
-                <span class="pill pill-code">Ref. #GM-${esc(it.id)}</span>
+                <div style="display:flex; gap:6px; align-items:center;">
+                  ${allPhotos.length > 1 ? `<span id="heroPhotoCounter" class="pill pill-city">📷 1/${allPhotos.length}</span>` : ''}
+                  <span class="pill pill-code">Ref. #GM-${esc(it.id)}</span>
+                </div>
               </div>
               <div class="media-badges-bottom">
                 <span id="availPill" class="pill pill-avail ${it.busy ? 'busy' : ''}">${it.busy ? 'En Obra' : 'Disponible Hoy'}</span>
                 ${it.operator ? '<span class="pill pill-op">👷 Con Operador Certificado</span>' : ''}
               </div>
             </div>
+            ${thumbsHTML}
 
             <div class="panel-pad">
               <div class="eq-cat-label">${esc(it.category)}</div>
@@ -1190,6 +1228,7 @@
   }
 
   window.GM_DETAIL = {
+    selectPhoto,
     copyShareLink,
     nativeShare,
     toggleFavorite,
