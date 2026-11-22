@@ -137,11 +137,29 @@
     toast('Plan Pro activado (-10% aplicado)');
   }
 
+  let geoPicker = null;
+  const geoState = {
+    lat: null,
+    lng: null,
+    distanceKm: null,
+    durationMin: null,
+    calculatedCost: null,
+    isRoadRoute: false
+  };
+
+  function getActiveTransportCost() {
+    const it = currentItem;
+    const transEl = document.getElementById('qTrans');
+    if (!it || !transEl || transEl.value !== 'yes') return 0;
+    if (geoState.calculatedCost != null) return geoState.calculatedCost;
+    return Number(it.transportCost) || 0;
+  }
+
   function currentBreakdown() {
     const it = currentItem;
     const mode = document.getElementById('qMode').value;
     const qty = Math.max(1, Number(document.getElementById('qQty').value) || 1);
-    const trans = document.getElementById('qTrans').value === 'yes' ? (it.transportCost || 0) : 0;
+    const trans = getActiveTransportCost();
     const ncf = document.getElementById('qNcf').checked;
 
     let unit = it.priceDay, label = 'días';
@@ -153,20 +171,24 @@
     const net = base - disc + trans;
     const itbis = ncf ? Math.round(net * 0.18) : 0;
     const total = net + itbis;
-    return { qty, unit, label, base, disc, trans, net, itbis, total, ncf };
+    return { qty, unit, label, base, disc, trans, net, itbis, total, ncf, distanceKm: geoState.distanceKm };
   }
 
   function calcReceipt() {
     const box = document.getElementById('qReceipt');
     if (!currentItem || !box) return;
     const b = currentBreakdown();
+    const transLabel = b.distanceKm
+      ? `Traslado Lowboy (${b.distanceKm} km)`
+      : 'Traslado Lowboy (base)';
     box.innerHTML = `
       <div class="r-row"><span>${GM.fmtRD(b.unit)} × ${b.qty} ${b.label}</span><span>${GM.fmtRD(b.base)}</span></div>
       ${b.disc > 0 ? `<div class="r-row" style="color:var(--success); font-weight:700;"><span>Descuento Pro (-10%)</span><span>- ${GM.fmtRD(b.disc)}</span></div>` : ''}
-      ${b.trans > 0 ? `<div class="r-row"><span>Traslado Lowboy</span><span>${GM.fmtRD(b.trans)}</span></div>` : ''}
+      ${b.trans > 0 ? `<div class="r-row"><span>${transLabel}</span><span>${GM.fmtRD(b.trans)}</span></div>` : ''}
       ${b.ncf ? `<div class="r-row"><span>ITBIS 18% (e-NCF)</span><span>${GM.fmtRD(b.itbis)}</span></div>` : ''}
       <div class="r-total"><span>Total a Pagar</span><span>${GM.fmtRD(b.total)}</span></div>
     `;
+    updateGeoUI();
   }
 
   /* =========================================================
@@ -377,6 +399,272 @@
   }
 
   let dgiiController = null;
+  let geoSuggestions = [];
+  let cloudReviews = [];
+  let selectedReviewStars = 5;
+
+  const STAR_LABELS = {
+    1: '1 ★ — Deficiente',
+    2: '2 ★ — Regular',
+    3: '3 ★ — Bueno',
+    4: '4 ★ — Muy bueno',
+    5: '5 ★ — Excelente'
+  };
+
+  function updateGeoUI() {
+    const card = document.getElementById('qGeoStatus');
+    const transOpt = document.getElementById('qTransYesOpt');
+    const transSel = document.getElementById('qTrans');
+    if (transOpt && currentItem) {
+      if (geoState.distanceKm != null && geoState.calculatedCost != null) {
+        transOpt.textContent = `Con traslado a obra · ${geoState.distanceKm} km (${GM.fmtRD(geoState.calculatedCost)})`;
+      } else {
+        transOpt.textContent = currentItem.transportCost > 0
+          ? `Con traslado a obra (desde ${GM.fmtRD(currentItem.transportCost)} · según km)`
+          : 'Con traslado a obra (local RD$ 0 · según km)';
+      }
+    }
+    if (!card) return;
+    if (geoState.lat != null && geoState.lng != null && geoState.distanceKm != null) {
+      const wantsTrans = transSel && transSel.value === 'yes';
+      const costText = wantsTrans
+        ? `<strong>Traslado (${geoState.distanceKm} km): ${GM.fmtRD(geoState.calculatedCost || 0)}</strong>`
+        : '<strong>Retiro directo en patio (RD$ 0)</strong>';
+      card.className = 'geo-status-card ready';
+      card.innerHTML = `
+        <div class="geo-status-row">
+          <span><strong>✓ Obra georreferenciada</strong> (${geoState.lat.toFixed(5)}, ${geoState.lng.toFixed(5)})</span>
+          <a href="https://www.google.com/maps?q=${geoState.lat},${geoState.lng}" target="_blank" rel="noopener" style="color:#047857; font-weight:800; text-decoration:underline;">Abrir Maps ↗</a>
+        </div>
+        <div class="geo-status-row" style="margin-top:4px;">
+          <span>🚚 Ruta desde ${esc(currentItem.city)}: <strong>${geoState.distanceKm} km</strong> (~${geoState.durationMin} min)</span>
+          <span>${costText}</span>
+        </div>
+      `;
+    } else {
+      card.className = 'geo-status-card';
+      card.innerHTML = '📍 Toca el mapa, busca una dirección o presiona <strong>GPS</strong> para fijar el punto exacto de la obra y calcular el traslado por distancia.';
+    }
+  }
+
+  async function initWorksiteMap() {
+    if (!window.GM_GEO || !currentItem) return;
+    geoState.lat = null;
+    geoState.lng = null;
+    geoState.distanceKm = null;
+    geoState.durationMin = null;
+    geoState.calculatedCost = null;
+    try {
+      geoPicker = await window.GM_GEO.createWorksitePicker({
+        mapId: 'worksiteMap',
+        item: currentItem,
+        onAddressResolved: (addr) => {
+          const inp = document.getElementById('qAddr');
+          if (inp && addr) inp.value = addr;
+        },
+        onRoutingStart: (pt) => {
+          geoState.lat = pt.lat;
+          geoState.lng = pt.lng;
+          const card = document.getElementById('qGeoStatus');
+          if (card) {
+            card.className = 'geo-status-card loading';
+            card.textContent = '⏳ Calculando distancia vial y costo de traslado desde base…';
+          }
+        },
+        onChange: (st) => {
+          geoState.lat = st.dest.lat;
+          geoState.lng = st.dest.lng;
+          geoState.distanceKm = st.route.distanceKm;
+          geoState.durationMin = st.route.durationMin;
+          geoState.calculatedCost = st.quote.cost;
+          geoState.isRoadRoute = st.route.isRoadRoute;
+          calcReceipt();
+        }
+      });
+    } catch (_) {
+      const card = document.getElementById('qGeoStatus');
+      if (card) card.textContent = 'No se pudo cargar el mapa interactivo. Verifica tu conexión.';
+    }
+    updateGeoUI();
+  }
+
+  async function searchWorksiteAddr() {
+    const inp = document.getElementById('qAddr');
+    const listBox = document.getElementById('qAddrSuggestions');
+    if (!inp || !window.GM_GEO) return;
+    const q = inp.value.trim();
+    if (q.length < 3) {
+      toast('Escribe sector, calle o ciudad para ubicar en el mapa');
+      inp.focus();
+      return;
+    }
+    const card = document.getElementById('qGeoStatus');
+    if (card) {
+      card.className = 'geo-status-card loading';
+      card.textContent = `🔍 Buscando "${q}" en República Dominicana…`;
+    }
+    const results = await window.GM_GEO.searchAddress(q);
+    geoSuggestions = results;
+    if (!results.length) {
+      if (listBox) listBox.innerHTML = '';
+      updateGeoUI();
+      toast('No se encontró esa dirección. Toca directamente el punto en el mapa.');
+      return;
+    }
+    if (results.length === 1) {
+      pickGeoSuggestion(0);
+      return;
+    }
+    if (listBox) {
+      listBox.innerHTML = results.map((r, idx) => `
+        <button type="button" class="dgii-sugg-item" onclick="window.GM_DETAIL.pickGeoSuggestion(${idx})">
+          <strong>📍 ${esc(r.label)}</strong>
+          <span>${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}</span>
+        </button>
+      `).join('');
+    }
+    updateGeoUI();
+  }
+
+  function pickGeoSuggestion(idx) {
+    const item = geoSuggestions[idx];
+    const listBox = document.getElementById('qAddrSuggestions');
+    if (listBox) listBox.innerHTML = '';
+    if (!item || !geoPicker) return;
+    geoPicker.setWorksite(item.lat, item.lng, { addressLabel: item.label, shouldReverse: false });
+  }
+
+  function useMyLocation() {
+    if (!navigator.geolocation) {
+      toast('Tu navegador no soporta geolocalización GPS');
+      return;
+    }
+    const card = document.getElementById('qGeoStatus');
+    if (card) {
+      card.className = 'geo-status-card loading';
+      card.textContent = '📡 Obteniendo tu ubicación GPS actual…';
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (geoPicker) {
+          geoPicker.setWorksite(pos.coords.latitude, pos.coords.longitude, { shouldReverse: true });
+        }
+      },
+      () => {
+        updateGeoUI();
+        toast('Permiso de ubicación denegado. Toca directamente en el mapa.');
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+
+  /* =========================================================
+     VALORACIONES CON ESTRELLAS Y COMENTARIOS
+     ========================================================= */
+  function setReviewStars(n) {
+    selectedReviewStars = Math.min(5, Math.max(1, Number(n) || 5));
+    document.querySelectorAll('#revStarPicker .star-pick-btn').forEach((btn) => {
+      const val = Number(btn.dataset.star);
+      btn.classList.toggle('active', val <= selectedReviewStars);
+    });
+    const lbl = document.getElementById('revStarLabel');
+    if (lbl) lbl.textContent = STAR_LABELS[selectedReviewStars] || '';
+  }
+
+  function renderReviewsSection() {
+    if (!currentItem || !window.GM_REVIEWS) return;
+    const reviews = window.GM_REVIEWS.mergeReviews(currentItem.id, cloudReviews);
+    const stats = window.GM_REVIEWS.getStats(reviews);
+
+    // Actualizar badge de estrellas en el encabezado
+    const headerBadge = document.getElementById('eqRatingPill');
+    if (headerBadge) {
+      headerBadge.innerHTML = stats.count > 0
+        ? `★ ${stats.avg.toFixed(1)} <span style="font-weight:600; opacity:0.85;">(${stats.count} ${stats.count === 1 ? 'reseña' : 'reseñas'})</span>`
+        : '★ Nuevo equipo';
+    }
+
+    const overviewBox = document.getElementById('reviewsOverviewBox');
+    if (overviewBox) {
+      const barsHTML = [5, 4, 3, 2, 1].map((s) => {
+        const c = stats.breakdown[s] || 0;
+        const pct = stats.count > 0 ? Math.round((c / stats.count) * 100) : 0;
+        return `
+          <div class="r-bar-row">
+            <span style="width:24px;">${s}★</span>
+            <div class="r-bar-track"><div class="r-bar-fill" style="width:${pct}%;"></div></div>
+            <span style="width:22px; text-align:right; color:var(--text-muted);">${c}</span>
+          </div>
+        `;
+      }).join('');
+
+      overviewBox.innerHTML = `
+        <div class="reviews-score-box">
+          <div class="reviews-big-num">${stats.count > 0 ? stats.avg.toFixed(1) : '—'}</div>
+          <div class="reviews-stars-row">${window.GM_REVIEWS.renderStarsHTML(stats.avg)}</div>
+          <div class="reviews-count-lbl">${stats.count} ${stats.count === 1 ? 'valoración' : 'valoraciones'}</div>
+        </div>
+        <div class="reviews-bars">${barsHTML}</div>
+      `;
+    }
+
+    const listBox = document.getElementById('reviewsListBox');
+    if (listBox) {
+      if (!reviews.length) {
+        listBox.innerHTML = '<p style="font-size:13px; color:var(--text-muted);">Sé el primero en valorar este equipo.</p>';
+      } else {
+        listBox.innerHTML = reviews.map((r) => `
+          <div class="review-card">
+            <div class="review-card-head">
+              <div>
+                <div class="review-author">${esc(r.author)}</div>
+                <div class="review-meta">
+                  <span>${esc(r.date || '')}</span>
+                  ${r.verified ? '<span class="review-verified">✓ Cliente Green Mile</span>' : ''}
+                </div>
+              </div>
+              <div class="reviews-stars-row" style="font-size:14px; margin:0;">${window.GM_REVIEWS.renderStarsHTML(r.rating)}</div>
+            </div>
+            <p class="review-text">${esc(r.comment)}</p>
+          </div>
+        `).join('');
+      }
+    }
+  }
+
+  async function submitReview(e) {
+    e.preventDefault();
+    if (!currentItem || !window.GM_REVIEWS) return;
+    const authorEl = document.getElementById('revAuthor');
+    const commentEl = document.getElementById('revComment');
+    const author = (authorEl && authorEl.value.trim()) || '';
+    const comment = (commentEl && commentEl.value.trim()) || '';
+    if (author.length < 2) {
+      toast('Escribe tu nombre o empresa para publicar la reseña');
+      if (authorEl) authorEl.focus();
+      return;
+    }
+    if (comment.length < 5) {
+      toast('Escribe un breve comentario sobre el equipo');
+      if (commentEl) commentEl.focus();
+      return;
+    }
+    try {
+      await window.GM_REVIEWS.addReview(currentItem.id, {
+        author,
+        rating: selectedReviewStars,
+        comment,
+        verified: false
+      });
+      if (authorEl) authorEl.value = '';
+      if (commentEl) commentEl.value = '';
+      setReviewStars(5);
+      renderReviewsSection();
+      toast('★ ¡Gracias! Tu valoración fue publicada');
+    } catch (err) {
+      toast(err.message || 'No se pudo guardar la reseña');
+    }
+  }
 
   function stepQty(delta) {
     const inp = document.getElementById('qQty');
@@ -404,6 +692,23 @@
       }
     }
 
+    // Si escribió dirección pero aún no fijó el punto, intentar geocodificar automáticamente
+    if ((geoState.lat == null || geoState.lng == null) && window.GM_GEO && geoPicker) {
+      const typedAddr = document.getElementById('qAddr')?.value.trim() || '';
+      if (typedAddr.length >= 3) {
+        const hits = await window.GM_GEO.searchAddress(typedAddr);
+        if (hits.length > 0) {
+          await geoPicker.setWorksite(hits[0].lat, hits[0].lng, { addressLabel: hits[0].label, shouldReverse: false });
+        }
+      }
+    }
+
+    if (geoState.lat == null || geoState.lng == null) {
+      toast('Fija el punto exacto de la obra en el mapa para georreferenciar la dirección');
+      document.getElementById('worksiteMap')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
     if (!sigSigned) {
       toast('Dibuja tu firma en pantalla para continuar');
       document.getElementById('sigCanvas')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -423,6 +728,11 @@
       renterRnc: document.getElementById('qRnc').value.trim(),
       dgiiVerified: true,
       address: document.getElementById('qAddr').value.trim(),
+      worksiteLat: geoState.lat,
+      worksiteLng: geoState.lng,
+      distanceKm: geoState.distanceKm,
+      durationMin: geoState.durationMin,
+      transportCost: b.trans,
       startDate: calState.start,
       endDate: calState.end || calState.start,
       qty: b.qty,
@@ -455,7 +765,7 @@
     calState.end = '';
     renderCalendar();
     openContract(rec);
-    toast('✓ RNC validado en DGII y contrato firmado');
+    toast('✓ Obra georreferenciada, RNC validado y contrato firmado');
   }
 
   function openContract(b) {
@@ -463,6 +773,12 @@
     const rangeLabel = b.endDate && b.endDate !== b.startDate
       ? `del ${esc(b.startDate)} al ${esc(b.endDate)}`
       : `desde ${esc(b.startDate)}`;
+    const gpsLine = (b.worksiteLat != null && b.worksiteLng != null)
+      ? `<br><a href="https://www.google.com/maps?q=${b.worksiteLat},${b.worksiteLng}" target="_blank" rel="noopener" style="color:var(--orange); font-weight:700;">📍 GPS: ${Number(b.worksiteLat).toFixed(5)}, ${Number(b.worksiteLng).toFixed(5)}</a>`
+      : '';
+    const distLine = b.distanceKm
+      ? `<p style="font-size:13px; margin-bottom:6px;"><strong>Logística / Traslado:</strong> ${b.distanceKm} km desde ${esc(b.city)} ${b.transportCost > 0 ? `(${GM.fmtRD(b.transportCost)})` : '(Retiro en patio)'}</p>`
+      : '';
     document.getElementById('contractBody').innerHTML = `
       <div style="border:1.5px solid var(--border); border-radius:14px; padding:20px; background:#fff;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--navy); padding-bottom:12px; margin-bottom:14px; gap:10px;">
@@ -479,10 +795,11 @@
           </div>
           <div style="background:var(--bg); padding:10px; border-radius:10px;">
             <strong style="color:var(--navy); display:block;">CONTRATISTA</strong>
-            ${esc(b.renter)}<br>RNC: ${esc(b.renterRnc)}<br>Obra: ${esc(b.address)}
+            ${esc(b.renter)}<br>RNC: ${esc(b.renterRnc)}<br>Obra: ${esc(b.address)}${gpsLine}
           </div>
         </div>
         <p style="font-size:13px; margin-bottom:6px;"><strong>Equipo:</strong> ${esc(b.title)} (${esc(b.city)})</p>
+        ${distLine}
         <p style="font-size:13px; margin-bottom:12px;"><strong>Plazo:</strong> ${b.qty} ${esc(b.unitLabel)} (${rangeLabel})</p>
         <div style="background:var(--navy-soft); padding:12px; border-radius:10px; font-size:13px; margin-bottom:14px;">
           <div style="display:flex; justify-content:space-between;"><span>Subtotal Neto:</span><span>${GM.fmtRD(b.netSubtotal)}</span></div>
@@ -607,6 +924,7 @@
               <div class="eq-cat-label">${esc(it.category)}</div>
               <h1 class="eq-heading">${esc(it.title)}</h1>
               <div class="eq-subline">
+                <a href="#reviewsSection" class="rating-pill-link" id="eqRatingPill" onclick="event.preventDefault(); document.getElementById('reviewsSection')?.scrollIntoView({behavior:'smooth'});">★ 4.8</a>
                 <span>⚡ ${esc(it.power || 'Estándar')}</span>
                 <span>📅 Año ${esc(it.year || 'Verificado')}</span>
                 <span>🏢 Flota Verificada • Green Mile RD</span>
@@ -655,7 +973,7 @@
                 <div class="spec-item"><span>Año / Modelo</span><strong>${esc(it.year || 'Verificado')}</strong></div>
                 <div class="spec-item"><span>Provincia Base</span><strong>${esc(it.city)}, República Dominicana</strong></div>
                 <div class="spec-item"><span>Operador</span><strong>${it.operator ? 'Incluido en la tarifa' : 'Opcional / Equipo seco'}</strong></div>
-                <div class="spec-item"><span>Traslado Lowboy (Ida)</span><strong>${it.transportCost > 0 ? GM.fmtRD(it.transportCost) : 'Incluido / Retiro en patio'}</strong></div>
+                <div class="spec-item"><span>Traslado Lowboy (Base)</span><strong>${it.transportCost > 0 ? GM.fmtRD(it.transportCost) + ' + km' : 'Local incluido + km'}</strong></div>
                 <div class="spec-item"><span>Disponibilidad</span><strong id="specAvail">${it.busy ? 'En Obra (consultar fecha)' : 'Disponible Hoy'}</strong></div>
                 <div class="spec-item"><span>Facturación Fiscal</span><strong>Comprobante e-NCF (e-CF 31 · DGII)</strong></div>
               </div>
@@ -675,6 +993,41 @@
                   <a class="btn btn-ghost" style="background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.28);" href="${telHref}">📞 Llamar</a>
                 </div>
               </div>
+
+              <!-- VALORACIONES CON ESTRELLAS Y COMENTARIOS -->
+              <section class="reviews-section" id="reviewsSection">
+                <h3 class="section-label" style="margin-top:0;">Valoraciones y Comentarios del Equipo</h3>
+                <div class="reviews-overview" id="reviewsOverviewBox"></div>
+
+                <form class="review-form-box" onsubmit="window.GM_DETAIL.submitReview(event)">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                    <strong style="font-size:13.5px; color:var(--navy);">Califica este equipo</strong>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <div class="star-picker" id="revStarPicker" role="radiogroup" aria-label="Puntuación en estrellas">
+                        <button type="button" class="star-pick-btn active" data-star="1" onclick="window.GM_DETAIL.setReviewStars(1)" aria-label="1 estrella">★</button>
+                        <button type="button" class="star-pick-btn active" data-star="2" onclick="window.GM_DETAIL.setReviewStars(2)" aria-label="2 estrellas">★</button>
+                        <button type="button" class="star-pick-btn active" data-star="3" onclick="window.GM_DETAIL.setReviewStars(3)" aria-label="3 estrellas">★</button>
+                        <button type="button" class="star-pick-btn active" data-star="4" onclick="window.GM_DETAIL.setReviewStars(4)" aria-label="4 estrellas">★</button>
+                        <button type="button" class="star-pick-btn active" data-star="5" onclick="window.GM_DETAIL.setReviewStars(5)" aria-label="5 estrellas">★</button>
+                      </div>
+                      <span id="revStarLabel" style="font-size:11.5px; font-weight:700; color:var(--orange);">5 ★ — Excelente</span>
+                    </div>
+                  </div>
+                  <div class="f-grid" style="gap:10px;">
+                    <div class="f-field full">
+                      <label>Tu Nombre o Constructora</label>
+                      <div class="f-box"><input type="text" id="revAuthor" placeholder="Ej. Ing. Pedro Martínez — Constructora Este" required></div>
+                    </div>
+                    <div class="f-field full">
+                      <label>Comentario sobre rendimiento, estado o puntualidad</label>
+                      <div class="f-box"><textarea id="revComment" rows="2" placeholder="Cuéntanos tu experiencia con esta máquina en obra..." required></textarea></div>
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-navy" style="margin-top:10px; padding:9px 16px; font-size:12.5px;">Publicar Valoración</button>
+                </form>
+
+                <div class="review-list" id="reviewsListBox"></div>
+              </section>
             </div>
           </article>
         </div>
@@ -740,7 +1093,7 @@
                     <label>Traslado Cama Baja (Lowboy)</label>
                     <div class="f-box">
                       <select id="qTrans" onchange="window.GM_DETAIL.calcReceipt()">
-                        <option value="yes">${it.transportCost > 0 ? 'Con traslado a obra (' + GM.fmtRD(it.transportCost) + ')' : 'Traslado incluido (RD$ 0)'}</option>
+                        <option value="yes" id="qTransYesOpt">${it.transportCost > 0 ? 'Con traslado a obra (desde ' + GM.fmtRD(it.transportCost) + ' · según km)' : 'Con traslado a obra (local RD$ 0 · según km)'}</option>
                         <option value="no">Retiro directo en patio (RD$ 0)</option>
                       </select>
                     </div>
@@ -756,8 +1109,23 @@
                     <div id="qDgiiStatus" class="dgii-badge" style="display:none;"></div>
                   </div>
                   <div class="f-field full">
-                    <label>Dirección de Obra en RD</label>
-                    <div class="f-box"><input type="text" id="qAddr" placeholder="Sector, calle o referencia del proyecto" enterkeyhint="done" required></div>
+                    <label>Dirección de Obra en RD <small class="req-tag">Mapa y Distancia</small></label>
+                    <div class="geo-input-row">
+                      <div class="f-box">
+                        <input type="text" id="qAddr" placeholder="Sector, calle o proyecto (ej. Verón, Punta Cana)" enterkeyhint="search" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.GM_DETAIL.searchWorksiteAddr();}" required>
+                      </div>
+                      <button type="button" class="geo-btn" onclick="window.GM_DETAIL.searchWorksiteAddr()" title="Buscar en mapa">🔍 Buscar</button>
+                      <button type="button" class="geo-btn geo-btn-gps" onclick="window.GM_DETAIL.useMyLocation()" title="Usar mi ubicación GPS">📍 GPS</button>
+                    </div>
+                    <div id="qAddrSuggestions" class="dgii-sugg-list"></div>
+                    <div class="geo-map-wrap">
+                      <div id="worksiteMap" class="geo-map-canvas" aria-label="Mapa de ubicación de obra"></div>
+                      <div class="geo-map-legend">
+                        <span><i class="geo-pin-dot" style="background:#0D223A;"></i> Base (${esc(it.city)})</span>
+                        <span><i class="geo-pin-dot" style="background:#B85A27;"></i> Obra (toca o arrastra)</span>
+                      </div>
+                    </div>
+                    <div id="qGeoStatus" class="geo-status-card"></div>
                   </div>
 
                   <div class="f-field full">
@@ -808,6 +1176,8 @@
     renderCalendar();
     setupSig();
     calcReceipt();
+    initWorksiteMap();
+    renderReviewsSection();
 
     if (window.GM_DGII && window.GM_DGII.attachPair) {
       dgiiController = window.GM_DGII.attachPair({
@@ -833,7 +1203,12 @@
     calPrevMonth,
     calNextMonth,
     calPickDate,
-    calClear
+    calClear,
+    searchWorksiteAddr,
+    pickGeoSuggestion,
+    useMyLocation,
+    setReviewStars,
+    submitReview
   };
 
   async function initPage() {
@@ -866,6 +1241,12 @@
               pill.textContent = liveDoc.busy ? 'En Obra' : 'Disponible Hoy';
             }
           }
+        });
+      }
+      if (window.GM_FIREBASE.subscribeReviews) {
+        window.GM_FIREBASE.subscribeReviews(rawId, (list) => {
+          cloudReviews = Array.isArray(list) ? list : [];
+          renderReviewsSection();
         });
       }
     }

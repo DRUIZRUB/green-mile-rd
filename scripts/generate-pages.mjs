@@ -112,7 +112,7 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
           <div style="font-size:26px; font-weight:800; color:var(--navy);">RD$ 2,900 <span style="font-size:12px; font-weight:500; color:var(--text-muted);">/ mes</span></div>
           <ul style="list-style:none; margin-top:12px; font-size:13px; display:flex; flex-direction:column; gap:7px;">
             <li>✓ <strong>10% de descuento</strong> automático en alquileres</li>
-            <li>✓ Contratos digitales ilimitados con NCF</li>
+            <li>✓ Contratos digitales ilimitados con e-NCF</li>
             <li>✓ Prioridad de soporte en obra</li>
           </ul>
         </div>
@@ -132,6 +132,8 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
   <script src="${dataJs}"></script>
   <script src="${basePrefix}js/firebase-config.js"></script>
   <script src="${basePrefix}js/dgii-validator.js"></script>
+  <script src="${basePrefix}js/geo-map.js"></script>
+  <script src="${basePrefix}js/reviews.js"></script>
   <script src="${pageJs}"></script>
 </body>
 </html>
@@ -180,7 +182,7 @@ fs.writeFileSync(
     basePrefix: './',
     equipmentId: null,
     title: 'Anuncio de Maquinaria Pesada | Green Mile App RD',
-    description: 'Alquiler directo de maquinaria pesada en República Dominicana con cotizador, NCF B01 y contrato digital.',
+    description: 'Alquiler gestionado de maquinaria pesada en República Dominicana con cotizador, mapa de distancia, e-NCF y contrato digital.',
     canonicalUrl: `${BASE_PUBLIC_URL}equipo.html`,
     ogImageUrl: `${BASE_PUBLIC_URL}logo.png`
   }),

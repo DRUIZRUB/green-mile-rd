@@ -1063,3 +1063,298 @@ canvas#sigCanvas {
   border-radius: 50%;
   display: inline-block;
 }
+
+/* =========================================================
+   MAPA GEORREFERENCIADO Y CÁLCULO DE TRASLADO POR DISTANCIA
+   ========================================================= */
+.geo-input-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.geo-input-row .f-box {
+  flex: 1;
+  min-width: 0;
+}
+.geo-btn {
+  border: 1.5px solid var(--border, #E2E8F0);
+  background: var(--surface, #fff);
+  color: var(--navy, #0D223A);
+  border-radius: 12px;
+  padding: 0 11px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.geo-btn:hover {
+  background: var(--navy-soft, #F1F5F9);
+  border-color: var(--navy, #0D223A);
+}
+.geo-btn-gps {
+  background: var(--orange-soft, #FEF4EE);
+  border-color: rgba(184, 90, 39, 0.35);
+  color: var(--orange, #B85A27);
+}
+.geo-btn-gps:hover {
+  background: var(--orange, #B85A27);
+  color: #fff;
+}
+.geo-map-wrap {
+  margin-top: 8px;
+  border: 1.5px solid var(--border, #E2E8F0);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #E8EEF5;
+  position: relative;
+}
+.geo-map-canvas {
+  width: 100%;
+  height: 235px;
+  z-index: 1;
+}
+.geo-map-legend {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--surface, #fff);
+  border-top: 1px solid var(--border, #E2E8F0);
+  font-size: 11px;
+  color: var(--text-muted, #64748B);
+}
+.geo-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+.geo-pin-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.geo-status-card {
+  margin-top: 8px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  background: var(--navy-soft, #F1F5F9);
+  border: 1px solid var(--border, #E2E8F0);
+  color: var(--navy, #0D223A);
+}
+.geo-status-card.ready {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+  color: #065F46;
+}
+.geo-status-card.loading {
+  background: #FFF7ED;
+  border-color: #FED7AA;
+  color: #9A3412;
+}
+.geo-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.gm-map-pin-wrap {
+  background: transparent;
+  border: none;
+}
+.gm-map-pin {
+  width: 28px;
+  height: 28px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  border: 2.5px solid #fff;
+  box-shadow: 0 3px 10px rgba(13, 34, 58, 0.35);
+}
+.gm-map-pin span {
+  transform: rotate(45deg);
+}
+
+/* =========================================================
+   VALORACIÓN CON ESTRELLAS Y COMENTARIOS (RESEÑAS)
+   ========================================================= */
+.rating-pill-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+  font-weight: 800;
+  font-size: 12.5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.rating-pill-link:hover {
+  background: #FEF3C7;
+}
+.reviews-section {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border, #E2E8F0);
+}
+.reviews-overview {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 18px;
+  align-items: center;
+  background: var(--navy-soft, #F1F5F9);
+  border: 1px solid var(--border, #E2E8F0);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 520px) {
+  .reviews-overview {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+.reviews-score-box {
+  text-align: center;
+  min-width: 112px;
+}
+.reviews-big-num {
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--navy, #0D223A);
+}
+.reviews-stars-row {
+  display: inline-flex;
+  gap: 2px;
+  margin: 5px 0 3px;
+  font-size: 16px;
+}
+.gm-star {
+  color: #CBD5E1;
+}
+.gm-star.filled {
+  color: #F59E0B;
+}
+.reviews-count-lbl {
+  font-size: 11.5px;
+  color: var(--text-muted, #64748B);
+  font-weight: 600;
+}
+.reviews-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.r-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--navy, #0D223A);
+  font-weight: 700;
+}
+.r-bar-track {
+  flex: 1;
+  height: 7px;
+  border-radius: 999px;
+  background: #E2E8F0;
+  overflow: hidden;
+}
+.r-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #F59E0B;
+}
+.review-form-box {
+  background: var(--surface, #fff);
+  border: 1.5px solid var(--border, #E2E8F0);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.star-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.star-pick-btn {
+  border: none;
+  background: transparent;
+  font-size: 26px;
+  line-height: 1;
+  color: #CBD5E1;
+  cursor: pointer;
+  padding: 2px;
+  transition: transform 0.1s, color 0.1s;
+}
+.star-pick-btn.active {
+  color: #F59E0B;
+}
+.star-pick-btn:hover {
+  transform: scale(1.12);
+}
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.review-card {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #E2E8F0);
+  border-radius: 12px;
+  padding: 13px 14px;
+}
+.review-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.review-author {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--navy, #0D223A);
+}
+.review-meta {
+  font-size: 11px;
+  color: var(--text-muted, #64748B);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+.review-verified {
+  background: #ECFDF5;
+  color: #047857;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+}
+.review-text {
+  font-size: 13px;
+  color: var(--text, #0F172A);
+  line-height: 1.5;
+}

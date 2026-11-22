@@ -952,6 +952,14 @@
       #contractModal { position: absolute; inset: 0; background: #fff; padding: 0; }
       .no-print { display: none !important; }
     }
+    .gm-map-pin-wrap { background: transparent; border: none; }
+    .gm-map-pin {
+      width: 28px; height: 28px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+      display: flex; align-items: center; justify-content: center; color: #fff;
+      font-weight: 800; font-size: 12px; border: 2.5px solid #fff;
+      box-shadow: 0 3px 10px rgba(13, 34, 58, 0.35);
+    }
+    .gm-map-pin span { transform: rotate(45deg); }
   </style>
 </head>
 <body>
@@ -1285,7 +1293,7 @@
               <div class="f-field full">
                 <label>Provincia / Ciudad Base</label>
                 <div class="f-box">
-                  <select id="pubCity">
+                  <select id="pubCity" onchange="onPubCityChanged()">
                     <option value="Santo Domingo">Santo Domingo / DN</option>
                     <option value="Santiago">Santiago</option>
                     <option value="Punta Cana">Punta Cana / Bávaro</option>
@@ -1303,6 +1311,16 @@
                     <option value="Azua">Azua</option>
                     <option value="Moca">Moca</option>
                   </select>
+                </div>
+              </div>
+              <div class="f-field full">
+                <label>Ubicación del Patio en Mapa <small style="color:var(--orange); font-weight:700;">Para calcular traslado por km</small></label>
+                <div style="border:1.5px solid var(--border); border-radius:12px; overflow:hidden; background:#E8EEF5;">
+                  <div id="pubPatioMap" style="width:100%; height:170px; z-index:1;"></div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--surface); border-top:1px solid var(--border); font-size:11px; color:var(--text-muted);">
+                    <span id="pubPatioCoords">📍 Toca el mapa para ubicar tu patio</span>
+                    <button type="button" style="border:none; background:none; color:var(--orange); font-weight:700; cursor:pointer; font-size:11px;" onclick="usePatioGPS()">Usar mi GPS</button>
+                  </div>
                 </div>
               </div>
               <div class="f-field full">
@@ -1538,6 +1556,8 @@
   <script src="js/catalog-data.js"></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/dgii-validator.js"></script>
+  <script src="js/geo-map.js"></script>
+  <script src="js/reviews.js"></script>
   <script>
     const GM = window.GM_CATALOG;
     const LOGO_URI = document.getElementById('brandLogo').src;
@@ -1550,6 +1570,9 @@
     let bookings = initialState.bookings;
     let savedIds = initialState.savedIds;
     let isPro = initialState.isPro;
+    let allCloudReviews = {};
+    let pubPatioPicker = null;
+    let pubPatioLatLng = null;
 
     let activeTab = 'catalog';
     let activeCat = 'Todos';
@@ -1690,8 +1713,15 @@
             <div class="eq-cat">${item.category}${item.power ? ' • ' + item.power : ''}</div>
             <div class="eq-title"><a href="${url}" onclick="event.stopPropagation()">${item.title}</a></div>
             <div class="eq-owner">
-              <span>${item.owner}</span>
-              <span>${item.year || ''}</span>
+              <span style="display:inline-flex; align-items:center; gap:4px; font-weight:700; color:#92400E;">
+                ${(() => {
+                  const st = window.GM_REVIEWS ? window.GM_REVIEWS.getEquipmentSummary(item.id, allCloudReviews[String(item.id)]) : { avg: 4.9, count: 2 };
+                  return st.count > 0
+                    ? `<span style="color:#F59E0B;">★</span> ${st.avg.toFixed(1)} <small style="color:var(--text-muted); font-weight:500;">(${st.count})</small>`
+                    : '<span style="color:#F59E0B;">★</span> Nuevo';
+                })()}
+              </span>
+              <span>${item.year || ''} • Verificado</span>
             </div>
             <div class="eq-foot">
               <div class="eq-price">${fmtRD(item.priceDay)} <small>/ día</small></div>
@@ -2009,6 +2039,47 @@
       updateWiz();
     }
 
+    async function initPubPatioMap() {
+      if (!window.GM_GEO) return;
+      const city = document.getElementById('pubCity')?.value || 'Santo Domingo';
+      if (!pubPatioPicker) {
+        try {
+          pubPatioPicker = await window.GM_GEO.createPatioPicker({
+            mapId: 'pubPatioMap',
+            initialCity: city,
+            onChange: (pt) => {
+              pubPatioLatLng = pt;
+              const lbl = document.getElementById('pubPatioCoords');
+              if (lbl) lbl.textContent = `📍 Patio fijado (${pt.lat.toFixed(4)}, ${pt.lng.toFixed(4)})`;
+            }
+          });
+          if (pubPatioPicker) {
+            pubPatioLatLng = pubPatioPicker.getPoint();
+            const lbl = document.getElementById('pubPatioCoords');
+            if (lbl && pubPatioLatLng) lbl.textContent = `📍 Base en ${city} (${pubPatioLatLng.lat.toFixed(4)}, ${pubPatioLatLng.lng.toFixed(4)})`;
+          }
+        } catch (_) {}
+      } else {
+        setTimeout(() => pubPatioPicker.invalidate(), 150);
+      }
+    }
+
+    function onPubCityChanged() {
+      const city = document.getElementById('pubCity')?.value || 'Santo Domingo';
+      if (pubPatioPicker) pubPatioPicker.setCity(city);
+    }
+
+    function usePatioGPS() {
+      if (!navigator.geolocation) { toast('Tu navegador no soporta GPS'); return; }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (pubPatioPicker) pubPatioPicker.setPoint(pos.coords.latitude, pos.coords.longitude, true);
+        },
+        () => toast('No se pudo obtener GPS. Toca el mapa manualmente.'),
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
     function updateWiz() {
       [1, 2, 3].forEach(n => {
         document.getElementById('pStep' + n).style.display = n === wizStep ? 'block' : 'none';
@@ -2022,6 +2093,7 @@
       document.getElementById('wSubmit').style.display = wizStep === 3 ? 'inline-flex' : 'none';
       const bodyEl = document.getElementById('publishSheetBody');
       if (bodyEl) bodyEl.scrollTop = 0;
+      if (wizStep === 2) setTimeout(initPubPatioMap, 120);
     }
 
     const pubDgiiController = (window.GM_DGII && window.GM_DGII.attachPair)
@@ -2054,6 +2126,9 @@
 
       const day = Number(document.getElementById('pubPriceDay').value);
       const cat = document.getElementById('pubCat').value;
+      const cityVal = document.getElementById('pubCity').value;
+      const fallbackPt = window.GM_GEO ? window.GM_GEO.getCityCoords(cityVal) : null;
+      const basePt = pubPatioLatLng || fallbackPt;
       const newEq = {
         id: Date.now(),
         category: cat,
@@ -2065,7 +2140,9 @@
         priceHour: Number(document.getElementById('pubPriceHour').value) || Math.round(day / 7),
         priceWeek: Number(document.getElementById('pubPriceWeek').value) || Math.round(day * 6 * 0.9),
         transportCost: Number(document.getElementById('pubTransport').value) || 0,
-        city: document.getElementById('pubCity').value,
+        city: cityVal,
+        lat: basePt ? basePt.lat : null,
+        lng: basePt ? basePt.lng : null,
         operator: document.getElementById('pubOp').checked,
         owner,
         rnc: document.getElementById('pubRnc').value.trim() || 'N/A',
@@ -2112,6 +2189,12 @@
     function openContract(id) {
       const b = bookings.find(x => String(x.id) === String(id));
       if (!b) return;
+      const gpsLine = (b.worksiteLat != null && b.worksiteLng != null)
+        ? `<br><a href="https://www.google.com/maps?q=${b.worksiteLat},${b.worksiteLng}" target="_blank" rel="noopener" style="color:var(--orange); font-weight:700;">📍 GPS: ${Number(b.worksiteLat).toFixed(5)}, ${Number(b.worksiteLng).toFixed(5)}</a>`
+        : '';
+      const distLine = b.distanceKm
+        ? `<p style="font-size:13px; margin-bottom:6px;"><strong>Logística / Traslado:</strong> ${b.distanceKm} km desde ${b.city} ${b.transportCost > 0 ? `(${fmtRD(b.transportCost)})` : '(Retiro en patio)'}</p>`
+        : '';
       document.getElementById('contractBody').innerHTML = `
         <div style="border:1.5px solid var(--border); border-radius:14px; padding:20px; background:#fff;">
           <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--navy); padding-bottom:12px; margin-bottom:14px;">
@@ -2123,19 +2206,20 @@
           </div>
           <div style="font-size:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
             <div style="background:var(--bg); padding:10px; border-radius:10px;">
-              <strong style="color:var(--navy); display:block;">ARRENDADOR</strong>
-              ${b.owner}<br>RNC: ${b.ownerRnc}<br>Tel: +1 ${b.ownerPhone}
+              <strong style="color:var(--navy); display:block;">GESTOR / FACTURADOR</strong>
+              Green Mile Construction RD<br>Facturación Electrónica e-NCF<br>Cobro y Garantía Centralizada
             </div>
             <div style="background:var(--bg); padding:10px; border-radius:10px;">
               <strong style="color:var(--navy); display:block;">CONTRATISTA</strong>
-              ${b.renter}<br>RNC: ${b.renterRnc}<br>Obra: ${b.address}
+              ${b.renter}<br>RNC: ${b.renterRnc}<br>Obra: ${b.address}${gpsLine}
             </div>
           </div>
           <p style="font-size:13px; margin-bottom:6px;"><strong>Equipo:</strong> ${b.title} (${b.city})</p>
-          <p style="font-size:13px; margin-bottom:12px;"><strong>Plazo:</strong> ${b.qty} ${b.unitLabel} desde ${b.startDate}</p>
+          ${distLine}
+          <p style="font-size:13px; margin-bottom:12px;"><strong>Plazo:</strong> ${b.qty} ${b.unitLabel} ${b.endDate && b.endDate !== b.startDate ? `del ${b.startDate} al ${b.endDate}` : `desde ${b.startDate}`}</p>
           <div style="background:var(--navy-soft); padding:12px; border-radius:10px; font-size:13px; margin-bottom:14px;">
             <div style="display:flex; justify-content:space-between;"><span>Subtotal Neto:</span><span>${fmtRD(b.netSubtotal)}</span></div>
-            ${b.ncf ? `<div style="display:flex; justify-content:space-between;"><span>ITBIS 18% (NCF B01):</span><span>${fmtRD(b.itbis)}</span></div>` : ''}
+            ${b.ncf ? `<div style="display:flex; justify-content:space-between;"><span>ITBIS 18% (e-NCF):</span><span>${fmtRD(b.itbis)}</span></div>` : ''}
             <div style="display:flex; justify-content:space-between; font-weight:800; color:var(--navy); border-top:1px solid #CBD5E1; margin-top:6px; padding-top:6px;">
               <span>Total Acordado:</span><span>${fmtRD(b.total)}</span>
             </div>
@@ -2214,6 +2298,13 @@
         window.GM_FIREBASE.subscribeBookings((cloudBookings) => {
           bookings = cloudBookings;
           syncCounters();
+          renderCurrentTab();
+        });
+      }
+
+      if (window.GM_FIREBASE.subscribeAllReviews) {
+        window.GM_FIREBASE.subscribeAllReviews((grouped) => {
+          allCloudReviews = grouped || {};
           renderCurrentTab();
         });
       }
