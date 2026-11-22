@@ -36,6 +36,7 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0D223A" />
+  <link rel="icon" type="image/png" href="${logoSrc}" />
   <title>${escAttr(title)}</title>
   <meta name="description" content="${escAttr(description)}" />
   <link rel="canonical" href="${escAttr(canonicalUrl)}" />
@@ -48,8 +49,8 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
   <meta property="og:description" content="${escAttr(description)}" />
   <meta property="og:url" content="${escAttr(canonicalUrl)}" />
   <meta property="og:image" content="${escAttr(ogImageUrl)}" />
-  <meta property="og:image:width" content="640" />
-  <meta property="og:image:height" content="480" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escAttr(title)}" />
   <meta name="twitter:description" content="${escAttr(description)}" />
@@ -57,24 +58,32 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
   <link rel="manifest" href="${basePrefix}manifest.json" />
   <link rel="apple-touch-icon" href="${basePrefix}icons/apple-touch-icon.png" />
 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="${cssHref}" />
 </head>
 <body>
   <header class="detail-header">
     <div class="header-inner">
       <div class="header-left">
-        <a class="back-link" href="${homeHref}">← Catálogo</a>
-        <a class="brand-mini" href="${homeHref}">
-          <img src="${logoSrc}" alt="Green Mile Construction RD" />
-          <div>
-            <strong>GREEN MILE</strong>
-            <span>App RD</span>
-          </div>
+        <a class="back-link" href="${homeHref}" aria-label="Volver al Catálogo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+          <span class="back-label">Catálogo</span>
         </a>
       </div>
+      <a class="brand-logo-link" href="${homeHref}" aria-label="Green Mile Construction RD — Catálogo">
+        <img src="${logoSrc}" alt="Green Mile Construction RD" />
+      </a>
       <div class="header-actions">
-        <button type="button" class="btn btn-ghost btn-fav" id="headerFavBtn" onclick="window.GM_DETAIL && window.GM_DETAIL.toggleFavorite()">♡ Guardar</button>
-        <button type="button" class="btn btn-primary" onclick="window.GM_DETAIL && window.GM_DETAIL.nativeShare()">🔗 Compartir</button>
+        <button type="button" class="btn btn-ghost btn-fav" id="headerFavBtn" onclick="window.GM_DETAIL && window.GM_DETAIL.toggleFavorite()" aria-label="Guardar equipo en favoritos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+          <span class="btn-label">Guardar</span>
+        </button>
+        <button type="button" class="btn btn-primary btn-share-hdr" onclick="window.GM_DETAIL && window.GM_DETAIL.nativeShare()" aria-label="Compartir anuncio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span class="btn-label">Compartir</span>
+        </button>
       </div>
     </div>
   </header>
@@ -85,13 +94,29 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
     </div>
   </main>
 
+  <footer class="detail-footer">
+    <div class="detail-footer-inner">
+      <a class="footer-brand" href="${homeHref}" aria-label="Green Mile Construction RD">
+        <img src="${logoSrc}" alt="Green Mile Construction RD" />
+      </a>
+      <nav class="detail-footer-links" aria-label="Enlaces institucionales">
+        <a href="${homeHref}">Catálogo RD</a>
+        <a href="${basePrefix}acerca-de.html">Acerca de</a>
+        <a href="${basePrefix}terminos.html">Términos y Condiciones</a>
+        <a href="${basePrefix}privacidad.html">Seguridad y Privacidad</a>
+        <a href="${basePrefix}admin.html">Administración</a>
+      </nav>
+      <div class="detail-footer-copy">© 2026 Green Mile Construction RD · Alquiler Gestionado con e-NCF</div>
+    </div>
+  </footer>
+
   <!-- CONTRATO PDF IMPRIMIBLE -->
   <div class="sheet-backdrop" id="contractModal" onclick="if(event.target===this)window.GM_DETAIL.closeSheet('contractModal')">
     <div class="sheet">
       <div class="sheet-head no-print">
         <div>
-          <h3>Contrato Digital Firmado</h3>
-          <p>Listo para guardar en PDF o compartir</p>
+          <h3>Contrato Digital y Factura e-CF</h3>
+          <p>Listo para guardar en PDF, imprimir o radicar</p>
         </div>
         <button type="button" class="close-x" onclick="window.GM_DETAIL.closeSheet('contractModal')">&times;</button>
       </div>
@@ -115,7 +140,7 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
           <ul style="list-style:none; margin-top:12px; font-size:13px; display:flex; flex-direction:column; gap:7px;">
             <li>✓ <strong>10% de descuento</strong> automático en alquileres</li>
             <li>✓ Contratos digitales ilimitados con e-NCF</li>
-            <li>✓ Prioridad de soporte en obra</li>
+            <li>✓ Prioridad de soporte en obra y acceso a crédito corporativo</li>
           </ul>
         </div>
         <button type="button" class="btn btn-primary" style="width:100%;" onclick="window.GM_DETAIL.activatePro()">Activar Plan Pro</button>
@@ -135,6 +160,7 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
   <script src="${basePrefix}js/firebase-config.js"></script>
   <script src="${basePrefix}js/native-bridge.js"></script>
   <script src="${basePrefix}js/dgii-validator.js"></script>
+  <script src="${basePrefix}js/billing-engine.js"></script>
   <script src="${basePrefix}js/geo-map.js"></script>
   <script src="${basePrefix}js/reviews.js"></script>
   <script src="${pageJs}"></script>
@@ -158,7 +184,7 @@ for (const item of GM.DEFAULT_EQUIPMENT) {
   const ogJpgRel = `img/og/${imgName}.jpg`;
   const ogImageUrl = fs.existsSync(path.join(PUBLIC_DIR, ogJpgRel))
     ? `${BASE_PUBLIC_URL}${ogJpgRel}`
-    : `${BASE_PUBLIC_URL}logo.png`;
+    : `${BASE_PUBLIC_URL}img/og/green-mile-og.jpg`;
 
   const priceStr = GM.fmtRD(item.priceDay);
   const title = `${item.title} en ${item.city} — ${priceStr}/día | Green Mile RD`;
@@ -184,10 +210,10 @@ fs.writeFileSync(
   buildHtml({
     basePrefix: './',
     equipmentId: null,
-    title: 'Anuncio de Maquinaria Pesada | Green Mile App RD',
+    title: 'Anuncio de Maquinaria Pesada | Green Mile Construction RD',
     description: 'Alquiler gestionado de maquinaria pesada en República Dominicana con cotizador, mapa de distancia, e-NCF y contrato digital.',
     canonicalUrl: `${BASE_PUBLIC_URL}equipo.html`,
-    ogImageUrl: `${BASE_PUBLIC_URL}logo.png`
+    ogImageUrl: `${BASE_PUBLIC_URL}img/og/green-mile-og.jpg`
   }),
   'utf8'
 );

@@ -6,10 +6,21 @@
   <meta name="theme-color" content="#0D223A" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Green Mile App — Maquinaria en República Dominicana</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+  <title>Green Mile Construction RD — Maquinaria en República Dominicana</title>
   <meta name="description" content="App móvil y plataforma web para alquilar maquinaria pesada, publicar licitaciones de obra y firmar contratos digitales con NCF en República Dominicana." />
   <link rel="manifest" href="./manifest.json" />
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Green Mile Construction RD" />
+  <meta property="og:title" content="Green Mile Construction RD — Alquiler de Maquinaria Pesada" />
+  <meta property="og:description" content="Plataforma profesional para alquilar maquinaria pesada en toda la República Dominicana con validación DGII, mapa de distancia, contrato digital y e-NCF." />
+  <meta property="og:image" content="https://green-mile-rd.web.app/img/og/green-mile-og.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
       --navy: #0D223A;
@@ -39,7 +50,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.45;
@@ -73,10 +84,11 @@
 
     /* Top App Bar */
     header.app-header {
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(13, 34, 58, 0.055);
       position: sticky;
       top: 0;
       z-index: 45;
@@ -84,8 +96,8 @@
     .nav-wrap {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 0 18px;
-      height: 72px;
+      padding: 0 20px;
+      height: 94px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -94,57 +106,37 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
       cursor: pointer;
       user-select: none;
+      flex-shrink: 0;
+      transition: transform 0.18s ease;
+    }
+    .brand:hover {
+      transform: scale(1.03);
     }
     .brand img {
-      height: 52px;
-      width: auto;
-      max-width: 170px;
-      object-fit: contain;
-      display: block;
-    }
-    .brand-meta strong {
-      display: block;
-      font-size: 16px;
-      font-weight: 800;
-      letter-spacing: 0.4px;
-      color: var(--navy);
-      line-height: 1.1;
-    }
-    .brand-meta span {
-      display: inline-block;
-      font-size: 10px;
-      font-weight: 800;
-      color: #fff;
-      background: var(--orange);
-      padding: 2px 8px;
-      border-radius: 99px;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-      margin-top: 4px;
-    }
-    .hero-logo-card {
-      background: #FFFFFF;
-      border-radius: 18px;
-      padding: 10px 16px;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
-      border: 2px solid rgba(184, 90, 39, 0.55);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .hero-logo-card img {
       height: 76px;
       width: auto;
+      max-width: 220px;
       object-fit: contain;
       display: block;
     }
     @media (max-width: 640px) {
-      .brand-meta { display: none; }
-      .hero-logo-card img { height: 60px; }
+      .nav-wrap {
+        height: 80px;
+        padding: 0 14px;
+        gap: 8px;
+      }
+      .brand img {
+        height: 62px;
+      }
+      .top-actions {
+        gap: 6px;
+      }
+      .top-actions .btn {
+        padding: 9px 11px !important;
+        font-size: 12px !important;
+      }
     }
 
     /* Desktop Tabs (Hidden in Mobile / App Frame) */
@@ -1227,9 +1219,12 @@
         </div>
 
         <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <strong style="font-size:15px; color:var(--navy);">Contratos Firmados y Despachos</strong>
-            <button class="btn btn-ghost" style="padding:5px 10px; font-size:11px;" onclick="exportBackup()">Respaldo JSON</button>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+            <strong style="font-size:15px; color:var(--navy);">Contratos, Facturas e-CF y Despachos</strong>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <a class="btn btn-navy" style="padding:5px 10px; font-size:11px; text-decoration:none;" href="admin.html">⚙️ Centro Administrativo</a>
+              <button class="btn btn-ghost" style="padding:5px 10px; font-size:11px;" onclick="exportBackup()">Respaldo JSON</button>
+            </div>
           </div>
           <div id="profileContracts"></div>
         </div>
@@ -1282,6 +1277,7 @@
         <a href="acerca-de.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Acerca de</a>
         <a href="terminos.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Términos y Condiciones</a>
         <a href="privacidad.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Seguridad y Privacidad</a>
+        <a href="admin.html" style="color:var(--orange); font-weight:700; text-decoration:none;">⚙️ Administración</a>
       </div>
     </footer>
   </div>
@@ -1801,6 +1797,7 @@
   <script src="js/firebase-config.js"></script>
   <script src="js/native-bridge.js"></script>
   <script src="js/dgii-validator.js"></script>
+  <script src="js/billing-engine.js"></script>
   <script src="js/geo-map.js"></script>
   <script src="js/reviews.js"></script>
   <script>
@@ -2312,30 +2309,38 @@
 
       const cBox = document.getElementById('profileContracts');
       if (bookings.length === 0) {
-        cBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No hay contratos generados todavía. Al firmar un contrato aparecerá aquí con su enlace de tracking en vivo. Mientras tanto puedes probar el <a href="./tracking.html?demo=1" style="color:var(--orange); font-weight:700;">Demo de Tracking GPS</a>.</p>`;
+        cBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No hay contratos ni facturas e-CF generados todavía. Al confirmar un alquiler aparecerá aquí con su tracking en vivo. Mientras tanto puedes probar el <a href="./tracking.html?demo=1" style="color:var(--orange); font-weight:700;">Demo de Tracking GPS</a>.</p>`;
       } else {
-        cBox.innerHTML = bookings.map(b => {
+        cBox.innerHTML = bookings.map(raw => {
+          const b = window.GM_BILLING ? window.GM_BILLING.normalizeBooking(raw) : raw;
+          const pBadge = window.GM_BILLING ? window.GM_BILLING.paymentStatusBadge(b) : { text: 'REGISTRADO', bg: '#F1F5F9', color: '#0D223A' };
           const tr = allTrackingMap[String(b.id)];
-          let badgeHtml = `<span style="display:inline-block; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:999px; background:#F1F5F9; color:#475569; margin-top:4px;">⏱ Despacho programado</span>`;
+          let trackBadgeHtml = `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#F1F5F9; color:#475569;">⏱ Despacho programado</span>`;
           if (tr && tr.status === 'en_route') {
             const etaLabel = Number.isFinite(Number(tr.etaMin)) ? ` • ~${Math.max(1, Math.round(tr.etaMin))} min` : '';
-            badgeHtml = `<span style="display:inline-block; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:999px; background:#FEF4EE; color:#B85A27; margin-top:4px;">🟢 En camino a obra${etaLabel}</span>`;
+            trackBadgeHtml = `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#FEF4EE; color:#B85A27;">🟢 En camino${etaLabel}</span>`;
           } else if (tr && tr.status === 'arrived') {
-            badgeHtml = `<span style="display:inline-block; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:999px; background:#ECFDF5; color:#059669; margin-top:4px;">📍 Llegó a la obra</span>`;
+            trackBadgeHtml = `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#ECFDF5; color:#059669;">📍 En obra</span>`;
           } else if (tr && (tr.status === 'completed' || tr.status === 'operating')) {
-            badgeHtml = `<span style="display:inline-block; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:999px; background:#ECFDF5; color:#065F46; margin-top:4px;">✅ En operación</span>`;
+            trackBadgeHtml = `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#ECFDF5; color:#065F46;">✅ Operando</span>`;
           }
           return `
             <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
               <div>
+                <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
+                  <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${b.ncfType === 'E45' ? '#EFF6FF' : '#0D223A'}; color:${b.ncfType === 'E45' ? '#1E40AF' : '#fff'};">${b.ncfType || 'E31'}</span>
+                  <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${pBadge.bg}; color:${pBadge.color};">${pBadge.text}</span>
+                  ${trackBadgeHtml}
+                  ${b.encfNumber ? `<span style="font-size:10px; font-family:monospace; font-weight:800; color:var(--orange);">${b.encfNumber}</span>` : ''}
+                </div>
                 <strong style="font-size:14px; color:var(--navy); display:block;">${b.title}</strong>
-                <span style="font-size:11px; color:var(--text-muted); display:block;">${b.renter} • ${fmtRD(b.total)}</span>
-                ${badgeHtml}
+                <span style="font-size:11px; color:var(--text-muted);">${b.renter} • ${fmtRD(b.total)}</span>
               </div>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
                 <a class="btn btn-primary" style="padding:7px 11px; font-size:11px; text-decoration:none;" href="./tracking.html?booking=${encodeURIComponent(b.id)}">🗺️ Tracking</a>
                 <a class="btn btn-ghost" style="padding:7px 11px; font-size:11px; text-decoration:none;" href="./tracking.html?booking=${encodeURIComponent(b.id)}&role=operator">🚚 Operador</a>
-                <button class="btn btn-navy" style="padding:7px 12px; font-size:11px;" onclick="openContract(${b.id})">Ver PDF</button>
+                <button class="btn btn-navy" style="padding:7px 11px; font-size:11px;" onclick="openContract(${b.id}, 'invoice')">🧾 Factura e-CF</button>
+                <button class="btn btn-ghost" style="padding:7px 11px; font-size:11px;" onclick="openContract(${b.id}, 'contract')">📄 Contrato</button>
               </div>
             </div>
           `;
@@ -2725,71 +2730,63 @@
       toast('☁️ Solicitud publicada y sincronizada en Obras RD');
     }
 
-    function openContract(id) {
-      const b = bookings.find(x => String(x.id) === String(id));
-      if (!b) return;
-      const gpsLine = (b.worksiteLat != null && b.worksiteLng != null)
-        ? `<br><a href="https://www.google.com/maps?q=${b.worksiteLat},${b.worksiteLng}" target="_blank" rel="noopener" style="color:var(--orange); font-weight:700;">📍 GPS: ${Number(b.worksiteLat).toFixed(5)}, ${Number(b.worksiteLng).toFixed(5)}</a>`
-        : '';
-      const distLine = b.distanceKm
-        ? `<p style="font-size:13px; margin-bottom:6px;"><strong>Logística / Traslado:</strong> ${b.distanceKm} km desde ${b.city} ${b.transportCost > 0 ? `(${fmtRD(b.transportCost)})` : '(Retiro en patio)'}</p>`
-        : '';
-      const permitsLine = Array.isArray(b.worksitePermits) && b.worksitePermits.length
-        ? `<div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:10px; font-size:12px; color:#78350F; margin-bottom:12px;">
-            <strong>Permisos y Accesos de Obra:</strong> ${b.worksitePermits.join(' • ')}<br>
-            <span style="font-size:11px;">El contratista declara contar con estos permisos vigentes antes de la llegada del equipo y asume costos de standby, retención o viaje en vacío por falta de permisos.</span>
-          </div>`
-        : '';
+    let activeHomeDocId = null;
+    let activeHomeDocTab = 'contract';
+
+    function openContract(id, tab = 'contract') {
+      activeHomeDocId = id;
+      activeHomeDocTab = tab;
+      renderHomeDocModal();
+      openSheet('contractModal');
+    }
+
+    function switchHomeDocTab(tab) {
+      activeHomeDocTab = tab;
+      renderHomeDocModal();
+    }
+
+    function renderHomeDocModal() {
+      const raw = bookings.find(x => String(x.id) === String(activeHomeDocId));
+      if (!raw) return;
+      const BILL = window.GM_BILLING;
+      if (!BILL) return;
+      const b = BILL.normalizeBooking(raw);
+      const isGov = b.ncfType === 'E45';
+
+      let docHtml = '';
+      if (activeHomeDocTab === 'invoice') {
+        docHtml = BILL.buildPrintableInvoiceHtml(b, null, LOGO_URI);
+      } else if (activeHomeDocTab === 'gov' && isGov) {
+        docHtml = BILL.buildGovDossierHtml(b, null, LOGO_URI);
+      } else {
+        docHtml = BILL.buildPrintableContractHtml(b, null, LOGO_URI);
+      }
+
       const trackClientHref = `./tracking.html?booking=${encodeURIComponent(b.id)}`;
       const trackOpHref = `./tracking.html?booking=${encodeURIComponent(b.id)}&role=operator`;
       const absTrackClient = new URL(trackClientHref, window.location.href).href;
       const waTrackMsg = encodeURIComponent(`🚚 *Tracking GPS en Vivo — Green Mile RD*\nContrato #GM-${String(b.id).slice(-6)} • ${b.title}\nObra: ${b.address}\n\nSigue la unidad en el mapa en tiempo real:\n${absTrackClient}`);
+
       document.getElementById('contractBody').innerHTML = `
-        <div style="border:1.5px solid var(--border); border-radius:14px; padding:20px; background:#fff;">
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--navy); padding-bottom:12px; margin-bottom:14px;">
-            <div>
-              <strong style="font-size:16px; color:var(--navy);">GREEN MILE CONSTRUCTION RD</strong>
-              <div style="font-size:11px; font-weight:800; color:var(--orange);">CONTRATO #GM-${String(b.id).slice(-6)}</div>
-            </div>
-            <img src="${LOGO_URI}" style="height:40px;" alt="Logo">
+        <div class="auth-tabs no-print" style="grid-template-columns:repeat(${isGov ? 3 : 2}, 1fr); margin-bottom:12px;">
+          <button type="button" class="auth-tab ${activeHomeDocTab === 'contract' ? 'active' : ''}" onclick="switchHomeDocTab('contract')">📄 Contrato</button>
+          <button type="button" class="auth-tab ${activeHomeDocTab === 'invoice' ? 'active' : ''}" onclick="switchHomeDocTab('invoice')">🧾 Factura ${b.ncfType}</button>
+          ${isGov ? `<button type="button" class="auth-tab ${activeHomeDocTab === 'gov' ? 'active' : ''}" onclick="switchHomeDocTab('gov')">🏛️ Estado E45</button>` : ''}
+        </div>
+        ${docHtml}
+        <div class="no-print" style="margin-top:14px; padding:12px; border-radius:12px; background:#F8FAFC; border:1px solid var(--border);">
+          <div style="font-size:11px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px;">Tracking GPS en Vivo (Tipo Uber)</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+            <a class="btn btn-primary" style="text-align:center; font-size:12px; padding:10px; text-decoration:none;" href="${trackClientHref}">🗺️ Seguir en Mapa</a>
+            <a class="btn btn-navy" style="text-align:center; font-size:12px; padding:10px; text-decoration:none;" href="${trackOpHref}">🚚 Modo Operador</a>
           </div>
-          <div style="font-size:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
-            <div style="background:var(--bg); padding:10px; border-radius:10px;">
-              <strong style="color:var(--navy); display:block;">GESTOR / FACTURADOR</strong>
-              Green Mile Construction RD<br>Facturación Electrónica e-NCF<br>Cobro y Garantía Centralizada
-            </div>
-            <div style="background:var(--bg); padding:10px; border-radius:10px;">
-              <strong style="color:var(--navy); display:block;">CONTRATISTA</strong>
-              ${b.renter}<br>RNC: ${b.renterRnc}<br>Obra: ${b.address}${gpsLine}
-            </div>
-          </div>
-          <p style="font-size:13px; margin-bottom:6px;"><strong>Equipo:</strong> ${b.title} (${b.city})</p>
-          ${distLine}
-          <p style="font-size:13px; margin-bottom:10px;"><strong>Plazo:</strong> ${b.qty} ${b.unitLabel} ${b.endDate && b.endDate !== b.startDate ? `del ${b.startDate} al ${b.endDate}` : `desde ${b.startDate}`}</p>
-          ${permitsLine}
-          <div style="background:var(--navy-soft); padding:12px; border-radius:10px; font-size:13px; margin-bottom:14px;">
-            <div style="display:flex; justify-content:space-between;"><span>Subtotal Neto:</span><span>${fmtRD(b.netSubtotal)}</span></div>
-            ${b.ncf ? `<div style="display:flex; justify-content:space-between;"><span>ITBIS 18% (e-NCF):</span><span>${fmtRD(b.itbis)}</span></div>` : ''}
-            <div style="display:flex; justify-content:space-between; font-weight:800; color:var(--navy); border-top:1px solid #CBD5E1; margin-top:6px; padding-top:6px;">
-              <span>Total Acordado:</span><span>${fmtRD(b.total)}</span>
-            </div>
-          </div>
-          <div style="text-align:center; margin-top:12px;">
-            ${b.signature ? `<img src="${b.signature}" alt="Firma" style="height:52px; border-bottom:1px solid var(--navy); margin:0 auto 4px; display:block;">` : ''}
-            <span style="font-size:11px; font-weight:700; color:var(--navy);">Firma Digital — ${b.renter}</span>
-          </div>
-          <div class="no-print" style="margin-top:16px; padding:12px; border-radius:12px; background:#F8FAFC; border:1px solid var(--border);">
-            <div style="font-size:11px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px;">Tracking GPS en Vivo (Tipo Uber)</div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
-              <a class="btn btn-primary" style="text-align:center; font-size:12px; padding:10px; text-decoration:none;" href="${trackClientHref}">🗺️ Seguir en Mapa</a>
-              <a class="btn btn-navy" style="text-align:center; font-size:12px; padding:10px; text-decoration:none;" href="${trackOpHref}">🚚 Modo Operador</a>
-            </div>
-            <a class="btn btn-ghost" style="width:100%; text-align:center; font-size:12px; padding:9px; color:#15803D; border-color:#BBF7D0; background:#F0FDF4; text-decoration:none;" href="https://wa.me/?text=${waTrackMsg}" target="_blank" rel="noopener">📲 Compartir Tracking por WhatsApp</a>
-          </div>
-          <button class="btn btn-navy no-print" style="width:100%; margin-top:12px;" onclick="window.print()">Imprimir / Guardar PDF</button>
+          <a class="btn btn-ghost" style="width:100%; text-align:center; font-size:12px; padding:9px; color:#15803D; border-color:#BBF7D0; background:#F0FDF4; text-decoration:none;" href="https://wa.me/?text=${waTrackMsg}" target="_blank" rel="noopener">📲 Compartir Tracking por WhatsApp</a>
+        </div>
+        <div class="no-print" style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+          <button class="btn btn-navy" style="flex:1;" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+          <a class="btn btn-ghost" href="admin.html" style="text-decoration:none;">⚙️ Gestionar en Admin</a>
         </div>
       `;
-      openSheet('contractModal');
     }
 
     function activatePro() {

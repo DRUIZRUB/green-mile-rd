@@ -206,7 +206,7 @@
    * Conecta un par de inputs (Nombre/Empresa + RNC/Cédula) con validación en vivo DGII,
    * autocompletado bidireccional y verificación de coincidencia Razón Social ↔ RNC.
    */
-  function attachPair({ rncInputId, nameInputId, statusBoxId, suggestionsBoxId }) {
+  function attachPair({ rncInputId, nameInputId, statusBoxId, suggestionsBoxId, onRecordChange }) {
     const rncEl = document.getElementById(rncInputId);
     const nameEl = document.getElementById(nameInputId);
     const statusEl = document.getElementById(statusBoxId);
@@ -217,6 +217,14 @@
     let rncTimer = null;
     let nameTimer = null;
     let suppressNameSearch = false;
+
+    function notifyRecord() {
+      if (typeof onRecordChange === 'function') {
+        try {
+          onRecordChange(lastRecord);
+        } catch (_) {}
+      }
+    }
 
     function renderStatus() {
       const digits = cleanDigits(rncEl.value);
@@ -257,7 +265,7 @@
           statusEl.innerHTML = `
             <div class="dgii-head">${activeTag} <span>${escHtml(lastRecord.formattedRnc)}</span></div>
             <div class="dgii-title">${escHtml(officialName)}</div>
-            <div class="dgii-note">⚠️ Contribuyente no activo en DGII para emitir Crédito Fiscal (B01).</div>
+            <div class="dgii-note">⚠️ Contribuyente no activo en DGII para emitir e-CF 31 / e-CF 45 / e-CF 44.</div>
           `;
           return;
         }
@@ -323,6 +331,7 @@
       if (digits.length !== 9 && digits.length !== 11) {
         lastRecord = null;
         renderStatus();
+        notifyRecord();
         return;
       }
       renderStatus();
@@ -331,6 +340,7 @@
         lastRecord = res;
         if (res.formattedRnc) rncEl.value = res.formattedRnc;
         renderStatus();
+        notifyRecord();
       }
     }
 
@@ -344,6 +354,7 @@
       } else {
         lastRecord = null;
         renderStatus();
+        notifyRecord();
       }
     });
 
@@ -405,7 +416,8 @@
     });
 
     return {
-      validateBeforeSubmit: async ({ requireActiveForNcf = false } = {}) => {
+      getLastRecord: () => lastRecord,
+      validateBeforeSubmit: async ({ requireActiveForNcf = false, ncfCode = 'E31' } = {}) => {
         const digits = cleanDigits(rncEl.value);
         if (!digits) {
           return { valid: false, error: 'Ingresa el RNC (9 dígitos) o Cédula (11 dígitos).' };
@@ -416,13 +428,14 @@
         const res = await lookupRnc(digits);
         lastRecord = res;
         renderStatus();
+        notifyRecord();
 
         if (res.code === 'INVALID_CHECK_DIGIT' || res.code === 'RNC_NOT_IN_DGII') {
           return { valid: false, error: res.message };
         }
         if (res.found) {
           if (requireActiveForNcf && !res.isActive) {
-            return { valid: false, error: `El RNC ${res.formattedRnc} figura ${res.estado} en DGII y no aplica para NCF B01.` };
+            return { valid: false, error: `El RNC ${res.formattedRnc} figura ${res.estado} en DGII y no aplica para comprobante ${ncfCode}.` };
           }
           const cmp = namesMatch(nameEl.value, res.razonSocial, res.nombreComercial);
           if (!cmp.match) {
