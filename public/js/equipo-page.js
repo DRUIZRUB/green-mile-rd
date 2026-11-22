@@ -1,4 +1,4 @@
-/* Green Mile Construction RD — Página Individual de Anuncio con Facturación e-CF, Pago con Tarjeta y Flujo Gubernamental E45 */
+/* Green Mile Construction RD — Página Individual de Anuncio (Mapa GPS, Reseñas, Permisos RD, Facturación e-CF, Pago Tarjeta y Flujo Gubernamental E45) */
 (function () {
   const GM = window.GM_CATALOG;
   const BILL = window.GM_BILLING;
@@ -153,7 +153,10 @@
     const btn = document.getElementById('headerFavBtn');
     if (btn) {
       btn.classList.toggle('saved', isSaved);
-      btn.innerHTML = isSaved ? '♥ Guardado' : '♡ Guardar';
+      const heartSvg = isSaved
+        ? '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
+      btn.innerHTML = `${heartSvg}<span class="btn-label">${isSaved ? 'Guardado' : 'Guardar'}</span>`;
     }
   }
 
@@ -175,7 +178,28 @@
   }
 
   /* =========================================================
-     SELECTOR DE COMPROBANTE e-CF Y MÉTODO DE PAGO
+     GEORREFERENCIACIÓN Y TRANSPORTE POR DISTANCIA
+     ========================================================= */
+  let geoPicker = null;
+  const geoState = {
+    lat: null,
+    lng: null,
+    distanceKm: null,
+    durationMin: null,
+    calculatedCost: null,
+    isRoadRoute: false
+  };
+
+  function getActiveTransportCost() {
+    const it = currentItem;
+    const transEl = document.getElementById('qTrans');
+    if (!it || !transEl || transEl.value !== 'yes') return 0;
+    if (geoState.calculatedCost != null) return geoState.calculatedCost;
+    return Number(it.transportCost) || 0;
+  }
+
+  /* =========================================================
+     MODO DE FACTURACIÓN e-CF Y FORMAS DE PAGO
      ========================================================= */
   function selectNcfType(code, autoSwitchPay = true) {
     if (!BILL || !BILL.NCF_TYPES[code]) return;
@@ -229,7 +253,7 @@
 
   function updateSubmitButtonLabel() {
     const btn = document.getElementById('bookingSubmitBtn');
-    if (!btn) return;
+    if (!btn || !currentItem) return;
     const b = currentBreakdown();
     if (selectedPaymentMethod === 'card') {
       btn.textContent = `💳 Pagar ${GM.fmtRD(b.total)} y Emitir ${selectedNcfType}`;
@@ -247,9 +271,7 @@
     el.value = BILL.formatCardNumber(el.value);
     const brand = BILL.detectCardBrand(el.value);
     const pill = document.getElementById('cardBrandPill');
-    if (pill) {
-      pill.textContent = brand.toUpperCase();
-    }
+    if (pill) pill.textContent = brand.toUpperCase();
   }
 
   function onCardExpiryInput(el) {
@@ -261,7 +283,7 @@
     const it = currentItem;
     const mode = document.getElementById('qMode').value;
     const qty = Math.max(1, Number(document.getElementById('qQty').value) || 1);
-    const trans = document.getElementById('qTrans').value === 'yes' ? (it.transportCost || 0) : 0;
+    const trans = getActiveTransportCost();
     const govApplyItbisRet = Boolean(document.getElementById('qGovItbisRet')?.checked);
 
     let unit = it.priceDay, label = 'días';
@@ -281,12 +303,16 @@
         govApplyItbisRet,
         ownerRnc: it.rnc || ''
       });
-      return Object.assign(fin, { qty, unit, label, govApplyItbisRet, ncf: selectedNcfType !== 'E32' });
+      return Object.assign(fin, {
+        qty, unit, label, govApplyItbisRet,
+        ncf: selectedNcfType !== 'E32',
+        distanceKm: geoState.distanceKm
+      });
     }
 
     const net = base - disc + trans;
     const itbis = Math.round(net * 0.18);
-    return { qty, unit, label, base, disc, trans, netSubtotal: net, itbis, total: net + itbis, ncf: true, ncfType: 'E31' };
+    return { qty, unit, label, base, disc, trans, netSubtotal: net, itbis, total: net + itbis, ncf: true, ncfType: 'E31', distanceKm: geoState.distanceKm };
   }
 
   function calcReceipt() {
@@ -294,11 +320,14 @@
     if (!currentItem || !box) return;
     const b = currentBreakdown();
     const ncfMeta = (BILL && BILL.NCF_TYPES[b.ncfType]) || { badge: 'e-CF 31', isExempt: false, isGov: false };
+    const transLabel = b.distanceKm
+      ? `Traslado Lowboy (${b.distanceKm} km)`
+      : 'Traslado Lowboy (base)';
 
     box.innerHTML = `
       <div class="r-row"><span>${GM.fmtRD(b.unit)} × ${b.qty} ${b.label}</span><span>${GM.fmtRD(b.base)}</span></div>
       ${b.disc > 0 ? `<div class="r-row" style="color:var(--success); font-weight:700;"><span>Descuento Pro (-10%)</span><span>- ${GM.fmtRD(b.disc)}</span></div>` : ''}
-      ${b.trans > 0 ? `<div class="r-row"><span>Traslado Lowboy</span><span>${GM.fmtRD(b.trans)}</span></div>` : ''}
+      ${b.trans > 0 ? `<div class="r-row"><span>${transLabel}</span><span>${GM.fmtRD(b.trans)}</span></div>` : ''}
       <div class="r-row">
         <span>${ncfMeta.isExempt ? 'ITBIS 0% (Exento · e-CF 44)' : `ITBIS 18% (${ncfMeta.badge})`}</span>
         <span>${GM.fmtRD(b.itbis)}</span>
@@ -318,6 +347,7 @@
         </div>
       ` : ''}
     `;
+    updateGeoUI();
     updateSubmitButtonLabel();
   }
 
@@ -529,6 +559,306 @@
   }
 
   let dgiiController = null;
+  let geoSuggestions = [];
+  let cloudReviews = [];
+  let selectedReviewStars = 5;
+
+  const STAR_LABELS = {
+    1: '1 ★ — Deficiente',
+    2: '2 ★ — Regular',
+    3: '3 ★ — Bueno',
+    4: '4 ★ — Muy bueno',
+    5: '5 ★ — Excelente'
+  };
+
+  function updateGeoUI() {
+    const card = document.getElementById('qGeoStatus');
+    const transOpt = document.getElementById('qTransYesOpt');
+    const transSel = document.getElementById('qTrans');
+    if (transOpt && currentItem) {
+      if (geoState.distanceKm != null && geoState.calculatedCost != null) {
+        transOpt.textContent = `Con traslado a obra · ${geoState.distanceKm} km (${GM.fmtRD(geoState.calculatedCost)})`;
+      } else {
+        transOpt.textContent = currentItem.transportCost > 0
+          ? `Con traslado a obra (desde ${GM.fmtRD(currentItem.transportCost)} · según km)`
+          : 'Con traslado a obra (local RD$ 0 · según km)';
+      }
+    }
+    if (!card) return;
+    if (geoState.lat != null && geoState.lng != null && geoState.distanceKm != null) {
+      const wantsTrans = transSel && transSel.value === 'yes';
+      const costText = wantsTrans
+        ? `<strong>Traslado (${geoState.distanceKm} km): ${GM.fmtRD(geoState.calculatedCost || 0)}</strong>`
+        : '<strong>Retiro directo en patio (RD$ 0)</strong>';
+      card.className = 'geo-status-card ready';
+      card.innerHTML = `
+        <div class="geo-status-row">
+          <span><strong>✓ Obra georreferenciada</strong> (${geoState.lat.toFixed(5)}, ${geoState.lng.toFixed(5)})</span>
+          <a href="https://www.google.com/maps?q=${geoState.lat},${geoState.lng}" target="_blank" rel="noopener" style="color:#047857; font-weight:800; text-decoration:underline;">Abrir Maps ↗</a>
+        </div>
+        <div class="geo-status-row" style="margin-top:4px;">
+          <span>🚚 Ruta desde ${esc(currentItem.city)}: <strong>${geoState.distanceKm} km</strong> (~${geoState.durationMin} min)</span>
+          <span>${costText}</span>
+        </div>
+      `;
+    } else {
+      card.className = 'geo-status-card';
+      card.innerHTML = '📍 Toca el mapa, busca una dirección o presiona <strong>GPS</strong> para fijar el punto exacto de la obra y calcular el traslado por distancia.';
+    }
+  }
+
+  async function initWorksiteMap() {
+    if (!window.GM_GEO || !currentItem) return;
+    geoState.lat = null;
+    geoState.lng = null;
+    geoState.distanceKm = null;
+    geoState.durationMin = null;
+    geoState.calculatedCost = null;
+    try {
+      geoPicker = await window.GM_GEO.createWorksitePicker({
+        mapId: 'worksiteMap',
+        item: currentItem,
+        onAddressResolved: (addr) => {
+          const inp = document.getElementById('qAddr');
+          if (inp && addr) inp.value = addr;
+        },
+        onRoutingStart: (pt) => {
+          geoState.lat = pt.lat;
+          geoState.lng = pt.lng;
+          const card = document.getElementById('qGeoStatus');
+          if (card) {
+            card.className = 'geo-status-card loading';
+            card.textContent = '⏳ Calculando distancia vial y costo de traslado desde base…';
+          }
+        },
+        onChange: (st) => {
+          geoState.lat = st.dest.lat;
+          geoState.lng = st.dest.lng;
+          geoState.distanceKm = st.route.distanceKm;
+          geoState.durationMin = st.route.durationMin;
+          geoState.calculatedCost = st.quote.cost;
+          geoState.isRoadRoute = st.route.isRoadRoute;
+          calcReceipt();
+        }
+      });
+    } catch (_) {
+      const card = document.getElementById('qGeoStatus');
+      if (card) card.textContent = 'No se pudo cargar el mapa interactivo. Verifica tu conexión.';
+    }
+    updateGeoUI();
+  }
+
+  async function searchWorksiteAddr() {
+    const inp = document.getElementById('qAddr');
+    const listBox = document.getElementById('qAddrSuggestions');
+    if (!inp || !window.GM_GEO) return;
+    const q = inp.value.trim();
+    if (q.length < 3) {
+      toast('Escribe sector, calle o ciudad para ubicar en el mapa');
+      inp.focus();
+      return;
+    }
+    const card = document.getElementById('qGeoStatus');
+    if (card) {
+      card.className = 'geo-status-card loading';
+      card.textContent = `🔍 Buscando "${q}" en República Dominicana…`;
+    }
+    const results = await window.GM_GEO.searchAddress(q);
+    geoSuggestions = results;
+    if (!results.length) {
+      if (listBox) listBox.innerHTML = '';
+      updateGeoUI();
+      toast('No se encontró esa dirección. Toca directamente el punto en el mapa.');
+      return;
+    }
+    if (results.length === 1) {
+      pickGeoSuggestion(0);
+      return;
+    }
+    if (listBox) {
+      listBox.innerHTML = results.map((r, idx) => `
+        <button type="button" class="dgii-sugg-item" onclick="window.GM_DETAIL.pickGeoSuggestion(${idx})">
+          <strong>📍 ${esc(r.label)}</strong>
+          <span>${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}</span>
+        </button>
+      `).join('');
+    }
+    updateGeoUI();
+  }
+
+  function pickGeoSuggestion(idx) {
+    const item = geoSuggestions[idx];
+    const listBox = document.getElementById('qAddrSuggestions');
+    if (listBox) listBox.innerHTML = '';
+    if (!item || !geoPicker) return;
+    geoPicker.setWorksite(item.lat, item.lng, { addressLabel: item.label, shouldReverse: false });
+  }
+
+  function useMyLocation() {
+    if (!navigator.geolocation) {
+      toast('Tu navegador no soporta geolocalización GPS');
+      return;
+    }
+    const card = document.getElementById('qGeoStatus');
+    if (card) {
+      card.className = 'geo-status-card loading';
+      card.textContent = '📡 Obteniendo tu ubicación GPS actual…';
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (geoPicker) {
+          geoPicker.setWorksite(pos.coords.latitude, pos.coords.longitude, { shouldReverse: true });
+        }
+      },
+      () => {
+        updateGeoUI();
+        toast('Permiso de ubicación denegado. Toca directamente en el mapa.');
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+
+  /* =========================================================
+     VALORACIONES CON ESTRELLAS Y COMENTARIOS
+     ========================================================= */
+  function setReviewStars(n) {
+    selectedReviewStars = Math.min(5, Math.max(1, Number(n) || 5));
+    document.querySelectorAll('#revStarPicker .star-pick-btn').forEach((btn) => {
+      const val = Number(btn.dataset.star);
+      btn.classList.toggle('active', val <= selectedReviewStars);
+    });
+    const lbl = document.getElementById('revStarLabel');
+    if (lbl) lbl.textContent = STAR_LABELS[selectedReviewStars] || '';
+  }
+
+  function renderReviewsSection() {
+    if (!currentItem || !window.GM_REVIEWS) return;
+    const reviews = window.GM_REVIEWS.mergeReviews(currentItem.id, cloudReviews);
+    const stats = window.GM_REVIEWS.getStats(reviews);
+
+    const headerBadge = document.getElementById('eqRatingPill');
+    if (headerBadge) {
+      headerBadge.innerHTML = stats.count > 0
+        ? `★ ${stats.avg.toFixed(1)} <span style="font-weight:600; opacity:0.85;">(${stats.count} ${stats.count === 1 ? 'reseña' : 'reseñas'})</span>`
+        : '★ Nuevo equipo';
+    }
+
+    const overviewBox = document.getElementById('reviewsOverviewBox');
+    if (overviewBox) {
+      const barsHTML = [5, 4, 3, 2, 1].map((s) => {
+        const c = stats.breakdown[s] || 0;
+        const pct = stats.count > 0 ? Math.round((c / stats.count) * 100) : 0;
+        return `
+          <div class="r-bar-row">
+            <span style="width:24px;">${s}★</span>
+            <div class="r-bar-track"><div class="r-bar-fill" style="width:${pct}%;"></div></div>
+            <span style="width:22px; text-align:right; color:var(--text-muted);">${c}</span>
+          </div>
+        `;
+      }).join('');
+
+      overviewBox.innerHTML = `
+        <div class="reviews-score-box">
+          <div class="reviews-big-num">${stats.count > 0 ? stats.avg.toFixed(1) : '—'}</div>
+          <div class="reviews-stars-row">${window.GM_REVIEWS.renderStarsHTML(stats.avg)}</div>
+          <div class="reviews-count-lbl">${stats.count} ${stats.count === 1 ? 'valoración' : 'valoraciones'}</div>
+        </div>
+        <div class="reviews-bars">${barsHTML}</div>
+      `;
+    }
+
+    const listBox = document.getElementById('reviewsListBox');
+    if (listBox) {
+      if (!reviews.length) {
+        listBox.innerHTML = '<p style="font-size:13px; color:var(--text-muted);">Sé el primero en valorar este equipo.</p>';
+      } else {
+        listBox.innerHTML = reviews.map((r) => `
+          <div class="review-card">
+            <div class="review-card-head">
+              <div>
+                <div class="review-author">${esc(r.author)}</div>
+                <div class="review-meta">
+                  <span>${esc(r.date || '')}</span>
+                  ${r.verified ? '<span class="review-verified">✓ Cliente Green Mile</span>' : ''}
+                </div>
+              </div>
+              <div class="reviews-stars-row" style="font-size:14px; margin:0;">${window.GM_REVIEWS.renderStarsHTML(r.rating)}</div>
+            </div>
+            <p class="review-text">${esc(r.comment)}</p>
+          </div>
+        `).join('');
+      }
+    }
+  }
+
+  async function submitReview(e) {
+    e.preventDefault();
+    if (!currentItem || !window.GM_REVIEWS) return;
+    const authorEl = document.getElementById('revAuthor');
+    const commentEl = document.getElementById('revComment');
+    const author = (authorEl && authorEl.value.trim()) || '';
+    const comment = (commentEl && commentEl.value.trim()) || '';
+    if (author.length < 2) {
+      toast('Escribe tu nombre o empresa para publicar la reseña');
+      if (authorEl) authorEl.focus();
+      return;
+    }
+    if (comment.length < 5) {
+      toast('Escribe un breve comentario sobre el equipo');
+      if (commentEl) commentEl.focus();
+      return;
+    }
+    try {
+      await window.GM_REVIEWS.addReview(currentItem.id, {
+        author,
+        rating: selectedReviewStars,
+        comment,
+        verified: false
+      });
+      if (authorEl) authorEl.value = '';
+      if (commentEl) commentEl.value = '';
+      setReviewStars(5);
+      renderReviewsSection();
+      toast('★ ¡Gracias! Tu valoración fue publicada');
+    } catch (err) {
+      toast(err.message || 'No se pudo guardar la reseña');
+    }
+  }
+
+  /* =========================================================
+     PERMISOS DE OBRA RD Y CLÁUSULA STANDBY
+     ========================================================= */
+  function getPermitHintForCategory(cat) {
+    const c = String(cat || '');
+    if (c.includes('Izaje')) return '💡 Para grúas y brazos articulados en zonas urbanas suele requerirse permiso de Ayuntamiento e INTRANT / DIGESETT.';
+    if (c.includes('Movimiento')) return '💡 En excavaciones, corte o bote de material recuerda verificar permiso de Medio Ambiente y Ayuntamiento.';
+    if (c.includes('Energía')) return '💡 Para plantas eléctricas en zonas urbanas, hoteles o residenciales verifica control de ruido (Salud Pública / Residencial).';
+    if (c.includes('Transporte')) return '💡 Verifica horarios permitidos de circulación pesada (INTRANT) y autorización de acceso en residenciales o plazas.';
+    return '💡 Indica qué permisos o autorizaciones aplican a esta obra para evitar retrasos, multas o viajes en vacío.';
+  }
+
+  function toggleWorksitePermit(btn) {
+    if (!btn) return;
+    const val = btn.dataset.permit || '';
+    const isPrivate = val === 'Terreno privado sin restricciones';
+    const allBtns = document.querySelectorAll('#qPermitChips .permit-chip');
+    if (isPrivate) {
+      const willSelect = !btn.classList.contains('selected');
+      allBtns.forEach((b) => b.classList.remove('selected'));
+      if (willSelect) btn.classList.add('selected');
+    } else {
+      allBtns.forEach((b) => {
+        if (b.dataset.permit === 'Terreno privado sin restricciones') b.classList.remove('selected');
+      });
+      btn.classList.toggle('selected');
+    }
+  }
+
+  function getSelectedWorksitePermits() {
+    return Array.from(document.querySelectorAll('#qPermitChips .permit-chip.selected'))
+      .map((b) => b.dataset.permit)
+      .filter(Boolean);
+  }
 
   function stepQty(delta) {
     const inp = document.getElementById('qQty');
@@ -538,6 +868,9 @@
     calcReceipt();
   }
 
+  /* =========================================================
+     CONFIRMACIÓN DE RESERVA + PAGO + EMISIÓN e-CF
+     ========================================================= */
   async function confirmRent(e) {
     e.preventDefault();
     if (!calState.start) {
@@ -558,6 +891,35 @@
         document.getElementById('qRnc')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
+    }
+
+    // Geocodificar automáticamente si escribió dirección sin pin
+    if ((geoState.lat == null || geoState.lng == null) && window.GM_GEO && geoPicker) {
+      const typedAddr = document.getElementById('qAddr')?.value.trim() || '';
+      if (typedAddr.length >= 3) {
+        const hits = await window.GM_GEO.searchAddress(typedAddr);
+        if (hits.length > 0) {
+          await geoPicker.setWorksite(hits[0].lat, hits[0].lng, { addressLabel: hits[0].label, shouldReverse: false });
+        }
+      }
+    }
+
+    if (geoState.lat == null || geoState.lng == null) {
+      toast('Fija el punto exacto de la obra en el mapa para georreferenciar la dirección');
+      document.getElementById('worksiteMap')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    const worksitePermits = getSelectedWorksitePermits();
+    if (worksitePermits.length === 0) {
+      toast('Selecciona los permisos o tipo de acceso de la obra');
+      document.getElementById('qPermitChips')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (!document.getElementById('qPermitsDecl')?.checked) {
+      toast('Confirma la declaración de permisos vigentes de la obra');
+      document.getElementById('qPermitsDecl')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
     }
 
     // Validación Comprobante Gubernamental (e-CF 45)
@@ -654,6 +1016,12 @@
       renterRnc: document.getElementById('qRnc').value.trim(),
       dgiiVerified: true,
       address: document.getElementById('qAddr').value.trim(),
+      worksiteLat: geoState.lat,
+      worksiteLng: geoState.lng,
+      distanceKm: geoState.distanceKm,
+      durationMin: geoState.durationMin,
+      worksitePermits,
+      permitsDeclared: true,
       startDate: calState.start,
       endDate: calState.end || calState.start,
       qty: b.qty,
@@ -727,7 +1095,7 @@
       ? `✓ Pago aprobado (${cardInfo.authCode}) y ${rec.encfNumber} emitido`
       : (selectedNcfType === 'E45'
         ? '✓ Expediente Gubernamental (e-CF 45) registrado y enviado a Administración'
-        : '✓ Contrato firmado y reserva enviada a validación'));
+        : '✓ Obra georreferenciada, permisos confirmados y contrato firmado'));
   }
 
   function switchContractTab(tab) {
@@ -833,7 +1201,7 @@
     }
 
     const it = currentItem;
-    const adminCfg = BILL ? BILL.loadAdminConfig() : { banks: [], rpeNumber: 'RPE Activo' };
+    const adminCfg = BILL ? BILL.loadAdminConfig() : { banks: [], rpeNumber: 'RPE-2026-04819' };
     const shareUrl = GM.getShareUrl(it, BASE);
     const shareText = getShareText(it, shareUrl);
     const waShareHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
@@ -903,6 +1271,7 @@
               <div class="eq-cat-label">${esc(it.category)}</div>
               <h1 class="eq-heading">${esc(it.title)}</h1>
               <div class="eq-subline">
+                <a href="#reviewsSection" class="rating-pill-link" id="eqRatingPill" onclick="event.preventDefault(); document.getElementById('reviewsSection')?.scrollIntoView({behavior:'smooth'});">★ 4.8</a>
                 <span>⚡ ${esc(it.power || 'Estándar')}</span>
                 <span>📅 Año ${esc(it.year || 'Verificado')}</span>
                 <span>🏢 Flota Verificada • Green Mile RD</span>
@@ -951,10 +1320,15 @@
                 <div class="spec-item"><span>Año / Modelo</span><strong>${esc(it.year || 'Verificado')}</strong></div>
                 <div class="spec-item"><span>Provincia Base</span><strong>${esc(it.city)}, República Dominicana</strong></div>
                 <div class="spec-item"><span>Operador</span><strong>${it.operator ? 'Incluido en la tarifa' : 'Opcional / Equipo seco'}</strong></div>
-                <div class="spec-item"><span>Traslado Lowboy (Ida)</span><strong>${it.transportCost > 0 ? GM.fmtRD(it.transportCost) : 'Incluido / Retiro en patio'}</strong></div>
+                <div class="spec-item"><span>Traslado Lowboy (Base)</span><strong>${it.transportCost > 0 ? GM.fmtRD(it.transportCost) + ' + km' : 'Local incluido + km'}</strong></div>
                 <div class="spec-item"><span>Disponibilidad</span><strong id="specAvail">${it.busy ? 'En Obra (consultar fecha)' : 'Disponible Hoy'}</strong></div>
                 <div class="spec-item"><span>Facturación e-CF DGII</span><strong>e-CF 31 · 32 · 45 (Estado) · 44</strong></div>
               </div>
+              ${Array.isArray(it.certifications) && it.certifications.length ? `
+                <div class="cert-pills" aria-label="Documentación y permisos del equipo">
+                  ${it.certifications.map(c => `<span class="cert-pill">✓ ${esc(c)}</span>`).join('')}
+                </div>
+              ` : ''}
 
               <h3 class="section-label">Descripción y Aditamentos</h3>
               <p class="desc-text">${esc(it.desc)}</p>
@@ -971,11 +1345,46 @@
                   <a class="btn btn-ghost" style="background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.28);" href="${telHref}">📞 Llamar</a>
                 </div>
               </div>
+
+              <!-- VALORACIONES CON ESTRELLAS Y COMENTARIOS -->
+              <section class="reviews-section" id="reviewsSection">
+                <h3 class="section-label" style="margin-top:0;">Valoraciones y Comentarios del Equipo</h3>
+                <div class="reviews-overview" id="reviewsOverviewBox"></div>
+
+                <form class="review-form-box" onsubmit="window.GM_DETAIL.submitReview(event)">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                    <strong style="font-size:13.5px; color:var(--navy);">Califica este equipo</strong>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <div class="star-picker" id="revStarPicker" role="radiogroup" aria-label="Puntuación en estrellas">
+                        <button type="button" class="star-pick-btn active" data-star="1" onclick="window.GM_DETAIL.setReviewStars(1)" aria-label="1 estrella">★</button>
+                        <button type="button" class="star-pick-btn active" data-star="2" onclick="window.GM_DETAIL.setReviewStars(2)" aria-label="2 estrellas">★</button>
+                        <button type="button" class="star-pick-btn active" data-star="3" onclick="window.GM_DETAIL.setReviewStars(3)" aria-label="3 estrellas">★</button>
+                        <button type="button" class="star-pick-btn active" data-star="4" onclick="window.GM_DETAIL.setReviewStars(4)" aria-label="4 estrellas">★</button>
+                        <button type="button" class="star-pick-btn active" data-star="5" onclick="window.GM_DETAIL.setReviewStars(5)" aria-label="5 estrellas">★</button>
+                      </div>
+                      <span id="revStarLabel" style="font-size:11.5px; font-weight:700; color:var(--orange);">5 ★ — Excelente</span>
+                    </div>
+                  </div>
+                  <div class="f-grid" style="gap:10px;">
+                    <div class="f-field full">
+                      <label>Tu Nombre o Constructora</label>
+                      <div class="f-box"><input type="text" id="revAuthor" placeholder="Ej. Ing. Pedro Martínez — Constructora Este" required></div>
+                    </div>
+                    <div class="f-field full">
+                      <label>Comentario sobre rendimiento, estado o puntualidad</label>
+                      <div class="f-box"><textarea id="revComment" rows="2" placeholder="Cuéntanos tu experiencia con esta máquina en obra..." required></textarea></div>
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-navy" style="margin-top:10px; padding:9px 16px; font-size:12.5px;">Publicar Valoración</button>
+                </form>
+
+                <div class="review-list" id="reviewsListBox"></div>
+              </section>
             </div>
           </article>
         </div>
 
-        <!-- COLUMNA DERECHA: COTIZADOR + FACTURACIÓN e-CF + PAGO + FIRMA -->
+        <!-- COLUMNA DERECHA: COTIZADOR + MAPA + PERMISOS + FACTURACIÓN e-CF + PAGO + FIRMA -->
         <aside class="booking-col" id="bookingBox">
           <div class="panel">
             <div class="booking-head">
@@ -1036,7 +1445,7 @@
                     <label>Traslado Cama Baja (Lowboy)</label>
                     <div class="f-box">
                       <select id="qTrans" onchange="window.GM_DETAIL.calcReceipt()">
-                        <option value="yes">${it.transportCost > 0 ? 'Con traslado a obra (' + GM.fmtRD(it.transportCost) + ')' : 'Traslado incluido (RD$ 0)'}</option>
+                        <option value="yes" id="qTransYesOpt">${it.transportCost > 0 ? 'Con traslado a obra (desde ' + GM.fmtRD(it.transportCost) + ' · según km)' : 'Con traslado a obra (local RD$ 0 · según km)'}</option>
                         <option value="no">Retiro directo en patio (RD$ 0)</option>
                       </select>
                     </div>
@@ -1057,9 +1466,45 @@
                       <button type="button" onclick="window.GM_DETAIL.selectNcfType('E45', true)">Activar e-CF 45</button>
                     </div>
                   </div>
+
+                  <!-- MAPA GEORREFERENCIADO Y DIRECCIÓN DE OBRA -->
                   <div class="f-field full">
-                    <label>Dirección de Obra en RD</label>
-                    <div class="f-box"><input type="text" id="qAddr" placeholder="Sector, calle o referencia del proyecto" enterkeyhint="next" required></div>
+                    <label>Dirección de Obra en RD <small class="req-tag">Mapa y Distancia</small></label>
+                    <div class="geo-input-row">
+                      <div class="f-box">
+                        <input type="text" id="qAddr" placeholder="Sector, calle o proyecto (ej. Verón, Punta Cana)" enterkeyhint="search" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.GM_DETAIL.searchWorksiteAddr();}" required>
+                      </div>
+                      <button type="button" class="geo-btn" onclick="window.GM_DETAIL.searchWorksiteAddr()" title="Buscar en mapa">🔍 Buscar</button>
+                      <button type="button" class="geo-btn geo-btn-gps" onclick="window.GM_DETAIL.useMyLocation()" title="Usar mi ubicación GPS">📍 GPS</button>
+                    </div>
+                    <div id="qAddrSuggestions" class="dgii-sugg-list"></div>
+                    <div class="geo-map-wrap">
+                      <div id="worksiteMap" class="geo-map-canvas" aria-label="Mapa de ubicación de obra"></div>
+                      <div class="geo-map-legend">
+                        <span><i class="geo-pin-dot" style="background:#0D223A;"></i> Base (${esc(it.city)})</span>
+                        <span><i class="geo-pin-dot" style="background:#B85A27;"></i> Obra (toca o arrastra)</span>
+                      </div>
+                    </div>
+                    <div id="qGeoStatus" class="geo-status-card"></div>
+                  </div>
+
+                  <!-- PERMISOS DE OBRA RD -->
+                  <div class="f-field full">
+                    <label>Permisos y Accesos de Obra (RD) <small class="req-tag">Obligatorio</small></label>
+                    <div class="permit-chips" id="qPermitChips">
+                      <button type="button" class="permit-chip" data-permit="Ayuntamiento / Vía pública" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🏛️ Ayuntamiento</button>
+                      <button type="button" class="permit-chip" data-permit="INTRANT / DIGESETT" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🚧 INTRANT / DIGESETT</button>
+                      <button type="button" class="permit-chip" data-permit="Medio Ambiente" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🌿 Medio Ambiente</button>
+                      <button type="button" class="permit-chip" data-permit="Residencial / Condominio / Plaza" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🏘️ Residencial / Plaza</button>
+                      <button type="button" class="permit-chip" data-permit="Salud Pública / Control de ruido" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🏥 Salud Pública / Ruido</button>
+                      <button type="button" class="permit-chip" data-permit="Zona Franca / Hotel / Puerto" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🏭 Zona Franca / Hotel</button>
+                      <button type="button" class="permit-chip" data-permit="Terreno privado sin restricciones" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">✅ Terreno privado libre</button>
+                    </div>
+                    <div class="permit-hint">${getPermitHintForCategory(it.category)}</div>
+                    <label class="permit-decl">
+                      <input type="checkbox" id="qPermitsDecl" required>
+                      <span>Confirmo que la obra cuenta con los permisos y accesos vigentes seleccionados antes de la llegada del equipo. En caso de espera (<em>standby</em>), retención o viaje en vacío por falta de permisos, el contratista asume dichos costos.</span>
+                    </label>
                   </div>
 
                   <!-- MODO DE FACTURACIÓN ELECTRÓNICA (e-CF / DGII) -->
@@ -1287,6 +1732,8 @@
     selectNcfType(selectedNcfType, false);
     selectPaymentMethod(selectedPaymentMethod);
     calcReceipt();
+    initWorksiteMap();
+    renderReviewsSection();
 
     if (window.GM_DGII && window.GM_DGII.attachPair) {
       dgiiController = window.GM_DGII.attachPair({
@@ -1329,7 +1776,13 @@
     calPrevMonth,
     calNextMonth,
     calPickDate,
-    calClear
+    calClear,
+    searchWorksiteAddr,
+    pickGeoSuggestion,
+    useMyLocation,
+    setReviewStars,
+    submitReview,
+    toggleWorksitePermit
   };
 
   async function initPage() {
@@ -1362,6 +1815,12 @@
               pill.textContent = liveDoc.busy ? 'En Obra' : 'Disponible Hoy';
             }
           }
+        });
+      }
+      if (window.GM_FIREBASE.subscribeReviews) {
+        window.GM_FIREBASE.subscribeReviews(rawId, (list) => {
+          cloudReviews = Array.isArray(list) ? list : [];
+          renderReviewsSection();
         });
       }
     }

@@ -396,6 +396,46 @@
     return cfg;
   }
 
+  async function saveReview(review) {
+    if (!db || !review) return review;
+    await db.collection('reviews').doc(String(review.id)).set(Object.assign({}, review, {
+      equipmentId: String(review.equipmentId),
+      createdAt: global.firebase.firestore.FieldValue.serverTimestamp()
+    }), { merge: true });
+    return review;
+  }
+
+  function subscribeReviews(equipmentId, onData) {
+    if (!db || equipmentId == null) return () => {};
+    return db.collection('reviews')
+      .where('equipmentId', '==', String(equipmentId))
+      .onSnapshot(
+        (snap) => {
+          const list = [];
+          snap.forEach((doc) => list.push(Object.assign({}, doc.data(), { id: doc.data().id ?? doc.id })));
+          onData(list);
+        },
+        (err) => console.warn('[Green Mile Firebase] Reviews listener error:', err.message)
+      );
+  }
+
+  function subscribeAllReviews(onData) {
+    if (!db) return () => {};
+    return db.collection('reviews').onSnapshot(
+      (snap) => {
+        const grouped = {};
+        snap.forEach((doc) => {
+          const r = Object.assign({}, doc.data(), { id: doc.data().id ?? doc.id });
+          const k = String(r.equipmentId || '');
+          if (!grouped[k]) grouped[k] = [];
+          grouped[k].push(r);
+        });
+        onData(grouped);
+      },
+      (err) => console.warn('[Green Mile Firebase] All reviews listener error:', err.message)
+    );
+  }
+
   global.GM_FIREBASE = {
     isReady,
     compressImageFile,
@@ -419,6 +459,9 @@
     saveBooking,
     updateBooking,
     savePayout,
-    saveAdminConfig
+    saveAdminConfig,
+    saveReview,
+    subscribeReviews,
+    subscribeAllReviews
   };
 })(window);

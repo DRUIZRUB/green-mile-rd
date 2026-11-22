@@ -8,7 +8,7 @@
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   const SEED_VERSION = 'gm_rd_seed_v2';
-  const PUBLIC_BASE_URL = 'https://druizrub.github.io/green-mile-rd/';
+  const PUBLIC_BASE_URL = 'https://green-mile-rd.web.app/';
 
   const DEFAULT_EQUIPMENT = [
   {

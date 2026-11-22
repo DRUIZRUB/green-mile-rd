@@ -6,8 +6,19 @@
   <meta name="theme-color" content="#0D223A" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Green Mile App — Maquinaria en República Dominicana</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+  <title>Green Mile Construction RD — Maquinaria en República Dominicana</title>
   <meta name="description" content="App móvil y plataforma web para alquilar maquinaria pesada, publicar licitaciones de obra y firmar contratos digitales con NCF en República Dominicana." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Green Mile Construction RD" />
+  <meta property="og:title" content="Green Mile Construction RD — Alquiler de Maquinaria Pesada" />
+  <meta property="og:description" content="Plataforma profesional para alquilar maquinaria pesada en toda la República Dominicana con validación DGII, mapa de distancia, contrato digital y e-NCF." />
+  <meta property="og:image" content="https://green-mile-rd.web.app/img/og/green-mile-og.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
       --navy: #0D223A;
@@ -37,7 +48,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.45;
@@ -71,10 +82,11 @@
 
     /* Top App Bar */
     header.app-header {
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(13, 34, 58, 0.055);
       position: sticky;
       top: 0;
       z-index: 45;
@@ -82,8 +94,8 @@
     .nav-wrap {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 0 18px;
-      height: 72px;
+      padding: 0 20px;
+      height: 94px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -92,57 +104,37 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
       cursor: pointer;
       user-select: none;
+      flex-shrink: 0;
+      transition: transform 0.18s ease;
+    }
+    .brand:hover {
+      transform: scale(1.03);
     }
     .brand img {
-      height: 52px;
-      width: auto;
-      max-width: 170px;
-      object-fit: contain;
-      display: block;
-    }
-    .brand-meta strong {
-      display: block;
-      font-size: 16px;
-      font-weight: 800;
-      letter-spacing: 0.4px;
-      color: var(--navy);
-      line-height: 1.1;
-    }
-    .brand-meta span {
-      display: inline-block;
-      font-size: 10px;
-      font-weight: 800;
-      color: #fff;
-      background: var(--orange);
-      padding: 2px 8px;
-      border-radius: 99px;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-      margin-top: 4px;
-    }
-    .hero-logo-card {
-      background: #FFFFFF;
-      border-radius: 18px;
-      padding: 10px 16px;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
-      border: 2px solid rgba(184, 90, 39, 0.55);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .hero-logo-card img {
       height: 76px;
       width: auto;
+      max-width: 220px;
       object-fit: contain;
       display: block;
     }
     @media (max-width: 640px) {
-      .brand-meta { display: none; }
-      .hero-logo-card img { height: 60px; }
+      .nav-wrap {
+        height: 80px;
+        padding: 0 14px;
+        gap: 8px;
+      }
+      .brand img {
+        height: 62px;
+      }
+      .top-actions {
+        gap: 6px;
+      }
+      .top-actions .btn {
+        padding: 9px 11px !important;
+        font-size: 12px !important;
+      }
     }
 
     /* Desktop Tabs (Hidden in Mobile / App Frame) */
@@ -1034,6 +1026,23 @@
       #contractModal { position: absolute; inset: 0; background: #fff; padding: 0; }
       .no-print { display: none !important; }
     }
+    .gm-map-pin-wrap { background: transparent; border: none; }
+    .gm-map-pin {
+      width: 28px; height: 28px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+      display: flex; align-items: center; justify-content: center; color: #fff;
+      font-weight: 800; font-size: 12px; border: 2.5px solid #fff;
+      box-shadow: 0 3px 10px rgba(13, 34, 58, 0.35);
+    }
+    .gm-map-pin span { transform: rotate(45deg); }
+    .permit-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 4px; }
+    .permit-chip {
+      border: 1.5px solid var(--border); background: var(--surface); color: var(--navy);
+      border-radius: 10px; padding: 7px 10px; font-size: 12px; font-weight: 700; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 5px; transition: all 0.14s;
+    }
+    .permit-chip.selected {
+      background: var(--orange-soft); border-color: var(--orange); color: var(--orange-hover);
+    }
   </style>
 </head>
 <body>
@@ -1492,7 +1501,7 @@
               <div class="f-field full">
                 <label>Provincia / Ciudad Base</label>
                 <div class="f-box">
-                  <select id="pubCity">
+                  <select id="pubCity" onchange="onPubCityChanged()">
                     <option value="Santo Domingo">Santo Domingo / DN</option>
                     <option value="Santiago">Santiago</option>
                     <option value="Punta Cana">Punta Cana / Bávaro</option>
@@ -1513,6 +1522,16 @@
                 </div>
               </div>
               <div class="f-field full">
+                <label>Ubicación del Patio en Mapa <small style="color:var(--orange); font-weight:700;">Para calcular traslado por km</small></label>
+                <div style="border:1.5px solid var(--border); border-radius:12px; overflow:hidden; background:#E8EEF5;">
+                  <div id="pubPatioMap" style="width:100%; height:170px; z-index:1;"></div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--surface); border-top:1px solid var(--border); font-size:11px; color:var(--text-muted);">
+                    <span id="pubPatioCoords">📍 Toca el mapa para ubicar tu patio</span>
+                    <button type="button" style="border:none; background:none; color:var(--orange); font-weight:700; cursor:pointer; font-size:11px;" onclick="usePatioGPS()">Usar mi GPS</button>
+                  </div>
+                </div>
+              </div>
+              <div class="f-field full">
                 <label class="switch-row">
                   <div>
                     <strong>Incluye Operador Certificado</strong>
@@ -1521,6 +1540,16 @@
                   <input type="checkbox" id="pubOp" style="display:none;">
                   <div class="sw-knob"></div>
                 </label>
+              </div>
+              <div class="f-field full">
+                <label>Documentación y Permisos del Equipo (RD) <small style="color:var(--text-muted); font-weight:500;">Aumenta la confianza de obras grandes</small></label>
+                <div class="permit-chips" id="pubCertChips">
+                  <button type="button" class="permit-chip selected" data-cert="Seguro Responsabilidad Civil al día" onclick="this.classList.toggle('selected')">🛡️ Seguro RC al día</button>
+                  <button type="button" class="permit-chip" data-cert="Certificación de Izaje vigente" onclick="this.classList.toggle('selected')">🏗️ Certificación de Izaje</button>
+                  <button type="button" class="permit-chip" data-cert="Permiso INTRANT Carga Pesada" onclick="this.classList.toggle('selected')">🚛 Permiso INTRANT</button>
+                  <button type="button" class="permit-chip" data-cert="Operador con Licencia / Certificación" onclick="this.classList.toggle('selected')">👷 Operador Certificado</button>
+                  <button type="button" class="permit-chip selected" data-cert="Mantenimiento Preventivo al día" onclick="this.classList.toggle('selected')">🔧 Mantenimiento al día</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1623,13 +1652,25 @@
               <div class="f-box"><span class="f-prefix">+1</span><input type="tel" id="rPhone" placeholder="829-555-0122" required></div>
             </div>
             <div class="f-field full">
+              <label>Permisos y Accesos de la Obra (RD)</label>
+              <div class="permit-chips" id="reqPermitChips">
+                <button type="button" class="permit-chip" data-permit="Ayuntamiento" onclick="toggleReqPermit(this)">🏛️ Ayuntamiento</button>
+                <button type="button" class="permit-chip" data-permit="INTRANT / DIGESETT" onclick="toggleReqPermit(this)">🚧 INTRANT / DIGESETT</button>
+                <button type="button" class="permit-chip" data-permit="Medio Ambiente" onclick="toggleReqPermit(this)">🌿 Medio Ambiente</button>
+                <button type="button" class="permit-chip" data-permit="Residencial / Plaza" onclick="toggleReqPermit(this)">🏘️ Residencial / Plaza</button>
+                <button type="button" class="permit-chip" data-permit="Salud Pública / Ruido" onclick="toggleReqPermit(this)">🏥 Salud Pública</button>
+                <button type="button" class="permit-chip" data-permit="Zona Franca / Hotel" onclick="toggleReqPermit(this)">🏭 Zona Franca / Hotel</button>
+                <button type="button" class="permit-chip selected" data-permit="Terreno privado libre" onclick="toggleReqPermit(this)">✅ Terreno privado libre</button>
+              </div>
+            </div>
+            <div class="f-field full">
               <label>Urgencia y detalles de obra</label>
               <div class="f-box"><textarea id="rNotes" placeholder="Para iniciar este lunes, terreno compacto..."></textarea></div>
             </div>
             <div class="f-field full">
               <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-muted); text-transform:none; letter-spacing:0;">
                 <input type="checkbox" id="reqTerms" required style="margin-top:3px; accent-color:var(--orange);">
-                <span>Acepto las <a href="#" onclick="event.preventDefault(); openSheet('policiesSheet');" style="color:var(--orange); font-weight:700; text-decoration:underline;">Políticas de Intermediación, Cobro y e-NCF</a> de Green Mile RD.</span>
+                <span>Confirmo que la obra gestiona sus permisos vigentes y acepto las <a href="#" onclick="event.preventDefault(); openSheet('policiesSheet');" style="color:var(--orange); font-weight:700; text-decoration:underline;">Políticas de Intermediación, Cobro y e-NCF</a> de Green Mile RD.</span>
               </label>
             </div>
           </div>
@@ -1735,6 +1776,8 @@
   <script src="js/firebase-config.js"></script>
   <script src="js/dgii-validator.js"></script>
   <script src="js/billing-engine.js"></script>
+  <script src="js/geo-map.js"></script>
+  <script src="js/reviews.js"></script>
   <script>
     const GM = window.GM_CATALOG;
     const LOGO_URI = document.getElementById('brandLogo').src;
@@ -1747,6 +1790,9 @@
     let bookings = initialState.bookings;
     let savedIds = initialState.savedIds;
     let isPro = initialState.isPro;
+    let allCloudReviews = {};
+    let pubPatioPicker = null;
+    let pubPatioLatLng = null;
 
     let activeTab = 'catalog';
     let activeCat = 'Todos';
@@ -1887,8 +1933,15 @@
             <div class="eq-cat">${item.category}${item.power ? ' • ' + item.power : ''}</div>
             <div class="eq-title"><a href="${url}" onclick="event.stopPropagation()">${item.title}</a></div>
             <div class="eq-owner">
-              <span>${item.owner}</span>
-              <span>${item.year || ''}</span>
+              <span style="display:inline-flex; align-items:center; gap:4px; font-weight:700; color:#92400E;">
+                ${(() => {
+                  const st = window.GM_REVIEWS ? window.GM_REVIEWS.getEquipmentSummary(item.id, allCloudReviews[String(item.id)]) : { avg: 4.9, count: 2 };
+                  return st.count > 0
+                    ? `<span style="color:#F59E0B;">★</span> ${st.avg.toFixed(1)} <small style="color:var(--text-muted); font-weight:500;">(${st.count})</small>`
+                    : '<span style="color:#F59E0B;">★</span> Nuevo';
+                })()}
+              </span>
+              <span>${item.year || ''} • Verificado</span>
             </div>
             <div class="eq-foot">
               <div class="eq-price">${fmtRD(item.priceDay)} <small>/ día</small></div>
@@ -2008,11 +2061,15 @@
       box.innerHTML = list.map(r => {
         const refCode = `OBRA-${String(r.id).slice(-4)}`;
         const msg = encodeURIComponent(`Hola Green Mile RD, tengo equipo disponible para la solicitud ${refCode}: "${r.title}" en ${r.city} (Presupuesto ${fmtRD(r.budget)}/día). Quiero postular mi equipo.`);
+        const permitsHTML = Array.isArray(r.permits) && r.permits.length
+          ? `<div style="display:flex; flex-wrap:wrap; gap:5px;">${r.permits.map(p => `<span style="font-size:10.5px; font-weight:700; background:var(--navy-soft); color:var(--navy); padding:2px 7px; border-radius:999px;">📋 ${p}</span>`).join('')}</div>`
+          : '';
         return `
           <div style="background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--orange); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow-sm);">
             <div style="font-size:11px; font-weight:800; color:var(--orange); text-transform:uppercase;">${r.city} • Presupuesto ${fmtRD(r.budget)}/día</div>
             <strong style="font-size:16px; color:var(--navy);">${r.title}</strong>
             <p style="font-size:13px; color:var(--text-muted);">${r.notes || 'Disponibilidad inmediata requerida.'}</p>
+            ${permitsHTML}
             <div style="display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid var(--border); margin-top:auto; gap:8px;">
               <span style="font-size:12px; font-weight:700; color:var(--navy);">🔒 ${refCode} • Gestionado por Green Mile</span>
               <a class="btn btn-wa" style="padding:8px 14px; font-size:12px; white-space:nowrap;" target="_blank" rel="noopener" href="https://wa.me/${GREEN_MILE_WA}?text=${msg}">Postular mi Equipo</a>
@@ -2471,6 +2528,47 @@
       updateWiz();
     }
 
+    async function initPubPatioMap() {
+      if (!window.GM_GEO) return;
+      const city = document.getElementById('pubCity')?.value || 'Santo Domingo';
+      if (!pubPatioPicker) {
+        try {
+          pubPatioPicker = await window.GM_GEO.createPatioPicker({
+            mapId: 'pubPatioMap',
+            initialCity: city,
+            onChange: (pt) => {
+              pubPatioLatLng = pt;
+              const lbl = document.getElementById('pubPatioCoords');
+              if (lbl) lbl.textContent = `📍 Patio fijado (${pt.lat.toFixed(4)}, ${pt.lng.toFixed(4)})`;
+            }
+          });
+          if (pubPatioPicker) {
+            pubPatioLatLng = pubPatioPicker.getPoint();
+            const lbl = document.getElementById('pubPatioCoords');
+            if (lbl && pubPatioLatLng) lbl.textContent = `📍 Base en ${city} (${pubPatioLatLng.lat.toFixed(4)}, ${pubPatioLatLng.lng.toFixed(4)})`;
+          }
+        } catch (_) {}
+      } else {
+        setTimeout(() => pubPatioPicker.invalidate(), 150);
+      }
+    }
+
+    function onPubCityChanged() {
+      const city = document.getElementById('pubCity')?.value || 'Santo Domingo';
+      if (pubPatioPicker) pubPatioPicker.setCity(city);
+    }
+
+    function usePatioGPS() {
+      if (!navigator.geolocation) { toast('Tu navegador no soporta GPS'); return; }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (pubPatioPicker) pubPatioPicker.setPoint(pos.coords.latitude, pos.coords.longitude, true);
+        },
+        () => toast('No se pudo obtener GPS. Toca el mapa manualmente.'),
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
     function updateWiz() {
       [1, 2, 3].forEach(n => {
         document.getElementById('pStep' + n).style.display = n === wizStep ? 'block' : 'none';
@@ -2484,6 +2582,7 @@
       document.getElementById('wSubmit').style.display = wizStep === 3 ? 'inline-flex' : 'none';
       const bodyEl = document.getElementById('publishSheetBody');
       if (bodyEl) bodyEl.scrollTop = 0;
+      if (wizStep === 2) setTimeout(initPubPatioMap, 120);
     }
 
     async function submitPublish(e) {
@@ -2500,6 +2599,9 @@
 
       const day = Number(document.getElementById('pubPriceDay').value);
       const cat = document.getElementById('pubCat').value;
+      const cityVal = document.getElementById('pubCity').value;
+      const fallbackPt = window.GM_GEO ? window.GM_GEO.getCityCoords(cityVal) : null;
+      const basePt = pubPatioLatLng || fallbackPt;
       const newEq = {
         id: Date.now(),
         ownerId: currentOwner.id,
@@ -2512,8 +2614,11 @@
         priceHour: Number(document.getElementById('pubPriceHour').value) || Math.round(day / 7),
         priceWeek: Number(document.getElementById('pubPriceWeek').value) || Math.round(day * 6 * 0.9),
         transportCost: Number(document.getElementById('pubTransport').value) || 0,
-        city: document.getElementById('pubCity').value,
+        city: cityVal,
+        lat: basePt ? basePt.lat : null,
+        lng: basePt ? basePt.lng : null,
         operator: document.getElementById('pubOp').checked,
+        certifications: Array.from(document.querySelectorAll('#pubCertChips .permit-chip.selected')).map(b => b.dataset.cert).filter(Boolean),
         owner: currentOwner.name,
         rnc: currentOwner.rncFormatted,
         phone: currentOwner.phone,
@@ -2535,9 +2640,24 @@
       }
     }
 
+    function toggleReqPermit(btn) {
+      if (!btn) return;
+      const isPrivate = btn.dataset.permit === 'Terreno privado libre';
+      const all = document.querySelectorAll('#reqPermitChips .permit-chip');
+      if (isPrivate) {
+        const next = !btn.classList.contains('selected');
+        all.forEach(b => b.classList.remove('selected'));
+        if (next) btn.classList.add('selected');
+      } else {
+        all.forEach(b => { if (b.dataset.permit === 'Terreno privado libre') b.classList.remove('selected'); });
+        btn.classList.toggle('selected');
+      }
+    }
+
     function submitReq(e) {
       e.preventDefault();
       if (!document.getElementById('reqTerms').checked) { toast('Debes aceptar las políticas de Green Mile RD'); return; }
+      const reqPermits = Array.from(document.querySelectorAll('#reqPermitChips .permit-chip.selected')).map(b => b.dataset.permit).filter(Boolean);
       const newReq = {
         id: Date.now(),
         title: document.getElementById('rTitle').value.trim(),
@@ -2545,6 +2665,7 @@
         budget: Number(document.getElementById('rBudget').value) || 0,
         author: document.getElementById('rAuthor').value.trim(),
         phone: document.getElementById('rPhone').value.trim(),
+        permits: reqPermits,
         notes: document.getElementById('rNotes').value.trim()
       };
       requests.unshift(newReq);
@@ -2669,6 +2790,13 @@
         window.GM_FIREBASE.subscribeBookings((cloudBookings) => {
           bookings = cloudBookings;
           syncCounters();
+          renderCurrentTab();
+        });
+      }
+
+      if (window.GM_FIREBASE.subscribeAllReviews) {
+        window.GM_FIREBASE.subscribeAllReviews((grouped) => {
+          allCloudReviews = grouped || {};
           renderCurrentTab();
         });
       }

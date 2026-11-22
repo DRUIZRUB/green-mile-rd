@@ -589,6 +589,18 @@
       ? `del ${esc(b.startDate)} al ${esc(b.endDate)}`
       : `desde ${esc(b.startDate || 'A coordinar')}`;
     const expectedNetGov = b.total - (b.govIsrRetention || 0) - (b.govItbisRetention || 0);
+    const gpsLine = (b.worksiteLat != null && b.worksiteLng != null)
+      ? `<br><a href="https://www.google.com/maps?q=${esc(b.worksiteLat)},${esc(b.worksiteLng)}" target="_blank" rel="noopener" style="color:#B85A27; font-weight:700;">📍 GPS: ${Number(b.worksiteLat).toFixed(5)}, ${Number(b.worksiteLng).toFixed(5)}</a>`
+      : '';
+    const distLine = b.distanceKm
+      ? `<div><strong>Logística / Traslado Lowboy:</strong> ${esc(b.distanceKm)} km desde ${esc(b.city)} ${b.transportCost > 0 ? `(${fmtRD(b.transportCost)})` : '(Retiro en patio)'}</div>`
+      : '';
+    const permitsBlock = Array.isArray(b.worksitePermits) && b.worksitePermits.length
+      ? `<div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:10px 12px; font-size:11.5px; color:#78350F; margin-bottom:12px;">
+          <strong>Permisos y Accesos de Obra RD:</strong> ${b.worksitePermits.map(esc).join(' • ')}<br>
+          <span style="font-size:10.5px;">El contratista declara contar con estos permisos vigentes antes de la llegada del equipo y asume costos de standby, retención o viaje en vacío por falta de permisos.</span>
+        </div>`
+      : '';
 
     return `
       <div style="border:1.5px solid #CBD5E1; border-radius:14px; padding:22px; background:#fff; color:#0F172A; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
@@ -598,7 +610,7 @@
             <div style="font-size:11px; color:#475569;">RNC: ${esc(cfg.rnc)} • RPE Estado: ${esc(cfg.rpeNumber)}</div>
             <div style="font-size:11.5px; font-weight:800; color:#B85A27; margin-top:2px;">CONTRATO DIGITAL #GM-${String(b.id).slice(-6)}</div>
           </div>
-          ${logoSrc ? `<img src="${esc(logoSrc)}" style="height:44px; object-fit:contain;" alt="Green Mile RD">` : ''}
+          ${logoSrc ? `<img src="${esc(logoSrc)}" style="height:54px; object-fit:contain;" alt="Green Mile RD">` : ''}
         </div>
 
         <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
@@ -619,7 +631,7 @@
             <strong style="color:#0D223A; display:block; margin-bottom:3px;">${ncfMeta.isGov ? 'ENTIDAD CONTRATANTE (ESTADO)' : 'CONTRATISTA / CLIENTE'}</strong>
             ${esc(b.renter)}<br>
             RNC/Cédula: ${esc(b.renterRnc)}<br>
-            Obra: ${esc(b.address)}
+            Obra: ${esc(b.address)}${gpsLine}
             ${b.exemptionCode ? `<br>Res. Exención DGII: <strong>${esc(b.exemptionCode)}</strong>` : ''}
           </div>
         </div>
@@ -638,9 +650,11 @@
 
         <div style="font-size:12.5px; margin-bottom:12px; line-height:1.55;">
           <div><strong>Maquinaria Asignada:</strong> ${esc(b.title)} (${esc(b.city)})</div>
+          ${distLine}
           <div><strong>Período de Alquiler:</strong> ${esc(b.qty)} ${esc(b.unitLabel)} (${rangeLabel})</div>
           <div><strong>Modalidad de Pago:</strong> ${esc(paymentSummaryText(b))}</div>
         </div>
+        ${permitsBlock}
 
         <div style="background:#F1F5F9; padding:13px 14px; border-radius:10px; font-size:12.5px; margin-bottom:14px;">
           <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal Neto (Equipo + Traslado):</span><span>${fmtRD(b.netSubtotal)}</span></div>
