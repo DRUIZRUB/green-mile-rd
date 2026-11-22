@@ -698,13 +698,21 @@
         </div>
       </div>
 
-      <!-- PASO 2: DESPACHO Y CONDUCE EN OBRA -->
+      <!-- PASO 2: DESPACHO LOGÍSTICO, TRACKING GPS Y CONDUCE EN OBRA -->
       <div class="panel" style="margin-bottom:12px;">
         <div class="panel-head" style="padding:11px 14px;">
-          <h3 style="font-size:13.5px;">2. Despacho y Conduce Conformado en Obra</h3>
+          <h3 style="font-size:13.5px;">2. Despacho Logístico, Tracking GPS y Conduce en Obra</h3>
           <span class="pill ${b.conduce.number ? 'pill-ok' : 'pill-warn'}">${b.conduce.number ? '✓ Conduce ' + esc(b.conduce.number) : 'Sin Conduce aún'}</span>
         </div>
         <div class="panel-body" style="padding:13px 14px;">
+          <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:10px; padding:11px 13px; margin-bottom:12px;">
+            <div style="font-size:11.5px; font-weight:800; color:var(--navy); margin-bottom:7px;">🚚 Control de Despacho GPS en Vivo (solo tras validar pago u Orden de Compra)</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <a class="btn btn-navy btn-sm" href="tracking.html?booking=${encodeURIComponent(b.id)}&role=operator" target="_blank" rel="noopener">🚚 Abrir Modo Operador (Chofer)</a>
+              <a class="btn btn-ghost btn-sm" href="tracking.html?booking=${encodeURIComponent(b.id)}" target="_blank" rel="noopener">🗺️ Vista Tracking Cliente</a>
+              <a class="btn btn-ghost btn-sm" style="color:#15803D; border-color:#BBF7D0; background:#F0FDF4;" href="https://wa.me/${encodeURIComponent(String(b.ownerPhone || '').replace(/\D/g, ''))}?text=${encodeURIComponent(`🚚 *Despacho Autorizado — Green Mile RD*\nOrden #GM-${String(b.id).slice(-6)} • ${b.title}\nObra: ${b.address}\n\nAbre el Modo Operador en tu celular al iniciar la ruta:\n${new URL('tracking.html?booking=' + encodeURIComponent(b.id) + '&role=operator', window.location.href).href}`)}" target="_blank" rel="noopener">📲 Enviar Modo Operador al Chofer</a>
+            </div>
+          </div>
           <form onsubmit="window.GM_ADMIN.actionSaveConduce(event, '${b.id}')">
             <div class="f-grid">
               <div class="f-field">

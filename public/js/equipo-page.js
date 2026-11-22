@@ -1399,8 +1399,15 @@
   function renderContractModalBody() {
     if (!activeContractRecord || !BILL) return;
     const b = activeContractRecord;
-    const logoSrc = BASE + 'logo.png?v=20261122-3';
+    const logoSrc = BASE + 'logo.png?v=20261122-4';
     const isGov = (b.ncfType === 'E45');
+    const isDispatchReady = (
+      b.paymentStatus === 'paid' ||
+      b.stage === 'invoiced_dispatched' ||
+      b.stage === 'conduce_signed' ||
+      b.stage === 'gov_filed' ||
+      b.stage === 'settled'
+    );
 
     let docHtml = '';
     if (activeContractTab === 'invoice') {
@@ -1412,9 +1419,27 @@
     }
 
     const trackClientHref = `${BASE}tracking.html?booking=${encodeURIComponent(b.id)}`;
-    const trackOpHref = `${BASE}tracking.html?booking=${encodeURIComponent(b.id)}&role=operator`;
     const absTrackClient = new URL(trackClientHref, window.location.href).href;
-    const waTrackMsg = encodeURIComponent(`🚚 *Tracking GPS en Vivo — Green Mile RD*\nContrato #GM-${String(b.id).slice(-6)} • ${b.title}\nObra: ${b.address}\n\nSigue la unidad en el mapa en tiempo real:\n${absTrackClient}`);
+    const waTrackMsg = encodeURIComponent(`🚚 *Seguimiento de Despacho — Green Mile RD*\nContrato #GM-${String(b.id).slice(-6)} • ${b.title}\nObra: ${b.address}\n\nSigue la unidad rumbo a obra en tiempo real:\n${absTrackClient}`);
+
+    const dispatchBanner = isDispatchReady
+      ? `
+        <div class="no-print" style="margin-top:16px; padding:14px 16px; border-radius:14px; background:#F8FAFC; border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="min-width:220px; flex:1;">
+            <div style="font-size:11.5px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:0.04em;">🚚 Siguiente paso: Seguimiento de Despacho a Obra</div>
+            <div style="font-size:12.5px; color:var(--text-muted); margin-top:2px;">Cuando el operador inicie la ruta en lowboy podrás ver su ubicación GPS y hora estimada de llegada.</div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <a class="btn btn-primary" style="font-size:13px; padding:10px 16px; text-decoration:none;" href="${trackClientHref}">🗺️ Seguir Despacho</a>
+            <a class="btn btn-ghost" style="font-size:13px; padding:10px 14px; color:#15803D; border-color:#BBF7D0; background:#F0FDF4; text-decoration:none;" href="https://wa.me/?text=${waTrackMsg}" target="_blank" rel="noopener">📲 Compartir WhatsApp</a>
+          </div>
+        </div>
+      `
+      : `
+        <div class="no-print" style="margin-top:16px; padding:13px 16px; border-radius:14px; background:#FFFBEB; border:1px solid #FDE68A; font-size:12.5px; color:#92400E; line-height:1.5;">
+          <strong>📍 Despacho y Seguimiento GPS (etapa posterior al contrato):</strong> Una vez Administración valide ${isGov ? 'tu Orden de Compra / expediente estatal (e-CF 45)' : 'tu pago / transferencia'} y autorice la salida de la unidad, recibirás el enlace de seguimiento GPS en vivo rumbo a la obra.
+        </div>
+      `;
 
     document.getElementById('contractBody').innerHTML = `
       <div class="doc-tabs no-print">
@@ -1423,17 +1448,10 @@
         ${isGov ? `<button type="button" class="doc-tab ${activeContractTab === 'gov' ? 'active' : ''}" onclick="window.GM_DETAIL.switchContractTab('gov')">🏛️ Carátula Estado</button>` : ''}
       </div>
       ${docHtml}
-      <div class="no-print" style="margin-top:14px; padding:12px; border-radius:12px; background:#F8FAFC; border:1px solid var(--border);">
-        <div style="font-size:11px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px;">Tracking GPS en Vivo (Tipo Uber)</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
-          <a class="btn btn-primary" style="text-align:center; font-size:12px; padding:10px; text-decoration:none;" href="${trackClientHref}">🗺️ Seguir en Mapa</a>
-          <a class="btn btn-navy" style="text-align:center; font-size:12px; padding:10px; text-decoration:none;" href="${trackOpHref}">🚚 Modo Operador</a>
-        </div>
-        <a class="btn btn-ghost" style="width:100%; text-align:center; font-size:12px; padding:9px; color:#15803D; border-color:#BBF7D0; background:#F0FDF4; text-decoration:none;" href="https://wa.me/?text=${waTrackMsg}" target="_blank" rel="noopener">📲 Compartir Tracking por WhatsApp</a>
-      </div>
-      <div class="no-print" style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
-        <button type="button" class="btn btn-navy" style="flex:1;" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
-        <a class="btn btn-ghost" href="${BASE}admin.html" style="font-size:12px;">⚙️ Gestionar en Admin</a>
+      ${dispatchBanner}
+      <div class="no-print" style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-navy" style="flex:1; min-height:46px; font-size:14.5px;" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+        <a class="btn btn-ghost" href="${BASE}admin.html" style="font-size:13px; min-height:46px; display:inline-flex; align-items:center;">⚙️ Centro Administrativo</a>
       </div>
     `;
   }

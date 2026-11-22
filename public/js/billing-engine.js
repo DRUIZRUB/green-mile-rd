@@ -619,16 +619,16 @@
           ${b.encfNumber ? `<span style="font-size:11px; font-weight:800; padding:4px 10px; border-radius:99px; background:#FEF4EE; color:#B85A27;">e-NCF: ${esc(b.encfNumber)}</span>` : ''}
         </div>
 
-        <div style="font-size:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
-          <div style="background:#F8FAFC; padding:11px; border-radius:10px; border:1px solid #E2E8F0;">
-            <strong style="color:#0D223A; display:block; margin-bottom:3px;">GESTOR Y FACTURADOR</strong>
+        <div style="font-size:13.5px; display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-bottom:16px; line-height:1.5;">
+          <div style="background:#F8FAFC; padding:14px 16px; border-radius:11px; border:1px solid #E2E8F0;">
+            <strong style="color:#0D223A; display:block; margin-bottom:4px; font-size:12px;">GESTOR Y FACTURADOR</strong>
             ${esc(cfg.commercialName)}<br>
             RNC: ${esc(cfg.rnc)}<br>
             Tel: ${esc(cfg.phone)}<br>
             ${esc(cfg.email)}
           </div>
-          <div style="background:#F8FAFC; padding:11px; border-radius:10px; border:1px solid #E2E8F0;">
-            <strong style="color:#0D223A; display:block; margin-bottom:3px;">${ncfMeta.isGov ? 'ENTIDAD CONTRATANTE (ESTADO)' : 'CONTRATISTA / CLIENTE'}</strong>
+          <div style="background:#F8FAFC; padding:14px 16px; border-radius:11px; border:1px solid #E2E8F0;">
+            <strong style="color:#0D223A; display:block; margin-bottom:4px; font-size:12px;">${ncfMeta.isGov ? 'ENTIDAD CONTRATANTE (ESTADO)' : 'CONTRATISTA / CLIENTE'}</strong>
             ${esc(b.renter)}<br>
             RNC/Cédula: ${esc(b.renterRnc)}<br>
             Obra: ${esc(b.address)}${gpsLine}
@@ -637,9 +637,9 @@
         </div>
 
         ${ncfMeta.isGov ? `
-          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:11px 12px; font-size:12px; margin-bottom:14px; color:#1E3A8A;">
-            <strong style="display:block; margin-bottom:4px;">🏛️ EXPEDIENTE GUBERNAMENTAL (LEY 340-06 · COMPROBANTE e-CF 45)</strong>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px 12px;">
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:11px; padding:14px 16px; font-size:13px; margin-bottom:16px; color:#1E3A8A;">
+            <strong style="display:block; margin-bottom:5px;">🏛️ EXPEDIENTE GUBERNAMENTAL (LEY 340-06 · COMPROBANTE e-CF 45)</strong>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:6px 14px;">
               <span><strong>Orden de Compra / Contrato:</strong> ${esc(b.govData.poNumber || 'Pendiente adjuntar')}</span>
               <span><strong>Cert. Presupuestaria (CAP):</strong> ${esc(b.govData.capNumber || 'N/A')}</span>
               <span><strong>Correo Institucional:</strong> ${esc(b.govData.entityEmail || 'N/A')}</span>
@@ -648,7 +648,7 @@
           </div>
         ` : ''}
 
-        <div style="font-size:12.5px; margin-bottom:12px; line-height:1.55;">
+        <div style="font-size:14px; margin-bottom:14px; line-height:1.6;">
           <div><strong>Maquinaria Asignada:</strong> ${esc(b.title)} (${esc(b.city)})</div>
           ${distLine}
           <div><strong>Período de Alquiler:</strong> ${esc(b.qty)} ${esc(b.unitLabel)} (${rangeLabel})</div>
@@ -656,38 +656,38 @@
         </div>
         ${permitsBlock}
 
-        <div style="background:#F1F5F9; padding:13px 14px; border-radius:10px; font-size:12.5px; margin-bottom:14px;">
-          <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal Neto (Equipo + Traslado):</span><span>${fmtRD(b.netSubtotal)}</span></div>
-          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+        <div style="background:#F1F5F9; padding:16px 18px; border-radius:12px; font-size:14px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>Subtotal Neto (Equipo + Traslado):</span><span>${fmtRD(b.netSubtotal)}</span></div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
             <span>${ncfMeta.isExempt ? 'ITBIS 0% (Exento · e-CF 44)' : `ITBIS 18% (${ncfMeta.badge})`}</span>
             <span>${fmtRD(b.itbis)}</span>
           </div>
-          <div style="display:flex; justify-content:space-between; font-weight:800; font-size:15px; color:#0D223A; border-top:1px solid #CBD5E1; margin-top:6px; padding-top:6px;">
+          <div style="display:flex; justify-content:space-between; font-weight:900; font-size:17.5px; color:#0D223A; border-top:1.5px solid #CBD5E1; margin-top:8px; padding-top:8px;">
             <span>Total Facturado (${esc(ncfMeta.badge)}):</span><span>${fmtRD(b.total)}</span>
           </div>
           ${ncfMeta.isGov ? `
-            <div style="border-top:1px dashed #94A3B8; margin-top:8px; padding-top:8px; font-size:11.5px; color:#334155;">
+            <div style="border-top:1px dashed #94A3B8; margin-top:9px; padding-top:9px; font-size:13px; color:#334155;">
               <div style="display:flex; justify-content:space-between;"><span>(−) Retención 5% ISR Estado (Art. 309 Cód. Tributario):</span><span>− ${fmtRD(b.govIsrRetention)}</span></div>
               ${b.govItbisRetention > 0 ? `<div style="display:flex; justify-content:space-between;"><span>(−) Retención 30% ITBIS Estatal (Norma 02-05):</span><span>− ${fmtRD(b.govItbisRetention)}</span></div>` : ''}
-              <div style="display:flex; justify-content:space-between; font-weight:800; color:#1E40AF; margin-top:3px;"><span>Desembolso Neto Esperado Tesorería Nacional:</span><span>${fmtRD(expectedNetGov)}</span></div>
+              <div style="display:flex; justify-content:space-between; font-weight:800; color:#1E40AF; margin-top:4px;"><span>Desembolso Neto Esperado Tesorería Nacional:</span><span>${fmtRD(expectedNetGov)}</span></div>
             </div>
           ` : ''}
         </div>
 
-        <div style="font-size:10.5px; color:#475569; line-height:1.45; margin-bottom:14px; border-top:1px solid #E2E8F0; padding-top:10px;">
+        <div style="font-size:12px; color:#475569; line-height:1.55; margin-bottom:18px; border-top:1px solid #E2E8F0; padding-top:12px;">
           <strong>Cláusulas Esenciales:</strong> (1) Green Mile Construction RD centraliza la facturación electrónica (e-CF / DGII), el cobro y la liquidación al propietario contra conduce conformado en obra. (2) El contratista garantiza acceso seguro y resguardo de la unidad durante la vigencia del contrato. (3) Queda prohibida la contratación directa por fuera de la plataforma (cláusula anti-elusión).
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; text-align:center; margin-top:10px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; text-align:center; margin-top:12px;">
           <div>
-            <div style="height:52px; display:flex; align-items:flex-end; justify-content:center; border-bottom:1px solid #0D223A; margin-bottom:4px; font-style:italic; font-weight:800; color:#0D223A; font-size:13px; padding-bottom:6px;">Green Mile RD · Autorizado</div>
-            <span style="font-size:10.5px; font-weight:700; color:#475569;">Gestor / Facturador e-CF</span>
+            <div style="height:62px; display:flex; align-items:flex-end; justify-content:center; border-bottom:1.5px solid #0D223A; margin-bottom:6px; font-style:italic; font-weight:800; color:#0D223A; font-size:15px; padding-bottom:8px;">Green Mile RD · Autorizado</div>
+            <span style="font-size:12px; font-weight:700; color:#475569;">Gestor / Facturador e-CF</span>
           </div>
           <div>
             ${b.signature
-              ? `<img src="${b.signature}" alt="Firma" style="height:52px; border-bottom:1px solid #0D223A; margin:0 auto 4px; display:block;">`
-              : `<div style="height:52px; border-bottom:1px solid #0D223A; margin-bottom:4px;"></div>`}
-            <span style="font-size:10.5px; font-weight:700; color:#0D223A;">Firma Digital — ${esc(b.renter)}</span>
+              ? `<img src="${b.signature}" alt="Firma" style="height:62px; border-bottom:1.5px solid #0D223A; margin:0 auto 6px; display:block;">`
+              : `<div style="height:62px; border-bottom:1.5px solid #0D223A; margin-bottom:6px;"></div>`}
+            <span style="font-size:12px; font-weight:700; color:#0D223A;">Firma Digital — ${esc(b.renter)}</span>
           </div>
         </div>
       </div>
@@ -706,98 +706,98 @@
     const secCode = b.encfSecurityCode || 'PENDIE';
     const issueDate = b.encfIssuedAt ? new Date(b.encfIssuedAt).toLocaleDateString('es-DO') : new Date(b.id || Date.now()).toLocaleDateString('es-DO');
     const expDate = b.encfExpires || (cfg.sequences[b.ncfType] && cfg.sequences[b.ncfType].expires) || '2027-12-31';
-    const qrSvg = buildDeterministicQrSvg(`${cfg.rnc}|${docNumber}|${b.renterRnc}|${b.total}|${secCode}`, 92);
+    const qrSvg = buildDeterministicQrSvg(`${cfg.rnc}|${docNumber}|${b.renterRnc}|${b.total}|${secCode}`, 118);
     const expectedNetGov = b.total - (b.govIsrRetention || 0) - (b.govItbisRetention || 0);
 
     return `
-      <div style="border:1.5px solid #0D223A; border-radius:14px; padding:22px; background:#fff; color:#0F172A; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; border-bottom:2px solid #0D223A; padding-bottom:14px; margin-bottom:14px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:220px;">
-            ${logoSrc ? `<img src="${esc(logoSrc)}" style="height:40px; object-fit:contain; margin-bottom:6px; display:block;" alt="Green Mile RD">` : ''}
-            <strong style="font-size:15px; color:#0D223A; display:block;">${esc(cfg.companyName)}</strong>
-            <div style="font-size:11px; color:#475569; line-height:1.45;">
+      <div style="border:1.5px solid #0D223A; border-radius:16px; padding:28px; background:#fff; color:#0F172A; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:18px; border-bottom:2px solid #0D223A; padding-bottom:18px; margin-bottom:18px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:250px;">
+            ${logoSrc ? `<img src="${esc(logoSrc)}" style="height:50px; object-fit:contain; margin-bottom:8px; display:block;" alt="Green Mile RD">` : ''}
+            <strong style="font-size:17px; color:#0D223A; display:block;">${esc(cfg.companyName)}</strong>
+            <div style="font-size:12.5px; color:#475569; line-height:1.5;">
               RNC: <strong>${esc(cfg.rnc)}</strong> • RPE: <strong>${esc(cfg.rpeNumber)}</strong><br>
               ${esc(cfg.address)}<br>
               Tel: ${esc(cfg.phone)} • ${esc(cfg.email)}
             </div>
           </div>
-          <div style="background:#F8FAFC; border:1.5px solid #0D223A; border-radius:10px; padding:11px 13px; min-width:235px;">
-            <div style="font-size:10px; font-weight:800; color:#B85A27; text-transform:uppercase; letter-spacing:0.4px;">
+          <div style="background:#F8FAFC; border:1.5px solid #0D223A; border-radius:12px; padding:14px 16px; min-width:280px;">
+            <div style="font-size:11px; font-weight:800; color:#B85A27; text-transform:uppercase; letter-spacing:0.45px;">
               ${isOfficial ? 'COMPROBANTE FISCAL ELECTRÓNICO (e-CF)' : 'FACTURA PROFORMA · PENDIENTE EMISIÓN e-NCF'}
             </div>
-            <strong style="font-size:13px; color:#0D223A; display:block; margin:2px 0;">${esc(ncfMeta.name)}</strong>
-            <div style="font-size:13px; font-weight:900; color:#0D223A; font-family:monospace; letter-spacing:0.6px;">e-NCF: ${esc(docNumber)}</div>
-            <div style="font-size:10.5px; color:#475569; margin-top:4px;">
+            <strong style="font-size:14.5px; color:#0D223A; display:block; margin:4px 0;">${esc(ncfMeta.name)}</strong>
+            <div style="font-size:15.5px; font-weight:900; color:#0D223A; font-family:monospace; letter-spacing:0.6px;">e-NCF: ${esc(docNumber)}</div>
+            <div style="font-size:12px; color:#475569; margin-top:6px; line-height:1.45;">
               Fecha Emisión: <strong>${esc(issueDate)}</strong><br>
               Válido hasta: <strong>${esc(expDate)}</strong>
             </div>
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:11.5px; margin-bottom:14px;">
-          <div style="background:#F8FAFC; padding:10px 12px; border-radius:9px; border:1px solid #E2E8F0;">
-            <strong style="color:#0D223A; display:block; margin-bottom:3px;">DATOS DEL COMPRADOR</strong>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; font-size:13px; margin-bottom:18px; line-height:1.5;">
+          <div style="background:#F8FAFC; padding:13px 15px; border-radius:11px; border:1px solid #E2E8F0;">
+            <strong style="color:#0D223A; display:block; margin-bottom:4px; font-size:12px; letter-spacing:0.3px;">DATOS DEL COMPRADOR</strong>
             Razón Social: <strong>${esc(b.renter)}</strong><br>
             RNC / Cédula: <strong>${esc(b.renterRnc)}</strong><br>
             Proyecto / Obra: ${esc(b.address)}
             ${b.exemptionCode ? `<br>Resolución Exención: <strong>${esc(b.exemptionCode)}</strong>` : ''}
           </div>
-          <div style="background:#F8FAFC; padding:10px 12px; border-radius:9px; border:1px solid #E2E8F0;">
-            <strong style="color:#0D223A; display:block; margin-bottom:3px;">CONDICIONES DE PAGO Y REFERENCIA</strong>
+          <div style="background:#F8FAFC; padding:13px 15px; border-radius:11px; border:1px solid #E2E8F0;">
+            <strong style="color:#0D223A; display:block; margin-bottom:4px; font-size:12px; letter-spacing:0.3px;">CONDICIONES DE PAGO Y REFERENCIA</strong>
             Forma de Pago: <strong>${esc(paymentSummaryText(b))}</strong><br>
             Contrato Ref.: <strong>#GM-${String(b.id).slice(-6)}</strong><br>
             ${b.ncfType === 'E45' ? `Orden de Compra: <strong>${esc(b.govData.poNumber || 'Por registrar')}</strong><br>CAP / SIGEF: <strong>${esc(b.govData.capNumber || 'N/A')}</strong>` : `Conduce Obra: <strong>${esc(b.conduce.number || 'Pendiente entrega')}</strong>`}
           </div>
         </div>
 
-        <table style="width:100%; border-collapse:collapse; font-size:12px; margin-bottom:14px;">
+        <table style="width:100%; border-collapse:collapse; font-size:13.5px; margin-bottom:18px;">
           <thead>
             <tr style="background:#0D223A; color:#fff; text-align:left;">
-              <th style="padding:8px 10px; border-radius:6px 0 0 0;">Cant.</th>
-              <th style="padding:8px 10px;">Descripción del Servicio</th>
-              <th style="padding:8px 10px; text-align:right;">ITBIS</th>
-              <th style="padding:8px 10px; text-align:right; border-radius:0 6px 0 0;">Valor Neto</th>
+              <th style="padding:10px 13px; border-radius:8px 0 0 0;">Cant.</th>
+              <th style="padding:10px 13px;">Descripción del Servicio</th>
+              <th style="padding:10px 13px; text-align:right;">ITBIS</th>
+              <th style="padding:10px 13px; text-align:right; border-radius:0 8px 0 0;">Valor Neto</th>
             </tr>
           </thead>
           <tbody>
             <tr style="border-bottom:1px solid #E2E8F0;">
-              <td style="padding:9px 10px; font-weight:700;">${esc(b.qty)} ${esc(b.unitLabel)}</td>
-              <td style="padding:9px 10px;">
-                <strong>Alquiler ${esc(b.title)}</strong><br>
-                <span style="font-size:11px; color:#64748B;">Ubicación: ${esc(b.city)} • Fechas: ${esc(b.startDate || '')}${b.endDate && b.endDate !== b.startDate ? ' al ' + esc(b.endDate) : ''}</span>
+              <td style="padding:12px 13px; font-weight:700; white-space:nowrap;">${esc(b.qty)} ${esc(b.unitLabel)}</td>
+              <td style="padding:12px 13px;">
+                <strong style="font-size:14.5px; color:#0D223A;">Alquiler ${esc(b.title)}</strong><br>
+                <span style="font-size:12.5px; color:#64748B;">Ubicación: ${esc(b.city)} • Fechas: ${esc(b.startDate || '')}${b.endDate && b.endDate !== b.startDate ? ' al ' + esc(b.endDate) : ''}</span>
               </td>
-              <td style="padding:9px 10px; text-align:right;">${ncfMeta.isExempt ? '0% Exento' : '18%'}</td>
-              <td style="padding:9px 10px; text-align:right; font-weight:700;">${fmtRDDecimal(b.netSubtotal)}</td>
+              <td style="padding:12px 13px; text-align:right; white-space:nowrap;">${ncfMeta.isExempt ? '0% Exento' : '18%'}</td>
+              <td style="padding:12px 13px; text-align:right; font-weight:800; white-space:nowrap;">${fmtRDDecimal(b.netSubtotal)}</td>
             </tr>
           </tbody>
         </table>
 
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
-          <div style="display:flex; gap:12px; align-items:center; flex:1; min-width:220px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap;">
+          <div style="display:flex; gap:15px; align-items:center; flex:1; min-width:300px;">
             ${qrSvg}
-            <div style="font-size:10.5px; color:#475569; line-height:1.45;">
-              <strong style="color:#0D223A; display:block;">Timbre Fiscal Electrónico DGII</strong>
-              Código de Seguridad: <strong style="font-family:monospace; color:#0D223A;">${esc(secCode)}</strong><br>
+            <div style="font-size:12px; color:#475569; line-height:1.55;">
+              <strong style="color:#0D223A; font-size:13px; display:block; margin-bottom:2px;">Timbre Fiscal Electrónico DGII</strong>
+              Código de Seguridad: <strong style="font-family:monospace; font-size:13px; color:#0D223A;">${esc(secCode)}</strong><br>
               Estado DGII: <strong>${esc(b.dgiiStatus || (isOfficial ? 'Aceptado Electrónicamente (Ley 32-23)' : 'Borrador / Proforma'))}</strong><br>
-              ${b.dgiiTrackId ? `TrackId DGII: <strong style="font-family:monospace; color:#0D223A;">${esc(b.dgiiTrackId)}</strong><br>` : ''}
+              ${b.dgiiTrackId ? `TrackId DGII: <strong style="font-family:monospace; color:#0D223A; word-break:break-all;">${esc(b.dgiiTrackId)}</strong><br>` : ''}
               ${b.dgiiQrUrl
                 ? `<a href="${esc(b.dgiiQrUrl)}" target="_blank" rel="noopener" style="color:#1E40AF; text-decoration:underline; font-weight:700;">Verificar en portal DGII e-CF →</a>`
                 : 'Verificable en portal e-CF de Impuestos Internos.'}
             </div>
           </div>
 
-          <div style="min-width:275px; background:#F1F5F9; border-radius:10px; padding:12px 14px; font-size:12px;">
-            <div style="display:flex; justify-content:space-between; gap:14px; margin-bottom:4px;"><span>Monto Gravado:</span><span>${fmtRDDecimal(ncfMeta.isExempt ? 0 : b.netSubtotal)}</span></div>
-            ${ncfMeta.isExempt ? `<div style="display:flex; justify-content:space-between; gap:14px; margin-bottom:4px;"><span>Monto Exento (e-CF 44):</span><span>${fmtRDDecimal(b.netSubtotal)}</span></div>` : ''}
-            <div style="display:flex; justify-content:space-between; gap:14px; margin-bottom:4px;"><span>ITBIS 18%:</span><span>${fmtRDDecimal(b.itbis)}</span></div>
-            <div style="display:flex; justify-content:space-between; gap:14px; font-size:14.5px; font-weight:900; color:#0D223A; border-top:1.5px solid #94A3B8; margin-top:6px; padding-top:6px;">
-              <span>TOTAL FACTURA:</span><span>${fmtRDDecimal(b.total)}</span>
+          <div style="min-width:320px; flex-shrink:0; background:#F1F5F9; border-radius:12px; padding:16px 18px; font-size:13.5px;">
+            <div style="display:flex; justify-content:space-between; gap:18px; margin-bottom:6px;"><span>Monto Gravado:</span><span style="white-space:nowrap;">${fmtRDDecimal(ncfMeta.isExempt ? 0 : b.netSubtotal)}</span></div>
+            ${ncfMeta.isExempt ? `<div style="display:flex; justify-content:space-between; gap:18px; margin-bottom:6px;"><span>Monto Exento (e-CF 44):</span><span style="white-space:nowrap;">${fmtRDDecimal(b.netSubtotal)}</span></div>` : ''}
+            <div style="display:flex; justify-content:space-between; gap:18px; margin-bottom:6px;"><span>ITBIS 18%:</span><span style="white-space:nowrap;">${fmtRDDecimal(b.itbis)}</span></div>
+            <div style="display:flex; justify-content:space-between; gap:18px; font-size:17.5px; font-weight:900; color:#0D223A; border-top:1.5px solid #94A3B8; margin-top:8px; padding-top:8px;">
+              <span>TOTAL FACTURA:</span><span style="white-space:nowrap;">${fmtRDDecimal(b.total)}</span>
             </div>
             ${b.ncfType === 'E45' ? `
-              <div style="border-top:1px dashed #94A3B8; margin-top:7px; padding-top:7px; font-size:11px; color:#1E40AF;">
-                <div style="display:flex; justify-content:space-between; gap:14px;"><span>Ret. 5% ISR Estado (Art. 309):</span><span style="white-space:nowrap;">− ${fmtRDDecimal(b.govIsrRetention)}</span></div>
-                ${b.govItbisRetention > 0 ? `<div style="display:flex; justify-content:space-between; gap:14px;"><span>Ret. 30% ITBIS Estado:</span><span style="white-space:nowrap;">− ${fmtRDDecimal(b.govItbisRetention)}</span></div>` : ''}
-                <div style="display:flex; justify-content:space-between; gap:14px; font-weight:800; margin-top:3px;"><span>Neto Libramiento SIGEF:</span><span style="white-space:nowrap;">${fmtRDDecimal(expectedNetGov)}</span></div>
+              <div style="border-top:1px dashed #94A3B8; margin-top:9px; padding-top:9px; font-size:12.5px; color:#1E40AF;">
+                <div style="display:flex; justify-content:space-between; gap:16px;"><span>Ret. 5% ISR Estado (Art. 309):</span><span style="white-space:nowrap;">− ${fmtRDDecimal(b.govIsrRetention)}</span></div>
+                ${b.govItbisRetention > 0 ? `<div style="display:flex; justify-content:space-between; gap:16px;"><span>Ret. 30% ITBIS Estado:</span><span style="white-space:nowrap;">− ${fmtRDDecimal(b.govItbisRetention)}</span></div>` : ''}
+                <div style="display:flex; justify-content:space-between; gap:16px; font-weight:800; margin-top:4px;"><span>Neto Libramiento SIGEF:</span><span style="white-space:nowrap;">${fmtRDDecimal(expectedNetGov)}</span></div>
               </div>
             ` : ''}
           </div>
