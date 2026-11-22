@@ -406,7 +406,7 @@ function cmdCheck() {
   console.log(`\n${C.bold}4. Seguridad Backend y Firebase Admin SDK:${C.reset}`);
   console.log(`  ${get('ADMIN_API_SECRET') ? `${C.green}✓ ADMIN_API_SECRET configurado` : `${C.yellow}🟡 ADMIN_API_SECRET vacío (usará PIN de Firestore)`}${C.reset}`);
   console.log(`  ${get('PAYMENT_WEBHOOK_SECRET') ? `${C.green}✓ PAYMENT_WEBHOOK_SECRET configurado` : `${C.yellow}🟡 PAYMENT_WEBHOOK_SECRET vacío`}${C.reset}`);
-  const saFile = resolveFileIfExists(get('FIREBASE_SERVICE_ACCOUNT_PATH') || './certs/firebase-adminsdk.json');
+  const saFile = resolveFileIfExists(get('GM_LOCAL_SERVICE_ACCOUNT_PATH') || './certs/firebase-adminsdk.json');
   if (saFile) {
     try {
       const sa = JSON.parse(fs.readFileSync(saFile, 'utf8'));

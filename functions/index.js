@@ -11,7 +11,7 @@ const { notifyInvoiceIssued, notifyOwnerSettlement } = require('./src/notificati
 
 if (!admin.apps.length) {
   const isCloudRuntime = Boolean(process.env.K_SERVICE || process.env.FUNCTION_TARGET);
-  const localSaRel = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || '';
+  const localSaRel = process.env.GM_LOCAL_SERVICE_ACCOUNT_PATH || '';
   let initialized = false;
   if (!isCloudRuntime && localSaRel) {
     const resolvedSa = path.isAbsolute(localSaRel) ? localSaRel : path.resolve(__dirname, localSaRel);
