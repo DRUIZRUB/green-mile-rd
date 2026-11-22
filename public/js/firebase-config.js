@@ -1,4 +1,4 @@
-/* Green Mile Construction RD — Firebase (Cloud Firestore + Optional Storage + Compressed Image Sync) */
+/* Green Mile Construction RD — Firebase (Cloud Firestore + Owner Accounts + Multi-Photo Sync) */
 (function (global) {
   const FIREBASE_CONFIG = {
     apiKey: 'AIzaSyDkN8yM76pK0kbFsbbsJrFcqcZ8tcfTmbE',
@@ -8,6 +8,9 @@
     messagingSenderId: '960400955140',
     appId: '1:960400955140:web:ff1f9d356e8d27393fe251'
   };
+
+  const OWNER_SESSION_KEY = 'gm_rd_owner_session_v1';
+  const LOCAL_OWNERS_KEY = 'gm_rd_local_owners_v1';
 
   const isConfigured = Boolean(
     FIREBASE_CONFIG.apiKey &&
@@ -36,7 +39,144 @@
     return Boolean(db);
   }
 
-  async function compressImageFile(file, maxWidth = 960, quality = 0.8) {
+  async function hashPassword(password, saltDigits) {
+    const raw = `gm_rd_2026:${saltDigits}:${String(password || '')}`;
+    if (global.crypto && global.crypto.subtle) {
+      const buf = new TextEncoder().encode(raw);
+      const digest = await global.crypto.subtle.digest('SHA-256', buf);
+      return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+    let h = 0;
+    for (let i = 0; i < raw.length; i++) {
+      h = ((h << 5) - h) + raw.charCodeAt(i);
+      h |= 0;
+    }
+    return 'fb_' + Math.abs(h).toString(16);
+  }
+
+  function getCurrentOwner() {
+    try {
+      const raw = localStorage.getItem(OWNER_SESSION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function setCurrentOwner(owner) {
+    if (!owner) {
+      localStorage.removeItem(OWNER_SESSION_KEY);
+      return null;
+    }
+    const safeSession = {
+      id: owner.id || owner.rncDigits,
+      rncDigits: owner.rncDigits,
+      rncFormatted: owner.rncFormatted,
+      name: owner.name,
+      email: owner.email || '',
+      phone: owner.phone || '',
+      city: owner.city || 'Santo Domingo'
+    };
+    localStorage.setItem(OWNER_SESSION_KEY, JSON.stringify(safeSession));
+    return safeSession;
+  }
+
+  function logoutOwner() {
+    localStorage.removeItem(OWNER_SESSION_KEY);
+  }
+
+  function getLocalOwnersMap() {
+    try {
+      return JSON.parse(localStorage.getItem(LOCAL_OWNERS_KEY) || '{}');
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function saveLocalOwner(docData) {
+    const map = getLocalOwnersMap();
+    map[docData.rncDigits] = docData;
+    localStorage.setItem(LOCAL_OWNERS_KEY, JSON.stringify(map));
+  }
+
+  async function registerOwnerAccount({ rncDigits, rncFormatted, name, email, phone, city, password }) {
+    const cleanId = String(rncDigits || '').replace(/\D/g, '');
+    if (!cleanId) throw new Error('RNC o Cédula inválido');
+
+    const passwordHash = await hashPassword(password, cleanId);
+    const ownerDoc = {
+      id: cleanId,
+      rncDigits: cleanId,
+      rncFormatted: rncFormatted || cleanId,
+      name: String(name || '').trim(),
+      email: String(email || '').trim().toLowerCase(),
+      phone: String(phone || '').trim(),
+      city: city || 'Santo Domingo',
+      passwordHash,
+      verifiedDgii: true
+    };
+
+    if (db) {
+      const ref = db.collection('owners').doc(cleanId);
+      const existing = await ref.get();
+      if (existing.exists) {
+        throw new Error('Ya existe una cuenta registrada con este RNC/Cédula. Inicia sesión.');
+      }
+      await ref.set(Object.assign({}, ownerDoc, {
+        createdAt: global.firebase.firestore.FieldValue.serverTimestamp()
+      }));
+    } else {
+      const map = getLocalOwnersMap();
+      if (map[cleanId]) {
+        throw new Error('Ya existe una cuenta registrada con este RNC/Cédula. Inicia sesión.');
+      }
+    }
+
+    saveLocalOwner(ownerDoc);
+    return setCurrentOwner(ownerDoc);
+  }
+
+  async function loginOwnerAccount({ identifier, password }) {
+    const raw = String(identifier || '').trim();
+    const digits = raw.replace(/\D/g, '');
+    const emailLower = raw.toLowerCase();
+
+    let found = null;
+
+    if (db) {
+      if (digits.length === 9 || digits.length === 11) {
+        const snap = await db.collection('owners').doc(digits).get();
+        if (snap.exists) found = snap.data();
+      } else if (raw.includes('@')) {
+        const qSnap = await db.collection('owners').where('email', '==', emailLower).limit(1).get();
+        if (!qSnap.empty) found = qSnap.docs[0].data();
+      }
+    }
+
+    if (!found) {
+      const map = getLocalOwnersMap();
+      if (digits && map[digits]) {
+        found = map[digits];
+      } else if (raw.includes('@')) {
+        found = Object.values(map).find((o) => o.email === emailLower) || null;
+      }
+    }
+
+    if (!found) {
+      throw new Error('No encontramos una cuenta con ese RNC/Cédula o correo. Regístrate primero.');
+    }
+
+    const expectedHash = await hashPassword(password, found.rncDigits);
+    if (found.passwordHash !== expectedHash) {
+      throw new Error('Contraseña incorrecta.');
+    }
+
+    saveLocalOwner(found);
+    return setCurrentOwner(found);
+  }
+
+  /* Compress image so up to 5 HD photos fit well inside Firestore's 1 MiB document limit (~95 KB each) */
+  async function compressImageFile(file, maxWidth = 860, quality = 0.74) {
     if (!file) return null;
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -150,33 +290,11 @@
     );
   }
 
-  async function uploadEquipmentImage(file, equipmentId) {
-    if (!storage || !file) return null;
-    const safeName = (file.name || 'photo.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');
-    const ref = storage.ref().child(`equipment/${equipmentId}_${safeName}`);
-    const uploadPromise = ref.put(file).then(() => ref.getDownloadURL());
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage timeout')), 3500));
-    return Promise.race([uploadPromise, timeoutPromise]);
-  }
-
-  async function saveEquipment(item, imageFile) {
+  async function saveEquipment(item) {
     if (!db) return item;
     const copy = Object.assign({}, item);
-    if (imageFile) {
-      let uploadedUrl = null;
-      if (storage) {
-        try {
-          uploadedUrl = await uploadEquipmentImage(imageFile, copy.id);
-        } catch (_) {
-          uploadedUrl = null;
-        }
-      }
-      if (uploadedUrl) {
-        copy.img = uploadedUrl;
-      } else {
-        const compressed = await compressImageFile(imageFile);
-        if (compressed) copy.img = compressed;
-      }
+    if (Array.isArray(copy.images) && copy.images.length > 0) {
+      copy.img = copy.images[0];
     }
     await db.collection('equipment').doc(String(copy.id)).set(Object.assign({}, copy, {
       createdAt: global.firebase.firestore.FieldValue.serverTimestamp()
@@ -221,6 +339,10 @@
   global.GM_FIREBASE = {
     isReady,
     compressImageFile,
+    getCurrentOwner,
+    logoutOwner,
+    registerOwnerAccount,
+    loginOwnerAccount,
     subscribeEquipment,
     subscribeRequests,
     subscribeBookings,

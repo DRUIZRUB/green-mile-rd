@@ -221,6 +221,44 @@ header.detail-header {
   object-fit: cover;
   display: block;
 }
+.media-thumbs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  padding: 10px 14px 4px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.media-thumb {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  background: var(--navy-soft);
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.media-thumb:hover {
+  border-color: var(--steel);
+}
+.media-thumb.active {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 2px rgba(184, 90, 39, 0.22);
+}
+.media-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+@media (max-width: 520px) {
+  .media-thumbs {
+    gap: 6px;
+    padding: 8px 10px 4px;
+  }
+}
 .media-badges-top {
   position: absolute;
   top: 14px;

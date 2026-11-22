@@ -844,23 +844,105 @@
     input:checked + .sw-knob { background: var(--orange); }
     input:checked + .sw-knob::after { transform: translateX(20px); }
 
-    /* Camera / Gallery Upload Card */
+    /* Multi-Photo Upload Grid (1 to 5 Mandatory Photos) */
     .cam-drop {
-      border: 2px dashed #CBD5E1;
-      border-radius: 14px;
-      padding: 18px;
+      border: 2px dashed #94A3B8;
+      border-radius: 16px;
+      padding: 18px 14px;
       text-align: center;
-      background: #FAFCFF;
+      background: #F8FAFC;
       cursor: pointer;
       display: block;
+      transition: border-color 0.15s, background 0.15s;
     }
-    .cam-preview {
+    .cam-drop:hover, .cam-drop:active { border-color: var(--orange); background: var(--orange-soft); }
+    .cam-drop.full-disabled { opacity: 0.55; pointer-events: none; }
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .photo-slot {
+      position: relative;
+      height: 88px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      background: var(--navy-soft);
+    }
+    .photo-slot.main-cover { border: 2px solid var(--orange); }
+    .photo-slot img {
       width: 100%;
-      height: 165px;
+      height: 100%;
       object-fit: cover;
-      border-radius: 10px;
-      margin-bottom: 8px;
-      display: none;
+      display: block;
+    }
+    .photo-slot-badge {
+      position: absolute;
+      bottom: 4px;
+      left: 4px;
+      background: rgba(13, 34, 58, 0.85);
+      color: #fff;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    .photo-slot.main-cover .photo-slot-badge { background: var(--orange); }
+    .photo-slot-del {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(220, 38, 38, 0.92);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Owner Account Pill & Auth Tabs */
+    .owner-verified-card {
+      background: #ECFDF5;
+      border: 1.5px solid #6EE7B7;
+      border-radius: 14px;
+      padding: 13px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      background: var(--navy-soft);
+      padding: 4px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .auth-tab {
+      border: none;
+      background: transparent;
+      padding: 9px 12px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--steel);
+      cursor: pointer;
+    }
+    .auth-tab.active {
+      background: var(--surface);
+      color: var(--navy);
+      box-shadow: var(--shadow-sm);
     }
 
     /* Signature Canvas */
@@ -972,6 +1054,9 @@
         </div>
 
         <div class="top-actions">
+          <button class="btn btn-ghost" id="ownerHeaderBtn" onclick="openOwnerAccountModal()" style="padding:9px 13px; font-size:12.5px;">
+            👤 Cuenta Propietario
+          </button>
           <button class="btn btn-primary" onclick="openPublishSheet()">+ Publicar</button>
         </div>
       </div>
@@ -1084,6 +1169,9 @@
          ========================================================= -->
     <div id="tabViewProfile" style="display:none;">
       <div class="view-section" style="padding-top:16px;">
+        <!-- Owner Account Card -->
+        <div id="profileOwnerCard" style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;"></div>
+
         <!-- KPI Summary Cards -->
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:18px;">
           <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center;">
@@ -1111,7 +1199,7 @@
         <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <strong style="font-size:15px; color:var(--navy);">Mis Máquinas Publicadas</strong>
-            <button class="btn btn-primary" style="padding:6px 12px; font-size:11px;" onclick="openPublishSheet()">+ Agregar</button>
+            <button class="btn btn-primary" style="padding:6px 12px; font-size:11px;" onclick="openPublishSheet()">+ Publicar Equipo</button>
           </div>
           <div id="profileFleet"></div>
         </div>
@@ -1151,7 +1239,7 @@
     </nav>
 
     <footer style="max-width:1180px; margin:24px auto 12px; padding:16px 20px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--text-muted);">
-      <span>© 2026 Green Mile RD • Facturación Electrónica e-NCF</span>
+      <span>© 2026 Green Mile RD • Plataforma Gestionada de Maquinaria Pesada</span>
       <div style="display:flex; gap:14px; flex-wrap:wrap;">
         <a href="acerca-de.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Acerca de</a>
         <a href="terminos.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Términos y Condiciones</a>
@@ -1176,18 +1264,133 @@
       <div class="sheet-body" style="display:flex; flex-direction:column; gap:12px;">
         <button class="switch-row" style="text-align:left; width:100%;" onclick="closeSheet('chooserSheet'); openPublishSheet();">
           <div>
-            <strong>🚜 Soy dueño: Publicar Máquina o Equipo</strong>
-            <span>Sube foto, fija tu tarifa en RD$ y recibe clientes</span>
+            <strong>🚜 Soy propietario: Publicar Equipo</strong>
+            <span>Requiere cuenta verificada • Sube hasta 5 fotos reales</span>
           </div>
           <span style="font-weight:800; color:var(--orange);">→</span>
         </button>
         <button class="switch-row" style="text-align:left; width:100%;" onclick="closeSheet('chooserSheet'); openSheet('reqSheet');">
           <div>
             <strong>👷 Soy contratista: Pedir Máquina para Obra</strong>
-            <span>Publica lo que buscas y recibe ofertas en tu WhatsApp</span>
+            <span>Publica lo que buscas y recibe propuestas verificadas</span>
           </div>
           <span style="font-weight:800; color:var(--navy);">→</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       BOTTOM SHEET 0: CUENTA PREVIA DE PROPIETARIO (REGISTRO / LOGIN)
+       ========================================================= -->
+  <div class="sheet-backdrop" id="ownerAuthSheet" onclick="if(event.target===this)closeSheet('ownerAuthSheet')">
+    <div class="sheet" style="max-width:520px;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <div>
+          <h3>Cuenta de Propietario</h3>
+          <p>Regístrate o inicia sesión antes de publicar maquinaria</p>
+        </div>
+        <button type="button" class="close-x" onclick="closeSheet('ownerAuthSheet')">&times;</button>
+      </div>
+
+      <div class="sheet-body">
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab active" id="authTabLogin" onclick="switchOwnerAuthMode('login')">Iniciar Sesión</button>
+          <button type="button" class="auth-tab" id="authTabRegister" onclick="switchOwnerAuthMode('register')">Crear Cuenta</button>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <form id="ownerLoginForm" onsubmit="submitOwnerLogin(event)">
+          <div class="f-grid">
+            <div class="f-field full">
+              <label>RNC / Cédula o Correo Electrónico <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <input type="text" id="loginIdentifier" placeholder="Ej. 1-32-05073-8 o correo@empresa.do" required>
+              </div>
+            </div>
+            <div class="f-field full">
+              <label>Contraseña <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <input type="password" id="loginPassword" placeholder="Ingresa tu contraseña" required>
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-navy" style="width:100%; margin-top:16px; min-height:48px; font-size:15px;">Entrar a mi Cuenta</button>
+          <p style="text-align:center; font-size:12px; color:var(--text-muted); margin-top:12px;">
+            ¿Aún no tienes cuenta de propietario?
+            <a href="#" onclick="event.preventDefault(); switchOwnerAuthMode('register');" style="color:var(--orange); font-weight:800;">Regístrate gratis aquí</a>
+          </p>
+        </form>
+
+        <!-- REGISTER FORM (VALIDADO EN DGII) -->
+        <form id="ownerRegisterForm" style="display:none;" onsubmit="submitOwnerRegister(event)" autocomplete="off">
+          <div class="f-grid">
+            <div class="f-field full">
+              <label>RNC (9 dígitos) o Cédula <small>* Validación DGII</small></label>
+              <div class="f-box">
+                <input type="text" id="regRnc" inputmode="numeric" placeholder="Ej. 1-32-05073-8" required>
+              </div>
+            </div>
+            <div class="f-field full">
+              <label>Empresa / Razón Social DGII <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <input type="text" id="regName" placeholder="Escribe empresa o autocompleta por RNC" required>
+              </div>
+              <div id="regDgiiSuggestions" class="dgii-sugg-list"></div>
+              <div id="regDgiiStatus" class="dgii-badge" style="display:none;"></div>
+            </div>
+            <div class="f-field">
+              <label>Correo Electrónico <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <input type="email" id="regEmail" placeholder="flota@empresa.do" required>
+              </div>
+            </div>
+            <div class="f-field">
+              <label>WhatsApp en RD <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <span class="f-prefix">🇩🇴 +1</span>
+                <input type="tel" id="regPhone" inputmode="tel" placeholder="809-555-0199" required>
+              </div>
+            </div>
+            <div class="f-field">
+              <label>Provincia Base</label>
+              <div class="f-box">
+                <select id="regCity">
+                  <option value="Santo Domingo">Santo Domingo / DN</option>
+                  <option value="Santiago">Santiago</option>
+                  <option value="Punta Cana">Punta Cana / Bávaro</option>
+                  <option value="La Romana">La Romana</option>
+                  <option value="San Cristóbal">San Cristóbal</option>
+                  <option value="Puerto Plata">Puerto Plata</option>
+                  <option value="La Vega">La Vega</option>
+                  <option value="Baní">Baní</option>
+                  <option value="San Pedro de Macorís">San Pedro de Macorís</option>
+                  <option value="Higüey">Higüey</option>
+                  <option value="San Francisco de Macorís">San Francisco de Macorís</option>
+                  <option value="Bonao">Bonao</option>
+                  <option value="Barahona">Barahona</option>
+                  <option value="Samaná">Samaná</option>
+                  <option value="Azua">Azua</option>
+                  <option value="Moca">Moca</option>
+                </select>
+              </div>
+            </div>
+            <div class="f-field">
+              <label>Crear Contraseña <small>* Mín. 6 caract.</small></label>
+              <div class="f-box">
+                <input type="password" id="regPassword" minlength="6" placeholder="••••••" required>
+              </div>
+            </div>
+            <div class="f-field full">
+              <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-muted); text-transform:none;">
+                <input type="checkbox" id="regTerms" required style="margin-top:3px; accent-color:var(--orange);">
+                <span>Acepto los <a href="terminos.html" target="_blank" style="color:var(--orange); font-weight:700; text-decoration:underline;">Términos de Intermediación y Cobro</a> de Green Mile RD.</span>
+              </label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; margin-top:16px; min-height:48px; font-size:15px;">Crear Cuenta Verificada y Continuar →</button>
+        </form>
       </div>
     </div>
   </div>
@@ -1200,8 +1403,8 @@
       <div class="sheet-handle"></div>
       <div class="sheet-head">
         <div>
-          <h3>Registrar Equipo en Flota Green Mile</h3>
-          <p>Sube tu maquinaria en 3 pasos • Cobro garantizado y e-NCF</p>
+          <h3>Publicar Equipo en Green Mile</h3>
+          <p>Sube tu maquinaria en 3 pasos • Cobro garantizado</p>
         </div>
         <button type="button" class="close-x" onclick="closeSheet('publishSheet')">&times;</button>
       </div>
@@ -1211,13 +1414,13 @@
           <div class="stepper">
             <div class="s-pill active" id="ws1" style="cursor:pointer;" onclick="goToWizardStep(1)">1. Equipo</div>
             <div class="s-pill" id="ws2" style="cursor:pointer;" onclick="goToWizardStep(2)">2. Tarifas RD$</div>
-            <div class="s-pill" id="ws3" style="cursor:pointer;" onclick="goToWizardStep(3)">3. Foto y Propietario</div>
+            <div class="s-pill" id="ws3" style="cursor:pointer;" onclick="goToWizardStep(3)">3. Fotos y Confirmar</div>
           </div>
 
           <!-- Step 1 -->
           <div id="pStep1">
             <div class="f-field full" style="margin-bottom:14px;">
-              <label>Categoría <small>Obligatorio</small></label>
+              <label>Categoría <small>* Obligatorio</small></label>
               <div class="cat-grid-tiles" id="pubCatTiles">
                 <div class="c-tile selected" data-val="Movimiento de Tierra" onclick="pickTile(this)">Movimiento Tierra</div>
                 <div class="c-tile" data-val="Izaje y Grúas" onclick="pickTile(this)">Grúas e Izaje</div>
@@ -1231,7 +1434,7 @@
 
             <div class="f-grid">
               <div class="f-field full">
-                <label>Marca y Modelo <small>Obligatorio</small></label>
+                <label>Marca y Modelo <small>* Obligatorio</small></label>
                 <div class="f-box">
                   <input type="text" id="pubTitle" placeholder="Ej. Retroexcavadora CAT 416F2">
                 </div>
@@ -1255,7 +1458,7 @@
           <div id="pStep2" style="display:none;">
             <div class="f-grid">
               <div class="f-field">
-                <label>Tarifa por Día <small>Obligatorio</small></label>
+                <label>Tarifa por Día <small>* Obligatorio</small></label>
                 <div class="f-box">
                   <span class="f-prefix">RD$</span>
                   <input type="number" id="pubPriceDay" placeholder="16500" min="500" oninput="suggestRates()">
@@ -1318,44 +1521,33 @@
             </div>
           </div>
 
-          <!-- Step 3 -->
+          <!-- Step 3: Fotos Obligatorias (1 a 5) + Propietario Verificado -->
           <div id="pStep3" style="display:none;">
-            <div class="f-field full" style="margin-bottom:14px;">
-              <label>Foto del Equipo (Cámara o Galería)</label>
-              <label class="cam-drop" for="pubPhoto">
-                <img id="camPreview" class="cam-preview" alt="Vista previa">
-                <div id="camText">
-                  <strong style="color:var(--navy); display:block; font-size:14px;">📷 Tomar foto o elegir de galería</strong>
-                  <span style="font-size:12px; color:var(--text-muted);">Sube una foto real para generar más confianza</span>
-                </div>
-                <input type="file" id="pubPhoto" accept="image/*" style="display:none;" onchange="onPhotoPicked(event)">
+            <div class="f-field full" style="margin-bottom:16px;">
+              <label>
+                <span>Fotos Reales del Equipo (<span id="pubPhotoCount">0</span>/5)</span>
+                <small>* Mín. 1 foto obligatoria · Máx. 5</small>
               </label>
+              <label class="cam-drop" id="pubCamDrop" for="pubPhoto">
+                <div id="camText">
+                  <strong style="color:var(--navy); display:block; font-size:14.5px;">📷 Subir fotos del equipo (hasta 5 imágenes)</strong>
+                  <span style="font-size:12px; color:var(--text-muted);">La primera foto será la portada principal del anuncio</span>
+                </div>
+                <input type="file" id="pubPhoto" accept="image/*" multiple style="display:none;" onchange="onPhotoPicked(event)">
+              </label>
+              <div id="pubPhotosGrid" class="photos-grid"></div>
             </div>
 
-            <div class="f-grid">
-              <div class="f-field full">
-                <label>RNC (9 dígitos) o Cédula <small>Validación DGII</small></label>
-                <div class="f-box"><input type="text" id="pubRnc" inputmode="numeric" placeholder="Ej. 1-01-01992-1" required></div>
-              </div>
-              <div class="f-field full">
-                <label>Propietario / Razón Social DGII <small>Obligatorio</small></label>
-                <div class="f-box"><input type="text" id="pubOwner" placeholder="Escribe empresa o autocompleta por RNC" autocomplete="off" required></div>
-                <div id="pubDgiiSuggestions" class="dgii-sugg-list"></div>
-                <div id="pubDgiiStatus" class="dgii-badge" style="display:none;"></div>
-              </div>
-              <div class="f-field full">
-                <label>WhatsApp en RD (confidencial · uso interno) <small>Obligatorio</small></label>
-                <div class="f-box">
-                  <span class="f-prefix">🇩🇴 +1</span>
-                  <input type="tel" id="pubPhone" inputmode="tel" placeholder="809-555-0199" required>
-                </div>
-              </div>
-              <div class="f-field full">
-                <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-muted); text-transform:none; letter-spacing:0;">
-                  <input type="checkbox" id="pubTerms" style="margin-top:3px; accent-color:var(--orange);">
-                  <span>Acepto las <a href="#" onclick="event.preventDefault(); openSheet('policiesSheet');" style="color:var(--orange); font-weight:700; text-decoration:underline;">Políticas de Intermediación, Cobro y e-NCF</a> de Green Mile RD.</span>
-                </label>
-              </div>
+            <div class="f-field full" style="margin-bottom:14px;">
+              <label>Cuenta de Propietario Vinculada</label>
+              <div id="pubOwnerSummary" class="owner-verified-card"></div>
+            </div>
+
+            <div class="f-field full">
+              <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-muted); text-transform:none; letter-spacing:0;">
+                <input type="checkbox" id="pubTerms" style="margin-top:3px; accent-color:var(--orange);">
+                <span>Confirmo que las fotos corresponden al equipo real y acepto las <a href="#" onclick="event.preventDefault(); openSheet('policiesSheet');" style="color:var(--orange); font-weight:700; text-decoration:underline;">Políticas de Intermediación y Cobro</a> de Green Mile RD.</span>
+              </label>
             </div>
           </div>
         </div>
@@ -1364,7 +1556,7 @@
           <button type="button" class="btn btn-ghost" id="wBack" style="visibility:hidden;" onclick="stepWizard(-1)">← Atrás</button>
           <div style="display:flex; gap:8px;">
             <button type="button" class="btn btn-navy" id="wNext" onclick="stepWizard(1)">Siguiente →</button>
-            <button type="submit" class="btn btn-primary" id="wSubmit" style="display:none;">Registrar Equipo</button>
+            <button type="submit" class="btn btn-primary" id="wSubmit" style="display:none;">Publicar Equipo</button>
           </div>
         </div>
       </form>
@@ -1554,7 +1746,6 @@
     let activeTab = 'catalog';
     let activeCat = 'Todos';
     let wizStep = 1;
-    let photoData = '';
 
     const fmtRD = GM.fmtRD;
     const cleanWA = GM.cleanWA;
@@ -1670,11 +1861,12 @@
     function cardHTML(item) {
       const isSaved = savedIds.includes(item.id);
       const url = GM.getEquipmentPath(item, '');
+      const photoCount = Array.isArray(item.images) ? item.images.length : 0;
       return `
         <article class="eq-card" onclick="openDetail(${item.id})">
           <div class="eq-media">
             <img src="${item.img || defaultCover(item.category)}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src=defaultCover('${item.category.replace(/'/g, "\\'")}')">
-            <span class="pill-city">${item.city}</span>
+            <span class="pill-city">${item.city}${photoCount > 1 ? ` • 📷 ${photoCount}` : ''}</span>
             <div class="card-top-actions">
               <button type="button" class="share-btn" onclick="shareCard(event, ${item.id})" aria-label="Compartir anuncio" title="Compartir enlace del anuncio">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
@@ -1825,7 +2017,196 @@
       }).join('');
     }
 
+    let currentOwner = (window.GM_FIREBASE && window.GM_FIREBASE.getCurrentOwner)
+      ? window.GM_FIREBASE.getCurrentOwner()
+      : null;
+    let pendingOpenPublishAfterAuth = false;
+    let photoList = [];
+
+    const regDgiiController = (window.GM_DGII && window.GM_DGII.attachPair)
+      ? window.GM_DGII.attachPair({
+          rncInputId: 'regRnc',
+          nameInputId: 'regName',
+          statusBoxId: 'regDgiiStatus',
+          suggestionsBoxId: 'regDgiiSuggestions'
+        })
+      : null;
+
+    function syncOwnerUI() {
+      currentOwner = (window.GM_FIREBASE && window.GM_FIREBASE.getCurrentOwner)
+        ? window.GM_FIREBASE.getCurrentOwner()
+        : null;
+
+      const hdrBtn = document.getElementById('ownerHeaderBtn');
+      if (hdrBtn) {
+        if (currentOwner) {
+          const shortName = currentOwner.name.length > 18 ? currentOwner.name.slice(0, 18) + '…' : currentOwner.name;
+          hdrBtn.innerHTML = `✓ ${shortName}`;
+          hdrBtn.style.borderColor = '#6EE7B7';
+          hdrBtn.style.background = '#ECFDF5';
+          hdrBtn.style.color = '#065F46';
+        } else {
+          hdrBtn.innerHTML = `👤 Cuenta Propietario`;
+          hdrBtn.style.borderColor = '';
+          hdrBtn.style.background = '';
+          hdrBtn.style.color = '';
+        }
+      }
+
+      const sumEl = document.getElementById('pubOwnerSummary');
+      if (sumEl && currentOwner) {
+        sumEl.innerHTML = `
+          <div>
+            <strong style="font-size:14px; color:#065F46; display:block;">✓ ${currentOwner.name}</strong>
+            <span style="font-size:12px; color:#047857;">RNC/Cédula: ${currentOwner.rncFormatted} • Tel: +1 ${currentOwner.phone}</span>
+          </div>
+          <button type="button" class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="closeSheet('publishSheet'); handleLogoutOwner();">Cambiar cuenta</button>
+        `;
+      }
+    }
+
+    function openOwnerAccountModal() {
+      if (currentOwner) {
+        switchTab('profile');
+        return;
+      }
+      pendingOpenPublishAfterAuth = false;
+      switchOwnerAuthMode('login');
+      openSheet('ownerAuthSheet');
+    }
+
+    function switchOwnerAuthMode(mode) {
+      const isLogin = mode === 'login';
+      document.getElementById('authTabLogin').classList.toggle('active', isLogin);
+      document.getElementById('authTabRegister').classList.toggle('active', !isLogin);
+      document.getElementById('ownerLoginForm').style.display = isLogin ? 'block' : 'none';
+      document.getElementById('ownerRegisterForm').style.display = isLogin ? 'none' : 'block';
+    }
+
+    async function submitOwnerLogin(e) {
+      e.preventDefault();
+      const identifier = document.getElementById('loginIdentifier').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!identifier || !password) {
+        toast('Ingresa tu RNC/Correo y contraseña');
+        return;
+      }
+      try {
+        currentOwner = await window.GM_FIREBASE.loginOwnerAccount({ identifier, password });
+        syncOwnerUI();
+        closeSheet('ownerAuthSheet');
+        toast(`¡Bienvenido, ${currentOwner.name}!`);
+        if (pendingOpenPublishAfterAuth) {
+          pendingOpenPublishAfterAuth = false;
+          openPublishSheet();
+        } else {
+          renderCurrentTab();
+        }
+      } catch (err) {
+        toast(err.message || 'No se pudo iniciar sesión');
+      }
+    }
+
+    async function submitOwnerRegister(e) {
+      e.preventDefault();
+      const rncRaw = document.getElementById('regRnc').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const phone = document.getElementById('regPhone').value.trim();
+      const city = document.getElementById('regCity').value;
+      const password = document.getElementById('regPassword').value;
+
+      if (phone.replace(/\D/g, '').length < 10) {
+        toast('Ingresa un número de WhatsApp válido de 10 dígitos');
+        return;
+      }
+      if (password.length < 6) {
+        toast('La contraseña debe tener al menos 6 caracteres');
+        return;
+      }
+      if (!document.getElementById('regTerms').checked) {
+        toast('Debes aceptar los términos de intermediación');
+        return;
+      }
+
+      if (regDgiiController) {
+        const dgiiRes = await regDgiiController.validateBeforeSubmit({ requireActiveForNcf: false });
+        if (!dgiiRes.valid) {
+          toast(dgiiRes.error);
+          return;
+        }
+      }
+
+      const name = document.getElementById('regName').value.trim();
+      const rncDigits = rncRaw.replace(/\D/g, '');
+      const rncFormatted = window.GM_DGII ? window.GM_DGII.formatRncOrCedula(rncDigits) : rncRaw;
+
+      try {
+        currentOwner = await window.GM_FIREBASE.registerOwnerAccount({
+          rncDigits,
+          rncFormatted,
+          name,
+          email,
+          phone,
+          city,
+          password
+        });
+        syncOwnerUI();
+        closeSheet('ownerAuthSheet');
+        toast('✓ Cuenta de propietario creada y verificada');
+        if (pendingOpenPublishAfterAuth) {
+          pendingOpenPublishAfterAuth = false;
+          openPublishSheet();
+        } else {
+          renderCurrentTab();
+        }
+      } catch (err) {
+        toast(err.message || 'Error al registrar la cuenta');
+      }
+    }
+
+    function handleLogoutOwner() {
+      if (window.GM_FIREBASE && window.GM_FIREBASE.logoutOwner) {
+        window.GM_FIREBASE.logoutOwner();
+      }
+      currentOwner = null;
+      syncOwnerUI();
+      renderCurrentTab();
+      toast('Sesión de propietario cerrada');
+    }
+
     function renderProfile() {
+      const oCard = document.getElementById('profileOwnerCard');
+      if (oCard) {
+        if (currentOwner) {
+          oCard.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+              <div>
+                <span style="font-size:10.5px; font-weight:800; color:#059669; background:#ECFDF5; padding:3px 9px; border-radius:99px; text-transform:uppercase;">✓ Propietario Verificado DGII</span>
+                <strong style="font-size:17px; color:var(--navy); display:block; margin-top:6px;">${currentOwner.name}</strong>
+                <span style="font-size:12.5px; color:var(--text-muted);">RNC/Cédula: <strong>${currentOwner.rncFormatted}</strong> • ${currentOwner.email || ''} • +1 ${currentOwner.phone}</span>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-primary" style="padding:8px 13px; font-size:12px;" onclick="openPublishSheet()">+ Subir Equipo</button>
+                <button class="btn btn-ghost" style="padding:8px 13px; font-size:12px; color:#DC2626;" onclick="handleLogoutOwner()">Cerrar Sesión</button>
+              </div>
+            </div>
+          `;
+        } else {
+          oCard.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+              <div>
+                <strong style="font-size:16px; color:var(--navy); display:block;">¿Eres propietario de maquinaria?</strong>
+                <span style="font-size:12.5px; color:var(--text-muted);">Registra tu cuenta verificada con RNC/DGII para publicar tus equipos y gestionar tu flota.</span>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-ghost" style="padding:8px 13px; font-size:12px;" onclick="switchOwnerAuthMode('login'); openSheet('ownerAuthSheet');">Iniciar Sesión</button>
+                <button class="btn btn-primary" style="padding:8px 13px; font-size:12px;" onclick="switchOwnerAuthMode('register'); openSheet('ownerAuthSheet');">Crear Cuenta</button>
+              </div>
+            </div>
+          `;
+        }
+      }
+
       const cBox = document.getElementById('profileContracts');
       if (bookings.length === 0) {
         cBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No hay contratos generados todavía.</p>`;
@@ -1842,16 +2223,23 @@
       }
 
       const fBox = document.getElementById('profileFleet');
-      if (equipment.length === 0) {
-        fBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Aún no has publicado equipos en tu flota.</p>`;
+      const myFleet = currentOwner
+        ? equipment.filter(e => String(e.ownerId || '') === String(currentOwner.id) || String(e.rnc || '').replace(/\D/g, '') === String(currentOwner.rncDigits))
+        : [];
+
+      if (!currentOwner) {
+        fBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Inicia sesión en tu cuenta de propietario para administrar las máquinas que publiques.</p>`;
+      } else if (myFleet.length === 0) {
+        fBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Aún no has subido maquinaria con tu cuenta (${currentOwner.name}). Toca <strong>+ Publicar Equipo</strong> para subir hasta 5 fotos de tu primera unidad.</p>`;
       } else {
-        fBox.innerHTML = equipment.map(e => {
+        fBox.innerHTML = myFleet.map(e => {
           const url = GM.getEquipmentPath(e, '');
+          const countImgs = Array.isArray(e.images) && e.images.length ? e.images.length : 1;
           return `
             <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
               <div>
                 <a href="${url}" style="font-size:14px; font-weight:800; color:var(--navy); display:block; text-decoration:none;">${e.title}</a>
-                <span style="font-size:11px; color:var(--text-muted);">${e.city} • ${fmtRD(e.priceDay)}/día</span>
+                <span style="font-size:11px; color:var(--text-muted);">${e.city} • ${fmtRD(e.priceDay)}/día • 📷 ${countImgs} foto(s)</span>
               </div>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
                 <a class="btn btn-navy" style="padding:6px 10px; font-size:11px;" href="${url}">Ver</a>
@@ -1888,15 +2276,30 @@
       toast('Equipo eliminado');
     }
 
-    /* Publish Wizard */
+    /* Publish Wizard — Gated by Pre-Registered Owner Account */
     function openPublishSheet() {
+      syncOwnerUI();
+      if (!currentOwner) {
+        pendingOpenPublishAfterAuth = true;
+        switchOwnerAuthMode('register');
+        openSheet('ownerAuthSheet');
+        toast('Primero crea o inicia sesión en tu Cuenta de Propietario');
+        return;
+      }
+
       wizStep = 1;
-      photoData = '';
+      photoList = [];
       document.getElementById('publishForm').reset();
-      document.getElementById('camPreview').style.display = 'none';
-      document.getElementById('camText').style.display = 'block';
       document.getElementById('pubCat').value = 'Movimiento de Tierra';
+      if (currentOwner.city) {
+        const citySel = document.getElementById('pubCity');
+        if (Array.from(citySel.options).some(o => o.value === currentOwner.city)) {
+          citySel.value = currentOwner.city;
+        }
+      }
       document.querySelectorAll('#pubCatTiles .c-tile').forEach((t, idx) => t.classList.toggle('selected', idx === 0));
+      renderPhotosGrid();
+      syncOwnerUI();
       updateWiz();
       openSheet('publishSheet');
     }
@@ -1915,27 +2318,75 @@
       }
     }
 
-    async function onPhotoPicked(e) {
-      const f = e.target.files[0];
-      if (!f) return;
-      if (window.GM_FIREBASE && window.GM_FIREBASE.compressImageFile) {
-        const compressed = await window.GM_FIREBASE.compressImageFile(f);
-        if (compressed) {
-          photoData = compressed;
-          const img = document.getElementById('camPreview');
-          img.src = photoData;
-          img.style.display = 'block';
-          return;
+    function renderPhotosGrid() {
+      const countEl = document.getElementById('pubPhotoCount');
+      const gridEl = document.getElementById('pubPhotosGrid');
+      const dropEl = document.getElementById('pubCamDrop');
+      const textEl = document.getElementById('camText');
+      if (!gridEl) return;
+
+      if (countEl) countEl.textContent = String(photoList.length);
+      if (dropEl) dropEl.classList.toggle('full-disabled', photoList.length >= 5);
+      if (textEl) {
+        if (photoList.length >= 5) {
+          textEl.innerHTML = `<strong style="color:var(--success); display:block; font-size:14px;">✓ Máximo de 5 fotos alcanzado</strong><span style="font-size:12px; color:var(--text-muted);">Elimina alguna miniatura abajo si deseas reemplazarla</span>`;
+        } else if (photoList.length > 0) {
+          textEl.innerHTML = `<strong style="color:var(--navy); display:block; font-size:14.5px;">📷 + Agregar más fotos (${photoList.length}/5 cargadas)</strong><span style="font-size:12px; color:var(--text-muted);">Puedes subir ${5 - photoList.length} foto(s) adicional(es)</span>`;
+        } else {
+          textEl.innerHTML = `<strong style="color:var(--navy); display:block; font-size:14.5px;">📷 Subir fotos reales del equipo (1 a 5 fotos obligatorias)</strong><span style="font-size:12px; color:var(--text-muted);">Toca aquí para abrir cámara o galería • La foto #1 será portada</span>`;
         }
       }
-      const r = new FileReader();
-      r.onload = ev => {
-        photoData = ev.target.result;
-        const img = document.getElementById('camPreview');
-        img.src = photoData;
-        img.style.display = 'block';
-      };
-      r.readAsDataURL(f);
+
+      gridEl.innerHTML = photoList.map((src, idx) => `
+        <div class="photo-slot ${idx === 0 ? 'main-cover' : ''}">
+          <img src="${src}" alt="Foto ${idx + 1}">
+          <span class="photo-slot-badge">${idx === 0 ? '★ Portada' : 'Foto ' + (idx + 1)}</span>
+          <button type="button" class="photo-slot-del" onclick="removePickedPhoto(${idx})" aria-label="Eliminar foto">&times;</button>
+        </div>
+      `).join('');
+    }
+
+    function removePickedPhoto(idx) {
+      photoList.splice(idx, 1);
+      renderPhotosGrid();
+    }
+
+    async function onPhotoPicked(e) {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+
+      const slotsLeft = 5 - photoList.length;
+      if (slotsLeft <= 0) {
+        toast('Ya subiste el máximo de 5 fotos permitidas');
+        e.target.value = '';
+        return;
+      }
+
+      if (files.length > slotsLeft) {
+        toast(`Solo se agregaron ${slotsLeft} foto(s) (límite máximo de 5)`);
+      }
+
+      const toProcess = files.slice(0, slotsLeft);
+      for (const file of toProcess) {
+        let dataUrl = null;
+        if (window.GM_FIREBASE && window.GM_FIREBASE.compressImageFile) {
+          dataUrl = await window.GM_FIREBASE.compressImageFile(file, 860, 0.74);
+        }
+        if (!dataUrl) {
+          dataUrl = await new Promise((resolve) => {
+            const r = new FileReader();
+            r.onload = (ev) => resolve(ev.target.result);
+            r.onerror = () => resolve(null);
+            r.readAsDataURL(file);
+          });
+        }
+        if (dataUrl && photoList.length < 5) {
+          photoList.push(dataUrl);
+        }
+      }
+
+      e.target.value = '';
+      renderPhotosGrid();
     }
 
     function validateWizardStep(step) {
@@ -1964,26 +2415,20 @@
         }
       }
       if (step === 3) {
-        const owner = document.getElementById('pubOwner').value.trim();
-        const rnc = document.getElementById('pubRnc').value.trim();
-        const phoneDigits = document.getElementById('pubPhone').value.replace(/\D/g, '');
-        if (!owner) {
-          toast('Ingresa el nombre del propietario o empresa');
-          document.getElementById('pubOwner').focus();
+        if (!currentOwner) {
+          toast('Inicia sesión en tu Cuenta de Propietario antes de publicar');
           return false;
         }
-        if (rnc.length < 9) {
-          toast('Ingresa un RNC o Cédula válido para e-NCF y pagos');
-          document.getElementById('pubRnc').focus();
+        if (photoList.length < 1) {
+          toast('⚠️ Es obligatorio subir al menos 1 foto real del equipo (máximo 5)');
           return false;
         }
-        if (phoneDigits.length < 10) {
-          toast('Ingresa un WhatsApp válido de 10 dígitos en RD');
-          document.getElementById('pubPhone').focus();
+        if (photoList.length > 5) {
+          toast('Máximo 5 fotos permitidas por equipo');
           return false;
         }
         if (!document.getElementById('pubTerms').checked) {
-          toast('Debes aceptar las políticas de Green Mile RD');
+          toast('Debes confirmar y aceptar las políticas de Green Mile RD');
           return false;
         }
       }
@@ -2024,38 +2469,23 @@
       if (bodyEl) bodyEl.scrollTop = 0;
     }
 
-    const pubDgiiController = (window.GM_DGII && window.GM_DGII.attachPair)
-      ? window.GM_DGII.attachPair({
-          rncInputId: 'pubRnc',
-          nameInputId: 'pubOwner',
-          statusBoxId: 'pubDgiiStatus',
-          suggestionsBoxId: 'pubDgiiSuggestions'
-        })
-      : null;
-
     async function submitPublish(e) {
       e.preventDefault();
+      if (!currentOwner) {
+        closeSheet('publishSheet');
+        pendingOpenPublishAfterAuth = true;
+        openSheet('ownerAuthSheet');
+        return;
+      }
       if (!validateWizardStep(1)) { wizStep = 1; updateWiz(); return; }
       if (!validateWizardStep(2)) { wizStep = 2; updateWiz(); return; }
       if (!validateWizardStep(3)) { wizStep = 3; updateWiz(); return; }
-
-      if (pubDgiiController) {
-        const dgiiRes = await pubDgiiController.validateBeforeSubmit({ requireActiveForNcf: false });
-        if (!dgiiRes.valid) {
-          wizStep = 3;
-          updateWiz();
-          toast(dgiiRes.error);
-          return;
-        }
-      }
-
-      const owner = document.getElementById('pubOwner').value.trim();
-      const phone = document.getElementById('pubPhone').value.trim();
 
       const day = Number(document.getElementById('pubPriceDay').value);
       const cat = document.getElementById('pubCat').value;
       const newEq = {
         id: Date.now(),
+        ownerId: currentOwner.id,
         category: cat,
         title: document.getElementById('pubTitle').value.trim(),
         power: document.getElementById('pubPower').value.trim() || 'Estándar',
@@ -2067,18 +2497,20 @@
         transportCost: Number(document.getElementById('pubTransport').value) || 0,
         city: document.getElementById('pubCity').value,
         operator: document.getElementById('pubOp').checked,
-        owner,
-        rnc: document.getElementById('pubRnc').value.trim() || 'N/A',
-        phone,
+        owner: currentOwner.name,
+        rnc: currentOwner.rncFormatted,
+        phone: currentOwner.phone,
         busy: false,
-        img: photoData || defaultCover(cat)
+        img: photoList[0],
+        images: photoList.slice(0, 5)
       };
+
       equipment.unshift(newEq);
       syncCounters();
       closeSheet('publishSheet');
-      const photoFile = document.getElementById('pubPhoto')?.files?.[0] || null;
+
       if (window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
-        window.GM_FIREBASE.saveEquipment(newEq, photoFile)
+        window.GM_FIREBASE.saveEquipment(newEq)
           .then((saved) => { window.location.href = GM.getEquipmentPath(saved || newEq, ''); })
           .catch(() => { window.location.href = GM.getEquipmentPath(newEq, ''); });
       } else {
@@ -2193,6 +2625,7 @@
       renderCurrentTab();
     }
 
+    syncOwnerUI();
     syncCounters();
     applyUrlParams();
 

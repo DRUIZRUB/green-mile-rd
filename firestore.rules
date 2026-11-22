@@ -1,6 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /owners/{ownerId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.rncDigits is string
+                            && request.resource.data.name is string
+                            && request.resource.data.passwordHash is string;
+      allow delete: if false;
+    }
+
     match /equipment/{equipmentId} {
       allow read: if true;
       allow create, update: if request.resource.data.title is string
