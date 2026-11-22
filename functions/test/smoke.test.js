@@ -1,5 +1,10 @@
 'use strict';
 
+// Garantizar que las pruebas de humo corran siempre en sandbox aislado aunque existan llaves reales en functions/.env
+process.env.GM_SKIP_DOTENV = '1';
+process.env.PAYMENT_PROVIDER = 'sandbox';
+process.env.DGII_ECF_MODE = 'sandbox';
+
 const assert = require('node:assert');
 const crypto = require('node:crypto');
 const forge = require('node-forge');

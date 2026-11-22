@@ -5,6 +5,11 @@
   "description": "Green Mile Construction RD — Marketplace de Maquinaria Pesada con Tracking GPS en Vivo y App Nativa",
   "scripts": {
     "build:pages": "node scripts/generate-pages.mjs",
+    "env:init": "node scripts/setup-env.mjs init",
+    "env:wizard": "node scripts/setup-env.mjs wizard",
+    "env:sync-certs": "node scripts/setup-env.mjs sync-certs",
+    "env:check": "node scripts/setup-env.mjs check",
+    "env:deploy": "bash scripts/configure-secrets.sh --deploy",
     "functions:install": "npm --prefix functions install",
     "functions:test": "node functions/test/smoke.test.js",
     "cap:sync": "npm run build:pages && npx cap sync",

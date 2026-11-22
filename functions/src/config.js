@@ -1,10 +1,42 @@
 'use strict';
 
+const fs = require('node:fs');
+const path = require('node:path');
+
 /**
  * Registro centralizado de configuración y secretos de Green Mile Construction RD.
- * Lee variables desde process.env (compatible con Firebase Secret Manager y functions/.env).
+ * Lee variables desde process.env (inyectado automáticamente por Firebase Cloud Functions v2
+ * desde functions/.env en deploy) y también carga functions/.env automáticamente en ejecución local.
  * NUNCA expone valores sensibles en getPublicHealthStatus().
  */
+
+const FUNCTIONS_DIR = path.resolve(__dirname, '..');
+
+function loadLocalDotEnvOnce() {
+  if (process.env.GM_SKIP_DOTENV === '1') return;
+  const envPath = path.join(FUNCTIONS_DIR, '.env');
+  if (!fs.existsSync(envPath)) return;
+  try {
+    const raw = fs.readFileSync(envPath, 'utf8');
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx <= 0) continue;
+      const key = trimmed.slice(0, eqIdx).trim();
+      if (!key || (process.env[key] !== undefined && process.env[key] !== '')) continue;
+      let val = trimmed.slice(eqIdx + 1).trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      if (val !== '') {
+        process.env[key] = val;
+      }
+    }
+  } catch (_) {}
+}
+
+loadLocalDotEnvOnce();
 
 function env(key, fallback = '') {
   const val = process.env[key];
@@ -15,6 +47,20 @@ function boolEnv(key, fallback = false) {
   const v = env(key, '');
   if (!v) return fallback;
   return ['1', 'true', 'yes', 'on'].includes(v.toLowerCase());
+}
+
+function resolveCertBase64(base64Key, pathKey) {
+  const direct = env(base64Key, '');
+  if (direct) return direct;
+  const relOrAbs = env(pathKey, '');
+  if (!relOrAbs) return '';
+  try {
+    const resolved = path.isAbsolute(relOrAbs) ? relOrAbs : path.resolve(FUNCTIONS_DIR, relOrAbs);
+    if (fs.existsSync(resolved)) {
+      return fs.readFileSync(resolved).toString('base64');
+    }
+  } catch (_) {}
+  return '';
 }
 
 function getConfig() {
@@ -35,8 +81,8 @@ function getConfig() {
         auth1: env('AZUL_AUTH1', ''),
         auth2: env('AZUL_AUTH2', ''),
         storeId: env('AZUL_STORE_ID', ''),
-        certBase64: env('AZUL_CERT_BASE64', ''),
-        keyBase64: env('AZUL_KEY_BASE64', ''),
+        certBase64: resolveCertBase64('AZUL_CERT_BASE64', 'AZUL_CERT_PATH'),
+        keyBase64: resolveCertBase64('AZUL_KEY_BASE64', 'AZUL_KEY_PATH'),
         force3ds: boolEnv('AZUL_FORCE_3DS', true)
       },
       cardnet: {
@@ -71,7 +117,7 @@ function getConfig() {
         provincia: env('DGII_EMISOR_PROVINCIA', '010000'),
         correo: env('DGII_EMISOR_CORREO', 'facturacion@greenmilerd.com')
       },
-      certP12Base64: env('DGII_CERT_P12_BASE64', ''),
+      certP12Base64: resolveCertBase64('DGII_CERT_P12_BASE64', 'DGII_CERT_P12_PATH'),
       certPassword: env('DGII_CERT_PASSWORD', ''),
       providerApi: {
         baseUrl: env('ECF_PROVIDER_BASE_URL', ''),

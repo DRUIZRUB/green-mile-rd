@@ -85,20 +85,29 @@ Copia [`functions/.env.example`](./functions/.env.example) a `functions/.env` (a
 
 ---
 
-## 4. Comandos Rápidos de Validación y Despliegue
+## 4. Comandos Rápidos para Cargar `functions/.env` y Desplegar
+
+Firebase Cloud Functions v2 lee **automáticamente** el archivo local `functions/.env` al hacer deploy e inyecta todas tus llaves como variables de entorno en la nube (sin subir `functions/.env` a Git).
 
 ```bash
-# 1. Codificar un certificado .p12 o .pem a Base64 (1 línea)
-./scripts/configure-secrets.sh --encode-cert /ruta/a/certificado.p12
+# 1. Crear functions/.env (permisos 600 + secretos aleatorios de admin/webhook)
+npm run env:init
 
-# 2. Validar que todas las llaves requeridas estén cargadas (sin imprimir secretos)
-./scripts/configure-secrets.sh --check
+# 2A. Editar functions/.env directamente con tus API keys, O BIEN usar el asistente guiado:
+npm run env:wizard
 
-# 3. Correr pruebas unitarias y de firma criptográfica XMLDSig localmente
+# 2B. Si tienes archivos .p12 (DGII) o .crt/.key (Azul mTLS), colócalos en functions/certs/
+#     (carpeta bloqueada en .gitignore y firebase.json) y conviértelos automáticamente a Base64:
+npm run env:sync-certs
+
+# 3. Validar llaves + abrir criptográficamente el .p12 (verifica contraseña y vencimiento sin imprimir secretos)
+npm run env:check
+
+# 4. Correr pruebas unitarias y de firma criptográfica XMLDSig localmente (siempre aisladas en sandbox)
 npm run functions:test
 
-# 4. Desplegar Cloud Functions v2, Reglas de Firestore y Hosting
-./scripts/configure-secrets.sh --deploy
+# 5. Desplegar Cloud Functions v2 (con functions/.env), Reglas de Firestore y Hosting
+npm run env:deploy
 ```
 
 > **Nota sobre Firebase Blaze:** Firebase Cloud Functions v2 requiere que el proyecto `studio-8139121026-17b90` esté en el plan **Blaze** (pago por uso con capa gratuita generosa de 2 millones de invocaciones/mes). Una vez desplegado, abre `admin.html` → **Configuración Empresa** y pulsa **🔄 Probar Conexión Backend** para confirmar que todos los indicadores aparezcan en verde.

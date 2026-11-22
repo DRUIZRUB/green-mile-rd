@@ -24,4 +24,7 @@ functions/.env.*
 *.pem
 *.key
 *.crt
+functions/certs/*
+!functions/certs/README.md
+
 
