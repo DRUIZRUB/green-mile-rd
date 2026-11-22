@@ -77,9 +77,9 @@ npm run cap:ios
 
 ---
 
-## 5. Probar el Tracking tipo Uber de inmediato
+## 5. Flujo real de Tracking GPS en Vivo (Operador → Cliente)
 
-1. Abre `/tracking.html?demo=1&role=operator` (o entra desde **Mi Panel → Demo Operador**).
-2. Haz clic en **👁 Abrir Vista Cliente** para abrir el mapa del contratista en otra pestaña.
-3. En la consola del operador, pulsa **▶ Simular recorrido** (puedes ajustar velocidad `1x`, `3x`, `8x`) o **🚚 Iniciar Recorrido hacia la Obra** para usar GPS real.
-4. Verás la unidad desplazarse suavemente sobre las calles reales, rotar según rumbo, acortar la ruta restante, actualizar ETA y distancia en vivo, y confirmar llegada a obra.
+1. Al confirmar cualquier alquiler, el sistema crea el contrato con coordenadas exactas del patio base y la obra, e inicializa el despacho en Cloud Firestore (`tracking/{bookingId}`).
+2. Desde **Mi Panel**, el contrato o el **Centro Administrativo** (`admin.html`), envía al operador su enlace directo (`tracking.html?booking=ID&role=operator`) por WhatsApp y al contratista el enlace de seguimiento (`tracking.html?booking=ID`).
+3. Cuando el operador sale del patio y pulsa **🚚 Iniciar Recorrido hacia la Obra**, su celular transmite GPS real en vivo a Cloud Firestore (en segundo plano si usa la App Nativa Capacitor, o con pantalla activa en web/PWA).
+4. El contratista ve el recorrido real sobre el mapa en tiempo real con ETA, velocidad, kilómetros restantes, ruta por carretera y confirmación de llegada a obra.

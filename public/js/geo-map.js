@@ -183,24 +183,271 @@
     };
   }
 
-  async function searchAddress(query) {
+  // Zonas, sectores, corredores industriales y municipios frecuentes en obras de RD (respuesta instantánea 0ms)
+  const DR_POPULAR_PLACES = [
+    { name: 'Piantini', area: 'Distrito Nacional, Santo Domingo', lat: 18.4728, lng: -69.9396, tags: 'sector torre poligono central churchill lincoln' },
+    { name: 'Ensanche Naco', area: 'Distrito Nacional, Santo Domingo', lat: 18.4756, lng: -69.9277, tags: 'sector poligono central tiradentes' },
+    { name: 'Ensanche Serrallés', area: 'Distrito Nacional, Santo Domingo', lat: 18.4774, lng: -69.9354, tags: 'sector poligono central agora' },
+    { name: 'Evaristo Morales', area: 'Distrito Nacional, Santo Domingo', lat: 18.4694, lng: -69.9465, tags: 'sector churchill 27 de febrero' },
+    { name: 'Bella Vista', area: 'Distrito Nacional, Santo Domingo', lat: 18.4526, lng: -69.9457, tags: 'sector sarasota mirador sur' },
+    { name: 'Ensanche Paraíso', area: 'Distrito Nacional, Santo Domingo', lat: 18.4765, lng: -69.9428, tags: 'sector churchill kennedy' },
+    { name: 'Mirador Sur', area: 'Distrito Nacional, Santo Domingo', lat: 18.4488, lng: -69.9565, tags: 'sector anacaona cayetano germosen' },
+    { name: 'Los Cacicazgos', area: 'Distrito Nacional, Santo Domingo', lat: 18.4452, lng: -69.9612, tags: 'sector anacaona enriquito' },
+    { name: 'Arroyo Hondo', area: 'Distrito Nacional, Santo Domingo', lat: 18.5008, lng: -69.9522, tags: 'sector cuesta hermosa camino chiquito' },
+    { name: 'Gazcue', area: 'Distrito Nacional, Santo Domingo', lat: 18.4690, lng: -69.9035, tags: 'sector bolivar independencia' },
+    { name: 'Zona Colonial', area: 'Distrito Nacional, Santo Domingo', lat: 18.4730, lng: -69.8842, tags: 'sector ciudad colonial conde' },
+    { name: 'Los Prados', area: 'Distrito Nacional, Santo Domingo', lat: 18.4795, lng: -69.9554, tags: 'sector nunez de caceres' },
+    { name: 'Santo Domingo Este', area: 'Provincia Santo Domingo', lat: 18.4885, lng: -69.8570, tags: 'sector ensanche ozama alma rosa san isidro autopista las americas' },
+    { name: 'Autopista de San Isidro', area: 'Santo Domingo Este, RD', lat: 18.5020, lng: -69.8050, tags: 'sector zona oriental coral mall' },
+    { name: 'Santo Domingo Oeste / Herrera', area: 'Provincia Santo Domingo', lat: 18.4855, lng: -69.9850, tags: 'sector zona industrial herrera manoguayabo' },
+    { name: 'Santo Domingo Norte / Villa Mella', area: 'Provincia Santo Domingo', lat: 18.5450, lng: -69.9080, tags: 'sector jacobomajluta sabana perdida' },
+    { name: 'Boca Chica / Caucedo', area: 'Santo Domingo Este, RD', lat: 18.4508, lng: -69.6064, tags: 'puerto caucedo zona franca las americas' },
+    { name: 'Bajos de Haina / Zona Industrial', area: 'San Cristóbal, RD', lat: 18.4150, lng: -70.0320, tags: 'puerto haina industria refinería' },
+    { name: 'Bávaro', area: 'Punta Cana, La Altagracia', lat: 18.6815, lng: -68.4534, tags: 'sector friusa cortecito cocotal hoteles' },
+    { name: 'Punta Cana Village', area: 'Punta Cana, La Altagracia', lat: 18.5540, lng: -68.3740, tags: 'aeropuerto puj boulevard turistico' },
+    { name: 'Cap Cana', area: 'Punta Cana, La Altagracia', lat: 18.4995, lng: -68.3990, tags: 'sector marina juanillo resort' },
+    { name: 'Verón', area: 'Punta Cana, La Altagracia', lat: 18.6104, lng: -68.4519, tags: 'sector cruce veron domingo maiz' },
+    { name: 'Cabeza de Toro', area: 'Punta Cana, La Altagracia', lat: 18.6400, lng: -68.3660, tags: 'sector hoteles downtown' },
+    { name: 'Uvero Alto', area: 'La Altagracia, RD', lat: 18.8035, lng: -68.5875, tags: 'sector hoteles macao' },
+    { name: 'Miches / Playa Esmeralda', area: 'El Seibo, RD', lat: 18.9838, lng: -69.0472, tags: 'sector desarrollo turistico hoteles' },
+    { name: 'Higüey Centro', area: 'La Altagracia, RD', lat: 18.6150, lng: -68.7079, tags: 'sector basilica autovia del coral' },
+    { name: 'Santiago Centro', area: 'Santiago de los Caballeros, RD', lat: 19.4517, lng: -70.6970, tags: 'sector monumento calle del sol' },
+    { name: 'Los Jardines Metropolitanos', area: 'Santiago de los Caballeros, RD', lat: 19.4614, lng: -70.6911, tags: 'sector residencial santiago' },
+    { name: 'Cerro Alto / Gurabo', area: 'Santiago de los Caballeros, RD', lat: 19.4765, lng: -70.6745, tags: 'sector residencial santiago' },
+    { name: 'Villa Olga / La Esmeralda', area: 'Santiago de los Caballeros, RD', lat: 19.4552, lng: -70.6795, tags: 'sector residencial santiago' },
+    { name: 'Zona Franca Industrial Santiago', area: 'Santiago de los Caballeros, RD', lat: 19.4648, lng: -70.7220, tags: 'sector industria parque industrial' },
+    { name: 'Tamboril / Licey al Medio', area: 'Santiago, RD', lat: 19.4852, lng: -70.6115, tags: 'sector carretera licey aeropuerto cibao' },
+    { name: 'La Romana Centro', area: 'La Romana, RD', lat: 18.4273, lng: -68.9728, tags: 'sector zona franca romana' },
+    { name: 'Casa de Campo', area: 'La Romana, RD', lat: 18.4162, lng: -68.9125, tags: 'sector marina villas altos de chavon' },
+    { name: 'Bayahíbe / Dominicus', area: 'La Altagracia / La Romana', lat: 18.3712, lng: -68.8396, tags: 'sector hoteles playa' },
+    { name: 'San Pedro de Macorís', area: 'San Pedro de Macorís, RD', lat: 18.4539, lng: -69.3086, tags: 'sector puerto zona franca' },
+    { name: 'Juan Dolio / Guayacanes', area: 'San Pedro de Macorís, RD', lat: 18.4240, lng: -69.4180, tags: 'sector torres playa metro country club' },
+    { name: 'San Cristóbal Centro', area: 'San Cristóbal, RD', lat: 18.4167, lng: -70.1000, tags: 'sector madre vieja autopista 6 de noviembre' },
+    { name: 'Puerto Plata / Playa Dorada', area: 'Puerto Plata, RD', lat: 19.7765, lng: -70.6422, tags: 'sector malecon puerto taino bay amber cove' },
+    { name: 'Sosúa / Cabarete', area: 'Puerto Plata, RD', lat: 19.7522, lng: -70.5199, tags: 'sector hoteles proyectos costa norte' },
+    { name: 'La Vega Centro', area: 'La Vega, RD', lat: 19.2220, lng: -70.5296, tags: 'sector autopista duarte' },
+    { name: 'Jarabacoa', area: 'La Vega, RD', lat: 19.1168, lng: -70.6359, tags: 'sector montaña villas proyecto' },
+    { name: 'Constanza', area: 'La Vega, RD', lat: 18.9092, lng: -70.7450, tags: 'sector valle agricola' },
+    { name: 'Azua de Compostela', area: 'Azua, RD', lat: 18.4532, lng: -70.7349, tags: 'sector carretera sanchez circunvalacion azua' },
+    { name: 'Playa Monte Río / Puerto Viejo', area: 'Azua, RD', lat: 18.4046, lng: -70.7155, tags: 'sector costa sur puerto azua' },
+    { name: 'Baní Centro', area: 'Peravia, RD', lat: 18.2796, lng: -70.3319, tags: 'sector circunvalacion bani puntarena' },
+    { name: 'Punta Arena / Salinas', area: 'Baní, Peravia, RD', lat: 18.2110, lng: -70.5260, tags: 'sector proyecto turistico' },
+    { name: 'Bonao', area: 'Monseñor Nouel, RD', lat: 18.9369, lng: -70.4092, tags: 'sector autopista duarte falcondo' },
+    { name: 'Moca', area: 'Espaillat, RD', lat: 19.3935, lng: -70.5260, tags: 'sector cibao' },
+    { name: 'San Francisco de Macorís', area: 'Duarte, RD', lat: 19.3010, lng: -70.2526, tags: 'sector urbanizacion nordeste' },
+    { name: 'Santa Bárbara de Samaná', area: 'Samaná, RD', lat: 19.2056, lng: -69.3369, tags: 'sector malecon puerto' },
+    { name: 'Las Terrenas', area: 'Samaná, RD', lat: 19.3110, lng: -69.5428, tags: 'sector playa bonita coson portillo villas' },
+    { name: 'Barahona Centro', area: 'Barahona, RD', lat: 18.2085, lng: -71.1008, tags: 'sector malecon sur' },
+    { name: 'Pedernales / Cabo Rojo', area: 'Pedernales, RD', lat: 17.9165, lng: -71.6532, tags: 'sector puerto desarrollo turistico' },
+    { name: 'San Juan de la Maguana', area: 'San Juan, RD', lat: 18.8059, lng: -71.2299, tags: 'sector sur' },
+    { name: 'Monte Cristi', area: 'Monte Cristi, RD', lat: 19.8483, lng: -71.6460, tags: 'sector puerto manzanillo' },
+    { name: 'Cotuí', area: 'Sánchez Ramírez, RD', lat: 19.0527, lng: -70.1494, tags: 'sector mineria cibao' }
+  ];
+
+  function normalizeText(str) {
+    return String(str || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  }
+
+  /**
+   * Detecta si el usuario pegó coordenadas (ej. "18.4861, -69.9312") o un enlace de Google Maps.
+   */
+  function parseCoordinatesOrGoogleMapsUrl(raw) {
+    const s = String(raw || '').trim();
+    if (!s) return null;
+    // Enlaces Google Maps: @lat,lng | ?q=lat,lng | ll=lat,lng | !3dLAT!4dLNG
+    const patterns = [
+      /@(-?\d{1,2}\.\d{3,}),\s*(-?\d{1,3}\.\d{3,})/,
+      /[?&](?:q|ll|query|destination)=(-?\d{1,2}\.\d{3,}),\s*(-?\d{1,3}\.\d{3,})/,
+      /!3d(-?\d{1,2}\.\d{3,})!4d(-?\d{1,3}\.\d{3,})/,
+      /^\s*(-?\d{1,2}\.\d{3,})\s*[,;\s]\s*(-?\d{1,3}\.\d{3,})\s*$/
+    ];
+    for (const re of patterns) {
+      const m = s.match(re);
+      if (m) {
+        const lat = parseFloat(m[1]);
+        const lng = parseFloat(m[2]);
+        if (Number.isFinite(lat) && Number.isFinite(lng) && lat >= 16.5 && lat <= 21.0 && lng >= -73.0 && lng <= -67.5) {
+          return {
+            primary: `Coordenadas GPS (${lat.toFixed(5)}, ${lng.toFixed(5)})`,
+            secondary: 'Ubicación exacta detectada en República Dominicana',
+            label: `Obra GPS (${lat.toFixed(5)}, ${lng.toFixed(5)})`,
+            lat,
+            lng,
+            source: 'coords'
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  function searchLocalPlaces(query, origin) {
+    const normQ = normalizeText(query);
+    const tokens = normQ.split(/[\s,]+/).filter(Boolean);
+
+    const scored = [];
+    for (const p of DR_POPULAR_PLACES) {
+      const hay = normalizeText(`${p.name} ${p.area} ${p.tags || ''}`);
+      let score = 0;
+
+      if (!normQ) {
+        // Sin texto aún: sugerir primero lugares más cercanos a la base del equipo
+        const dist = origin ? haversineKm(origin, p) : 50;
+        score = Math.max(1, 200 - dist);
+      } else {
+        const normName = normalizeText(p.name);
+        const normArea = normalizeText(p.area);
+        if (normName.startsWith(normQ)) score += 120;
+        else if (normName.includes(normQ)) score += 90;
+        else if (normArea.includes(normQ)) score += 65;
+        else if (tokens.length > 0 && tokens.every((t) => hay.includes(t))) score += 55;
+        else if (tokens.length > 0 && tokens.some((t) => t.length >= 3 && hay.includes(t))) score += 25;
+
+        if (score > 0 && origin) {
+          const dist = haversineKm(origin, p);
+          if (dist < 25) score += 20;
+          else if (dist < 60) score += 10;
+        }
+      }
+
+      if (score > 0) {
+        const approxKm = origin ? Math.max(1, Math.round(haversineKm(origin, p) * 1.25)) : null;
+        scored.push({
+          score,
+          primary: p.name,
+          secondary: p.area,
+          label: `${p.name}, ${p.area}`,
+          lat: p.lat,
+          lng: p.lng,
+          approxKm,
+          source: 'rd-index'
+        });
+      }
+    }
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, 6);
+  }
+
+  function formatPhotonResult(feat, origin) {
+    if (!feat || !feat.geometry || !Array.isArray(feat.geometry.coordinates)) return null;
+    const [lng, lat] = feat.geometry.coordinates;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    // Asegurar que está dentro de República Dominicana
+    if (lat < 17.35 || lat > 20.15 || lng < -72.15 || lng > -68.15) return null;
+
+    const p = feat.properties || {};
+    const primary = p.name || p.street || p.district || p.city || p.county || p.state || '';
+    if (!primary) return null;
+
+    const secParts = [
+      p.street && p.street !== primary ? p.street : null,
+      p.district && p.district !== primary ? p.district : null,
+      p.city && p.city !== primary ? p.city : null,
+      p.county && p.county !== primary && p.county !== p.city ? p.county : null,
+      p.state && p.state !== primary && p.state !== p.city ? p.state : null
+    ].filter(Boolean);
+
+    const dedup = [];
+    secParts.forEach((s) => {
+      if (!dedup.some((x) => normalizeText(x) === normalizeText(s))) dedup.push(s);
+    });
+    const secondary = dedup.length ? `${dedup.join(', ')}, RD` : 'República Dominicana';
+    const label = dedup.length ? `${primary}, ${dedup.slice(0, 2).join(', ')}` : `${primary}, RD`;
+    const approxKm = origin ? Math.max(1, Math.round(haversineKm(origin, { lat, lng }) * 1.25)) : null;
+
+    return {
+      primary,
+      secondary,
+      label,
+      lat,
+      lng,
+      approxKm,
+      source: 'photon'
+    };
+  }
+
+  async function searchPhoton(query, origin, signal) {
     const q = String(query || '').trim();
-    if (q.length < 3) return [];
-    const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=do&addressdetails=1&limit=5&accept-language=es&q=${encodeURIComponent(q)}`;
+    if (q.length < 2) return [];
+    const bias = origin ? `&lat=${origin.lat.toFixed(4)}&lon=${origin.lng.toFixed(4)}` : '&lat=18.4861&lon=-69.9312';
+    // Bounding box estricto de República Dominicana (minLon,minLat,maxLon,maxLat)
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&bbox=-72.05,17.45,-68.25,20.05&limit=6${bias}`;
     try {
-      const res = await fetch(url, { headers: { Accept: 'application/json' } });
+      const res = await fetch(url, { signal, headers: { Accept: 'application/json' } });
       if (!res.ok) return [];
-      const rows = await res.json();
-      if (!Array.isArray(rows)) return [];
-      return rows.map((r) => ({
-        label: formatNominatimLabel(r),
-        fullLabel: r.display_name || '',
-        lat: parseFloat(r.lat),
-        lng: parseFloat(r.lon)
-      })).filter((r) => Number.isFinite(r.lat) && Number.isFinite(r.lng));
+      const data = await res.json();
+      const features = Array.isArray(data && data.features) ? data.features : [];
+      return features.map((f) => formatPhotonResult(f, origin)).filter(Boolean);
     } catch (_) {
       return [];
     }
+  }
+
+  async function searchAddress(query, options = {}) {
+    const q = String(query || '').trim();
+    const origin = options.origin || null;
+
+    const directCoord = parseCoordinatesOrGoogleMapsUrl(q);
+    if (directCoord) {
+      if (origin) directCoord.approxKm = Math.max(1, Math.round(haversineKm(origin, directCoord) * 1.25));
+      return [directCoord];
+    }
+
+    if (q.length < 2) return searchLocalPlaces('', origin);
+
+    const localHits = searchLocalPlaces(q, origin);
+    const remotePhoton = await searchPhoton(q, origin, options.signal);
+
+    let remoteHits = remotePhoton;
+    if (!remoteHits.length && q.length >= 3) {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=do&addressdetails=1&limit=5&accept-language=es&q=${encodeURIComponent(q)}`;
+      try {
+        const res = await fetch(url, { signal: options.signal, headers: { Accept: 'application/json' } });
+        if (res.ok) {
+          const rows = await res.json();
+          if (Array.isArray(rows)) {
+            remoteHits = rows.map((r) => {
+              const lat = parseFloat(r.lat);
+              const lng = parseFloat(r.lon);
+              const full = formatNominatimLabel(r);
+              const split = full.split(',').map((s) => s.trim()).filter(Boolean);
+              const primary = split[0] || full;
+              const secondary = split.slice(1).join(', ') || 'República Dominicana';
+              const approxKm = origin && Number.isFinite(lat) && Number.isFinite(lng)
+                ? Math.max(1, Math.round(haversineKm(origin, { lat, lng }) * 1.25))
+                : null;
+              return { primary, secondary, label: full, lat, lng, approxKm, source: 'nominatim' };
+            }).filter((r) => Number.isFinite(r.lat) && Number.isFinite(r.lng));
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Combinar y deduplicar resultados (priorizando calles/lugares reales de Photon/Nominatim + sectores RD)
+    const merged = [];
+    const seen = [];
+    const pushUnique = (item) => {
+      if (!item || !Number.isFinite(item.lat) || !Number.isFinite(item.lng)) return;
+      const normP = normalizeText(item.primary);
+      const isDup = seen.some((s) => {
+        const close = haversineKm(s, item) < 0.8;
+        const sameName = normalizeText(s.primary) === normP;
+        return sameName && close;
+      });
+      if (!isDup) {
+        seen.push(item);
+        merged.push(item);
+      }
+    };
+
+    remoteHits.forEach(pushUnique);
+    localHits.forEach(pushUnique);
+    return merged.slice(0, 7);
   }
 
   async function reverseGeocode(lat, lng) {
@@ -242,7 +489,7 @@
   }
 
   /**
-   * Crea un mapa interactivo con Origen (Base del equipo) + Destino arrastrable (Obra) + Ruta y Distancia.
+   * Crea un mapa interactivo con Origen (Base del equipo) + Destino arrastrable (Obra) + Ruta, Distancia y vista Satélite.
    */
   async function createWorksitePicker(opts) {
     const L = await loadLeaflet();
@@ -256,10 +503,31 @@
       scrollWheelZoom: false
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
+    });
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Tiles &copy; Esri'
+    });
+
+    let layerMode = 'streets';
+    streetsLayer.addTo(map);
+
+    function setTileLayer(mode) {
+      const next = mode === 'satellite' ? 'satellite' : 'streets';
+      if (next === layerMode) return layerMode;
+      if (next === 'satellite') {
+        map.removeLayer(streetsLayer);
+        satelliteLayer.addTo(map);
+      } else {
+        map.removeLayer(satelliteLayer);
+        streetsLayer.addTo(map);
+      }
+      layerMode = next;
+      return layerMode;
+    }
 
     const originIcon = makePinIcon(L, 'B', '#0D223A');
     const destIcon = makePinIcon(L, 'O', '#B85A27');
@@ -321,7 +589,7 @@
         [origin.lat, origin.lng],
         [point.lat, point.lng]
       ]);
-      map.fitBounds(bounds, { padding: [36, 36], maxZoom: 14 });
+      map.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
 
       if (opts.onChange) opts.onChange(state);
     }
@@ -337,6 +605,8 @@
       originMarker,
       getState: () => state,
       setWorksite,
+      setTileLayer,
+      getTileLayer: () => layerMode,
       recenterOrigin: () => map.setView([origin.lat, origin.lng], 12),
       invalidate: () => map.invalidateSize()
     };
@@ -760,6 +1030,8 @@
     computeBearing,
     calculateRoute,
     calculateTransportQuote,
+    searchLocalPlaces,
+    parseCoordinatesOrGoogleMapsUrl,
     searchAddress,
     reverseGeocode,
     createWorksitePicker,

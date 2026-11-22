@@ -35,7 +35,7 @@
       "name": "Tracking GPS en Vivo",
       "short_name": "Tracking",
       "description": "Seguir maquinaria en camino hacia la obra en tiempo real",
-      "url": "./tracking.html?demo=1",
+      "url": "./tracking.html",
       "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
     },
     {
