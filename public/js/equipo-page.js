@@ -955,13 +955,15 @@
 
     // Validación de Tarjeta (si eligió pago con tarjeta)
     let cardInfo = null;
+    let rawCardForApi = null;
     if (selectedPaymentMethod === 'card') {
-      const cardCheck = BILL.validateCard({
+      rawCardForApi = {
         holder: document.getElementById('cHolder')?.value,
         number: document.getElementById('cNumber')?.value,
         expiry: document.getElementById('cExpiry')?.value,
         cvv: document.getElementById('cCvv')?.value
-      });
+      };
+      const cardCheck = BILL.validateCard(rawCardForApi);
       if (!cardCheck.valid) {
         toast(cardCheck.error);
         document.getElementById('payCardPanel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -991,20 +993,15 @@
         : '⏳ Registrando contrato y expediente fiscal…';
     }
 
-    if (selectedPaymentMethod === 'card') {
-      await new Promise(r => setTimeout(r, 650));
-    }
-
     const b = currentBreakdown();
     const sig = document.getElementById('sigCanvas').toDataURL('image/png');
     const originInfo = window.GM_GEO ? window.GM_GEO.getEquipmentOrigin(currentItem) : null;
     const isCardPaid = selectedPaymentMethod === 'card';
-    const issued = isCardPaid ? BILL.issueNextEncf(selectedNcfType) : null;
 
     const initialStage = selectedNcfType === 'E45'
       ? (isCardPaid ? 'invoiced_dispatched' : 'gov_review')
       : (isCardPaid ? 'invoiced_dispatched' : 'pending_validation');
-    const rec = {
+    let rec = {
       id: Date.now(),
       equipmentId: currentItem.id,
       title: currentItem.title,
@@ -1038,10 +1035,10 @@
       total: b.total,
       ncf: selectedNcfType !== 'E32',
       ncfType: selectedNcfType,
-      encfNumber: issued ? issued.encf : '',
-      encfSecurityCode: issued ? issued.securityCode : '',
-      encfExpires: issued ? issued.expires : '',
-      encfIssuedAt: issued ? issued.issuedAt : '',
+      encfNumber: '',
+      encfSecurityCode: '',
+      encfExpires: '',
+      encfIssuedAt: '',
       exemptionCode,
       paymentMethod: selectedPaymentMethod,
       paymentStatus: isCardPaid ? 'paid' : 'pending',
@@ -1061,7 +1058,7 @@
         capVerified: Boolean(govData.capNumber),
         compliancePack: true,
         conduceStamped: false,
-        encfFiled: Boolean(issued),
+        encfFiled: false,
         treasuryPaid: isCardPaid,
         isrLetterReceived: false
       } : {},
@@ -1069,12 +1066,67 @@
       signature: sig
     };
 
+    let serverPersisted = false;
+    if (isCardPaid) {
+      let usedServer = false;
+      if (window.GM_API && window.GM_API.chargeCardAndIssueEcf) {
+        const apiRes = await window.GM_API.chargeCardAndIssueEcf({
+          booking: rec,
+          card: rawCardForApi,
+          clientEmail: (govData && govData.entityEmail) || null
+        });
+        // Limpiar datos sensibles de tarjeta en memoria inmediatamente
+        rawCardForApi = null;
+
+        if (!apiRes.fallbackLocal) {
+          usedServer = true;
+          if (!apiRes.approved) {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              updateSubmitButtonLabel();
+            }
+            toast(apiRes.error || 'Pago declinado por la entidad bancaria. Verifica tu tarjeta.');
+            return;
+          }
+          rec = Object.assign({}, rec, apiRes.booking || {});
+          if (selectedNcfType === 'E45') {
+            rec.govChecklist = Object.assign({}, rec.govChecklist, {
+              encfFiled: Boolean(rec.encfNumber),
+              treasuryPaid: true
+            });
+          }
+          serverPersisted = true;
+        }
+      }
+
+      if (!usedServer) {
+        await new Promise(r => setTimeout(r, 450));
+        const issued = BILL.issueNextEncf(selectedNcfType);
+        rec.encfNumber = issued.encf;
+        rec.encfSecurityCode = issued.securityCode;
+        rec.encfExpires = issued.expires;
+        rec.encfIssuedAt = issued.issuedAt;
+        if (selectedNcfType === 'E45') {
+          rec.govChecklist = Object.assign({}, rec.govChecklist, {
+            encfFiled: true,
+            treasuryPaid: true
+          });
+        }
+      }
+
+      // Nunca dejar PAN o CVV escritos en los inputs DOM tras aprobar el pago
+      const cNumEl = document.getElementById('cNumber');
+      const cCvvEl = document.getElementById('cCvv');
+      if (cNumEl) cNumEl.value = '';
+      if (cCvvEl) cCvvEl.value = '';
+    }
+
     state.bookings.unshift(rec);
     const localEq = state.equipment.find(x => String(x.id) === String(currentItem.id));
     if (localEq) localEq.busy = true;
     currentItem.busy = true;
     GM.saveState(state);
-    if (window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
+    if (!serverPersisted && window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
       window.GM_FIREBASE.saveBooking(rec, currentItem.id).catch(() => {});
     }
     if (window.GM_FIREBASE && window.GM_FIREBASE.upsertTracking) {
@@ -1112,9 +1164,10 @@
       updateSubmitButtonLabel();
     }
 
+    const finalAuth = (rec.cardInfo && rec.cardInfo.authCode) || (cardInfo && cardInfo.authCode) || 'OK';
     openContract(rec, isCardPaid ? 'invoice' : 'contract');
     toast(isCardPaid
-      ? `✓ Pago aprobado (${cardInfo.authCode}) y ${rec.encfNumber} emitido`
+      ? `✓ Pago aprobado (${finalAuth}) y ${rec.encfNumber} emitido`
       : (selectedNcfType === 'E45'
         ? '✓ Expediente Gubernamental (e-CF 45) registrado y enviado a Administración'
         : '✓ Obra georreferenciada, permisos confirmados y contrato firmado'));

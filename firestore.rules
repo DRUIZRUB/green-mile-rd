@@ -61,5 +61,11 @@ service cloud.firestore {
                             && request.resource.data.status in ['scheduled', 'en_route', 'arrived', 'operating', 'completed'];
       allow delete: if false;
     }
+
+    // Archivo fiscal de XML e-CF firmados (escritura exclusiva desde Cloud Functions Admin SDK)
+    match /ecf_documents/{encfId} {
+      allow read: if true;
+      allow write: if false;
+    }
   }
 }

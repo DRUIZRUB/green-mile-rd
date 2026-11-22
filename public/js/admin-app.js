@@ -2,6 +2,7 @@
 (function () {
   const GM = window.GM_CATALOG;
   const BILL = window.GM_BILLING;
+  const API = window.GM_API;
   const ADMIN_SESSION_KEY = 'gm_rd_admin_session_v1';
 
   let state = GM.loadState();
@@ -13,6 +14,8 @@
   let manualDgiiCtrl = null;
   let currentPrintBookingId = null;
   let currentPrintDocTab = 'invoice';
+  let backendHealth = null;
+  let backendChecking = false;
 
   const SECTION_META = {
     overview: {
@@ -118,11 +121,55 @@
     return sessionStorage.getItem(ADMIN_SESSION_KEY) === '1';
   }
 
+  async function refreshBackendHealth(silent = false) {
+    if (!API || !API.getHealth) return null;
+    backendChecking = true;
+    if (activeSection === 'config') renderSection();
+    try {
+      backendHealth = await API.getHealth();
+    } catch (err) {
+      backendHealth = { reachable: false, apiBaseUrl: API.getApiBaseUrl(), error: err.message || 'Sin conexión' };
+    }
+    backendChecking = false;
+    const stEl = document.getElementById('sidebarCloudStatus');
+    if (stEl && backendHealth && backendHealth.reachable) {
+      const payLabel = backendHealth.payment?.activeMode === 'live'
+        ? `Pago: ${String(backendHealth.payment.configuredProvider || '').toUpperCase()} LIVE`
+        : 'Pago: Sandbox';
+      const dgiiLabel = backendHealth.dgii?.activeMode !== 'sandbox'
+        ? `DGII: ${backendHealth.dgii.dgiiEnv}`
+        : 'DGII: Sandbox';
+      stEl.innerHTML = `<strong>☁️ API Cloud Functions Activa</strong>${esc(payLabel)} • ${esc(dgiiLabel)}`;
+    }
+    if (activeSection === 'config') renderSection();
+    if (!silent) {
+      if (backendHealth && backendHealth.reachable) {
+        toast(`✓ Backend conectado (${backendHealth.payment?.activeMode === 'live' ? backendHealth.payment.configuredProvider.toUpperCase() + ' LIVE' : 'Modo Sandbox'})`);
+      } else {
+        toast('ℹ️ Backend Cloud Functions aún no desplegado — operando en modo Sandbox local');
+      }
+    }
+    return backendHealth;
+  }
+
+  function saveBackendUrl(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const val = (document.getElementById('cfgApiBaseUrl')?.value || '').trim();
+    if (API && API.setApiBaseUrl) {
+      API.setApiBaseUrl(val);
+    }
+    adminConfig.apiBaseUrl = val;
+    BILL.saveAdminConfigLocal(adminConfig);
+    toast(val ? '✓ URL de Backend API guardada' : '✓ URL de Backend restablecida al valor predeterminado');
+    refreshBackendHealth(false);
+  }
+
   function showApp() {
     document.getElementById('adminGate').style.display = 'none';
     document.getElementById('adminApp').style.display = 'grid';
     syncNavCounts();
     renderSection();
+    refreshBackendHealth(true);
   }
 
   function submitPin(e) {
@@ -620,6 +667,7 @@
         <span class="pill pill-navy">${esc(b.ncfMeta.badge)} · ${esc(b.ncfMeta.name)}</span>
         <span class="pill pill-${st.tone}">${esc(st.label)}</span>
         ${b.encfNumber ? `<span class="pill pill-orange">e-NCF: ${esc(b.encfNumber)}</span>` : `<span class="pill pill-warn">e-NCF pendiente de emitir</span>`}
+        ${b.dgiiStatus ? `<span class="pill pill-info">DGII: ${esc(b.dgiiStatus)}</span>` : ''}
       </div>
 
       <!-- PASO 1: VALIDACIÓN DE COBRO -->
@@ -633,6 +681,7 @@
             <strong>Método:</strong> ${esc(BILL.paymentSummaryText(b))}<br>
             <strong>Total Factura:</strong> ${BILL.fmtRD(b.total)} (Neto: ${BILL.fmtRD(b.netSubtotal)} + ITBIS: ${BILL.fmtRD(b.itbis)})
             ${b.paymentMethod === 'card' ? `<br><span style="color:#065F46;">Conciliación Tarjeta: Comisión ${BILL.fmtRD(b.cardGatewayFee)} • Ret. 2% Norma 06-23: ${BILL.fmtRD(b.cardItbisRetention)} • Neto Banco: <strong>${BILL.fmtRD(b.total - b.cardGatewayFee - b.cardItbisRetention)}</strong></span>` : ''}
+            ${b.dgiiTrackId ? `<br><span style="color:#1E40AF; font-family:monospace; font-size:11.5px;">TrackId DGII: <strong>${esc(b.dgiiTrackId)}</strong></span>` : ''}
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             ${b.paymentStatus !== 'paid' ? `
@@ -640,6 +689,9 @@
             ` : `<span style="font-size:12px; color:var(--success); font-weight:700;">✓ Cobro validado por Tesorería</span>`}
             ${!b.encfNumber ? `
               <button type="button" class="btn btn-primary btn-sm" onclick="window.GM_ADMIN.actionIssueEncf('${b.id}')">🧾 Emitir ${esc(b.ncfType)} Oficial DGII Ahora</button>
+            ` : ''}
+            ${b.dgiiTrackId ? `
+              <button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.actionCheckDgiiStatus('${b.id}')">🔄 Consultar Estado DGII</button>
             ` : ''}
           </div>
         </div>
@@ -683,8 +735,10 @@
       <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-top:14px;">
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button type="button" class="btn btn-navy btn-sm" onclick="window.GM_ADMIN.openPrintDoc('${b.id}', 'invoice')">🧾 Ver Factura ${esc(b.ncfType)}</button>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.openPrintDoc('${b.id}', 'contract')">📄 Ver Contrato</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.actionDownloadXml('${b.id}')">📥 XML e-CF</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.openPrintDoc('${b.id}', 'contract')">📄 Contrato</button>
           ${b.ncfType === 'E45' ? `<button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.openPrintDoc('${b.id}', 'gov')">🏛️ Carátula Estado</button>` : ''}
+          ${b.ncfType === 'E45' ? `<button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.actionNotifyGovEmail('${b.id}')">✉️ Enviar .gob.do</button>` : ''}
         </div>
         ${b.stage !== 'cancelled' ? `
           <button type="button" class="btn btn-danger btn-sm" onclick="window.GM_ADMIN.actionCancelOrder('${b.id}')">✖ Anular / Emitir Nota Crédito e-CF 34</button>
@@ -709,17 +763,44 @@
     toast('✓ Pago confirmado y registrado en Tesorería');
   }
 
-  function actionIssueEncf(id) {
+  async function actionIssueEncf(id) {
     const raw = findRawBooking(id);
     if (!raw) return;
     const typeCode = raw.ncfType || 'E31';
-    const issued = BILL.issueNextEncf(typeCode);
-    adminConfig = BILL.loadAdminConfig();
+
+    let issued = null;
+    if (API && API.issueEcf) {
+      toast(`⏳ Emitiendo ${typeCode} y firmando XML…`);
+      const apiRes = await API.issueEcf({
+        bookingId: raw.id,
+        booking: raw,
+        typeCode,
+        recipientEmail: (raw.govData && raw.govData.entityEmail) || null,
+        adminPin: adminConfig.adminPin || '2026'
+      });
+      if (!apiRes.fallbackLocal) {
+        if (!apiRes.ok || !apiRes.ecf) {
+          toast(`Error emitiendo e-CF en servidor: ${apiRes.error || 'Verifica credenciales DGII'}`);
+          return;
+        }
+        issued = apiRes.ecf;
+      }
+    }
+
+    if (!issued) {
+      issued = BILL.issueNextEncf(typeCode);
+      adminConfig = BILL.loadAdminConfig();
+    }
 
     raw.encfNumber = issued.encf;
     raw.encfSecurityCode = issued.securityCode;
     raw.encfExpires = issued.expires;
     raw.encfIssuedAt = issued.issuedAt;
+    if (issued.trackId) raw.dgiiTrackId = issued.trackId;
+    if (issued.dgiiStatus) raw.dgiiStatus = issued.dgiiStatus;
+    if (issued.dgiiQrUrl) raw.dgiiQrUrl = issued.dgiiQrUrl;
+    if (issued.dgiiMode) raw.dgiiMode = issued.dgiiMode;
+
     if (raw.stage === 'pending_validation' || raw.stage === 'payment_verified' || raw.stage === 'gov_review') {
       raw.stage = 'invoiced_dispatched';
     }
@@ -727,8 +808,87 @@
       raw.govChecklist = Object.assign({}, raw.govChecklist, { encfFiled: true });
     }
     persistBooking(raw);
-    openManageOrder(id);
-    toast(`✓ Comprobante electrónico ${issued.encf} emitido oficialmente`);
+    if (document.getElementById('manageOrderModal')?.classList.contains('open')) {
+      openManageOrder(id);
+    }
+    toast(`✓ Comprobante ${issued.encf} emitido${issued.dgiiStatus ? ' (' + issued.dgiiStatus + ')' : ''}`);
+  }
+
+  async function actionCheckDgiiStatus(id) {
+    const raw = findRawBooking(id);
+    if (!raw || !raw.dgiiTrackId) {
+      toast('Esta orden aún no posee TrackId de envío a la DGII.');
+      return;
+    }
+    if (!API || !API.queryDgiiStatus) return;
+    toast('🔄 Consultando estado en DGII…');
+    const res = await API.queryDgiiStatus(raw.dgiiTrackId, raw.id);
+    if (res.unreachable) {
+      toast('ℹ️ Backend Cloud Functions aún no desplegado para consultar DGII en vivo.');
+      return;
+    }
+    if (!res.ok) {
+      toast(res.error || 'No se pudo consultar el TrackId en DGII.');
+      return;
+    }
+    if (res.estado) {
+      raw.dgiiStatus = res.estado;
+      persistBooking(raw);
+      if (document.getElementById('manageOrderModal')?.classList.contains('open')) {
+        openManageOrder(id);
+      }
+    }
+    toast(`✓ Estado DGII (${raw.dgiiTrackId}): ${res.estado || 'Consultado'}`);
+  }
+
+  async function actionDownloadXml(id) {
+    const raw = findRawBooking(id);
+    if (!raw) return;
+    const b = BILL.normalizeBooking(raw);
+    const emisorDigits = String(adminConfig.rnc || '132050738').replace(/\D/g, '');
+    const encfLabel = b.encfNumber || `${b.ncfType || 'E31'}_PROFORMA_${String(b.id).slice(-6)}`;
+    const filename = `${emisorDigits}${encfLabel}.xml`;
+
+    if (API && API.getXmlDownloadUrl && backendHealth && backendHealth.reachable && b.encfNumber) {
+      try {
+        const res = await fetch(API.getXmlDownloadUrl(b.encfNumber));
+        if (res.ok) {
+          const xmlText = await res.text();
+          BILL.downloadTextFile(filename, xmlText, 'application/xml;charset=utf-8;');
+          toast(`📥 XML firmado DGII descargado (${filename})`);
+          return;
+        }
+      } catch (_) {}
+    }
+
+    const previewXml = BILL.buildEcfXmlPreview(b, adminConfig);
+    BILL.downloadTextFile(filename, previewXml, 'application/xml;charset=utf-8;');
+    toast(`📥 XML e-CF descargado (${filename})`);
+  }
+
+  async function actionNotifyGovEmail(id) {
+    const raw = findRawBooking(id);
+    if (!raw) return;
+    const email = (raw.govData && raw.govData.entityEmail) || '';
+    if (!API || !API.notifyGovDossier) return;
+    toast('✉️ Enviando expediente gubernamental…');
+    const res = await API.notifyGovDossier({
+      bookingId: raw.id,
+      recipientEmail: email || null,
+      adminPin: adminConfig.adminPin || '2026'
+    });
+    if (res.unreachable) {
+      toast('ℹ️ Despliega Cloud Functions con RESEND_API_KEY o SMTP para envío automático por correo.');
+      return;
+    }
+    if (!res.ok) {
+      toast(res.error || 'No se pudo enviar el correo del expediente.');
+      return;
+    }
+    const emailSent = res.notifications && res.notifications.email && res.notifications.email.sent;
+    toast(emailSent
+      ? `✓ Expediente e-CF 45 enviado a ${email || 'correo institucional'}`
+      : 'ℹ️ Correo no configurado todavía (agrega RESEND_API_KEY o SMTP en functions/.env)');
   }
 
   function actionSaveConduce(e, id) {
@@ -764,16 +924,39 @@
     toast('🔓 Equipo liberado como "Disponible" en el catálogo público');
   }
 
-  function actionCancelOrder(id) {
+  async function actionCancelOrder(id) {
     const raw = findRawBooking(id);
     if (!raw) return;
-    const cn = BILL.issueNextEncf('E34');
-    adminConfig = BILL.loadAdminConfig();
+    let cnEncf = '';
+    let cnTrackId = '';
+
+    if (API && API.voidOrder) {
+      const apiRes = await API.voidOrder({
+        bookingId: raw.id,
+        adminPin: adminConfig.adminPin || '2026'
+      });
+      if (!apiRes.fallbackLocal) {
+        if (!apiRes.ok) {
+          toast(apiRes.error || 'Error anulando orden en servidor.');
+          return;
+        }
+        cnEncf = (apiRes.creditNote && apiRes.creditNote.encf) || '';
+        cnTrackId = (apiRes.creditNote && apiRes.creditNote.trackId) || '';
+      }
+    }
+
+    if (!cnEncf) {
+      const cn = BILL.issueNextEncf('E34');
+      adminConfig = BILL.loadAdminConfig();
+      cnEncf = cn.encf;
+    }
+
     raw.stage = 'cancelled';
-    raw.creditNoteEncf = cn.encf;
+    raw.creditNoteEncf = cnEncf;
+    if (cnTrackId) raw.creditNoteTrackId = cnTrackId;
     persistBooking(raw);
     closeModal('manageOrderModal');
-    toast(`Orden anulada • Nota de Crédito emitida: ${cn.encf}`);
+    toast(`Orden anulada • Nota de Crédito emitida: ${cnEncf}`);
   }
 
   /* =========================================================
@@ -893,8 +1076,11 @@
                   <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
                     <button type="submit" class="btn btn-navy btn-sm">💾 Actualizar Expediente</button>
                     ${!b.encfNumber ? `<button type="button" class="btn btn-primary btn-sm" onclick="window.GM_ADMIN.actionIssueEncf('${b.id}')">🧾 Emitir e-CF 45</button>` : ''}
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.openPrintDoc('${b.id}', 'gov')">🏛️ Imprimir Carátula de Radicación</button>
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.openPrintDoc('${b.id}', 'invoice')">🧾 Ver Factura e-CF 45</button>
+                    ${b.dgiiTrackId ? `<button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.actionCheckDgiiStatus('${b.id}')">🔄 Estado DGII</button>` : ''}
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.actionDownloadXml('${b.id}')">📥 XML e-CF 45</button>
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.actionNotifyGovEmail('${b.id}')">✉️ Enviar Correo (.gob.do)</button>
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.openPrintDoc('${b.id}', 'gov')">🏛️ Carátula Radicación</button>
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.openPrintDoc('${b.id}', 'invoice')">🧾 Factura e-CF 45</button>
                   </div>
                 </form>
               </div>
@@ -1096,14 +1282,28 @@
     openModal('manageOrderModal');
   }
 
-  function confirmOwnerSettlement(e, bookingId) {
+  async function confirmOwnerSettlement(e, bookingId) {
     e.preventDefault();
     const raw = findRawBooking(bookingId);
     if (!raw) return;
     let ownerNcf = document.getElementById('stOwnerNcf').value.trim();
     if (ownerNcf.toUpperCase() === 'AUTO-E41') {
-      const issued41 = BILL.issueNextEncf('E41');
-      adminConfig = BILL.loadAdminConfig();
+      let issued41 = null;
+      if (API && API.issueEcf) {
+        const res41 = await API.issueEcf({
+          bookingId: raw.id,
+          booking: raw,
+          typeCode: 'E41',
+          adminPin: adminConfig.adminPin || '2026'
+        });
+        if (!res41.fallbackLocal && res41.ok && res41.ecf) {
+          issued41 = res41.ecf;
+        }
+      }
+      if (!issued41) {
+        issued41 = BILL.issueNextEncf('E41');
+        adminConfig = BILL.loadAdminConfig();
+      }
       ownerNcf = issued41.encf;
     }
     const commPct = Number(document.getElementById('stCommPct').value) || adminConfig.standardCommissionPct;
@@ -1131,6 +1331,12 @@
       raw.stage = 'settled';
     }
     persistBooking(raw);
+    if (API && API.notifyOwnerSettlement && backendHealth && backendHealth.reachable) {
+      API.notifyOwnerSettlement({
+        bookingId: raw.id,
+        adminPin: adminConfig.adminPin || '2026'
+      }).catch(() => {});
+    }
     closeModal('manageOrderModal');
     openPrintDoc(bookingId, 'settlement');
     toast(`✓ Propietario liquidado • Soporte: ${ownerNcf}`);
@@ -1378,7 +1584,76 @@
   function renderConfigModule() {
     const c = adminConfig;
     const banks = c.banks || [];
+    const h = backendHealth;
+    const isReachable = Boolean(h && h.reachable);
+    const currentApiUrl = (API && API.getApiBaseUrl) ? API.getApiBaseUrl() : '';
+
+    const payProvider = isReachable ? String(h.payment?.configuredProvider || 'sandbox').toUpperCase() : 'SANDBOX LOCAL';
+    const payLive = Boolean(isReachable && h.payment?.activeMode === 'live');
+    const dgiiMode = isReachable ? String(h.dgii?.activeMode || 'sandbox') : 'sandbox';
+    const dgiiEnv = isReachable ? String(h.dgii?.dgiiEnv || 'testecf').toUpperCase() : 'LOCAL';
+    const dgiiLive = Boolean(isReachable && dgiiMode !== 'sandbox');
+    const emailReady = Boolean(isReachable && h.notifications?.emailReady);
+    const waReady = Boolean(isReachable && h.notifications?.whatsappReady);
+
     return `
+      <!-- PANEL DE INTEGRACIONES BACKEND & API KEYS EN VIVO -->
+      <div class="panel" id="backendIntegrationsPanel">
+        <div class="panel-head">
+          <div>
+            <h3>🔌 Integraciones Backend &amp; API Keys (Estado en Vivo)</h3>
+            <p>Diagnóstico seguro de pasarelas de tarjetas RD (Azul / CardNET / Visanet / Stripe), DGII e-CF y notificaciones</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span class="pill ${isReachable ? 'pill-ok' : 'pill-warn'}">
+              ${backendChecking ? '⏳ Verificando…' : (isReachable ? '● Cloud Functions Conectado' : '● Modo Sandbox Local')}
+            </span>
+            <button type="button" class="btn btn-navy btn-sm" onclick="window.GM_ADMIN.refreshBackendHealth(false)">🔄 Probar Conexión Backend</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="kpi-grid" style="margin-bottom:14px;">
+            <div class="kpi-card ${payLive ? 'ok' : ''}">
+              <span>Pasarela de Tarjetas RD</span>
+              <strong style="font-size:17px;">${esc(payProvider)}</strong>
+              <small>${payLive ? `✓ Credenciales activas (${esc(h.payment?.environment || 'live')})` : 'Listo para recibir llaves de Azul, CardNET, Visanet o Stripe'}</small>
+            </div>
+            <div class="kpi-card ${dgiiLive ? 'ok' : 'info'}">
+              <span>Facturación DGII e-CF</span>
+              <strong style="font-size:17px;">${dgiiLive ? esc(dgiiMode === 'direct_dgii' ? 'DGII DIRECTO (.p12)' : 'API PROVEEDOR e-CF') : 'SANDBOX e-CF'}</strong>
+              <small>${dgiiLive ? `✓ Ambiente ${esc(dgiiEnv)} • RNC ${esc(h.dgii?.emisorRnc || c.rnc)}` : 'Listo para Certificado .p12 (INDOTEL/Viafirma) o API Proveedor'}</small>
+            </div>
+            <div class="kpi-card ${emailReady ? 'ok' : ''}">
+              <span>Correo Automático (Facturas / E45)</span>
+              <strong style="font-size:17px;">${emailReady ? esc(String(h.notifications?.emailProvider || 'ACTIVO').toUpperCase()) : 'PENDIENTE'}</strong>
+              <small>${emailReady ? '✓ Envío automático de XML + PDF activo' : 'Configura RESEND_API_KEY o SMTP en functions/.env'}</small>
+            </div>
+            <div class="kpi-card ${waReady ? 'ok' : ''}">
+              <span>WhatsApp Business Cloud</span>
+              <strong style="font-size:17px;">${waReady ? 'CONECTADO' : 'PENDIENTE'}</strong>
+              <small>${waReady ? '✓ Alertas de cobro y liquidaciones activas' : 'Configura WHATSAPP_TOKEN y PHONE_NUMBER_ID'}</small>
+            </div>
+          </div>
+
+          <form onsubmit="window.GM_ADMIN.saveBackendUrl(event)" style="background:#F8FAFC; border:1px solid var(--border); border-radius:12px; padding:12px 14px;">
+            <div class="f-grid" style="grid-template-columns:1fr auto; align-items:end;">
+              <div class="f-field">
+                <label for="cfgApiBaseUrl">URL del Backend Cloud Functions v2 (dejar vacío para auto-detección)</label>
+                <div class="f-box">
+                  <input type="url" id="cfgApiBaseUrl" value="${esc(c.apiBaseUrl || '')}" placeholder="${esc(currentApiUrl)}" />
+                </div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button type="submit" class="btn btn-primary btn-sm" style="height:40px;">💾 Guardar URL</button>
+              </div>
+            </div>
+            <div style="margin-top:8px; font-size:11.5px; color:#475569; line-height:1.45;">
+              🔐 <strong>Seguridad PCI-DSS y DGII:</strong> Todas las llaves secretas (<code>AZUL_AUTH1/2</code>, <code>CARDNET_PRIVATE_KEY</code>, <code>VISANET_API_SECRET</code>, <code>STRIPE_SECRET_KEY</code>, certificado <code>.p12</code> y claves SMTP/WhatsApp) residen únicamente en el servidor (<code>functions/.env</code> / Google Secret Manager) y <strong>jamás</strong> se exponen en el navegador. Ejecuta <code>./scripts/configure-secrets.sh</code> al cargar tus llaves.
+            </div>
+          </form>
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel-head">
           <div>
@@ -1639,9 +1914,6 @@
       config: adminConfig
     });
 
-    const issued = issueNow ? BILL.issueNextEncf(ncfType) : null;
-    adminConfig = BILL.loadAdminConfig();
-
     const poNumber = (document.getElementById('mGovPo')?.value || '').trim();
     const capNumber = (document.getElementById('mGovCap')?.value || '').trim();
     const entityEmail = (document.getElementById('mGovEmail')?.value || '').trim();
@@ -1670,10 +1942,10 @@
       total: fin.total,
       ncf: ncfType !== 'E32',
       ncfType,
-      encfNumber: issued ? issued.encf : '',
-      encfSecurityCode: issued ? issued.securityCode : '',
-      encfExpires: issued ? issued.expires : '',
-      encfIssuedAt: issued ? issued.issuedAt : '',
+      encfNumber: '',
+      encfSecurityCode: '',
+      encfExpires: '',
+      encfIssuedAt: '',
       exemptionCode,
       paymentMethod,
       paymentStatus: paymentMethod === 'card' ? 'paid' : 'pending',
@@ -1691,12 +1963,46 @@
         capVerified: Boolean(capNumber),
         compliancePack: true,
         conduceStamped: false,
-        encfFiled: Boolean(issued),
+        encfFiled: false,
         treasuryPaid: false,
         isrLetterReceived: false
       } : {},
-      stage: ncfType === 'E45' ? 'gov_review' : (issued ? 'invoiced_dispatched' : 'pending_validation')
+      stage: ncfType === 'E45' ? 'gov_review' : 'pending_validation'
     };
+
+    let issued = null;
+    if (issueNow) {
+      if (API && API.issueEcf) {
+        const apiRes = await API.issueEcf({
+          bookingId: rec.id,
+          booking: rec,
+          typeCode: ncfType,
+          recipientEmail: entityEmail || null,
+          adminPin: adminConfig.adminPin || '2026'
+        });
+        if (!apiRes.fallbackLocal) {
+          if (!apiRes.ok || !apiRes.ecf) {
+            toast(`Error emitiendo e-CF: ${apiRes.error || 'Verifica credenciales DGII'}`);
+            return;
+          }
+          issued = apiRes.ecf;
+        }
+      }
+      if (!issued) {
+        issued = BILL.issueNextEncf(ncfType);
+        adminConfig = BILL.loadAdminConfig();
+      }
+      rec.encfNumber = issued.encf;
+      rec.encfSecurityCode = issued.securityCode;
+      rec.encfExpires = issued.expires;
+      rec.encfIssuedAt = issued.issuedAt;
+      if (issued.trackId) rec.dgiiTrackId = issued.trackId;
+      if (issued.dgiiStatus) rec.dgiiStatus = issued.dgiiStatus;
+      if (issued.dgiiQrUrl) rec.dgiiQrUrl = issued.dgiiQrUrl;
+      if (issued.dgiiMode) rec.dgiiMode = issued.dgiiMode;
+      if (ncfType === 'E45') rec.govChecklist.encfFiled = true;
+      else rec.stage = 'invoiced_dispatched';
+    }
 
     persistBooking(rec);
     closeModal('newInvoiceModal');
@@ -1741,7 +2047,8 @@
         <button type="button" class="doc-tab ${currentPrintDocTab === 'settlement' ? 'active' : ''}" onclick="window.GM_ADMIN.switchPrintDocTab('settlement')">💸 Liquidación Flota</button>
       </div>
       ${html}
-      <div class="no-print" style="margin-top:14px; display:flex; justify-content:flex-end; gap:8px;">
+      <div class="no-print" style="margin-top:14px; display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+        ${currentPrintDocTab === 'invoice' ? `<button type="button" class="btn btn-ghost" onclick="window.GM_ADMIN.actionDownloadXml('${b.id}')">📥 Descargar XML e-CF</button>` : ''}
         <button type="button" class="btn btn-navy" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
       </div>
     `;
@@ -1785,6 +2092,8 @@
     switchSection,
     openModal,
     closeModal,
+    refreshBackendHealth,
+    saveBackendUrl,
     seedDemoOperations,
     jumpToOrdersFilter,
     setOrderFilter,
@@ -1792,6 +2101,9 @@
     openManageOrder,
     actionMarkPaid,
     actionIssueEncf,
+    actionCheckDgiiStatus,
+    actionDownloadXml,
+    actionNotifyGovEmail,
     actionSaveConduce,
     actionReleaseEquipment,
     actionCancelOrder,

@@ -161,6 +161,7 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
   <script src="${basePrefix}js/native-bridge.js"></script>
   <script src="${basePrefix}js/dgii-validator.js"></script>
   <script src="${basePrefix}js/billing-engine.js"></script>
+  <script src="${basePrefix}js/api-client.js"></script>
   <script src="${basePrefix}js/geo-map.js"></script>
   <script src="${basePrefix}js/reviews.js"></script>
   <script src="${pageJs}"></script>

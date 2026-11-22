@@ -778,8 +778,11 @@
             <div style="font-size:10.5px; color:#475569; line-height:1.45;">
               <strong style="color:#0D223A; display:block;">Timbre Fiscal Electrónico DGII</strong>
               Código de Seguridad: <strong style="font-family:monospace; color:#0D223A;">${esc(secCode)}</strong><br>
-              Estado DGII: <strong>${isOfficial ? 'Aceptado Electrónicamente (Ley 32-23)' : 'Borrador / Proforma'}</strong><br>
-              Verificable en portal e-CF de Impuestos Internos.
+              Estado DGII: <strong>${esc(b.dgiiStatus || (isOfficial ? 'Aceptado Electrónicamente (Ley 32-23)' : 'Borrador / Proforma'))}</strong><br>
+              ${b.dgiiTrackId ? `TrackId DGII: <strong style="font-family:monospace; color:#0D223A;">${esc(b.dgiiTrackId)}</strong><br>` : ''}
+              ${b.dgiiQrUrl
+                ? `<a href="${esc(b.dgiiQrUrl)}" target="_blank" rel="noopener" style="color:#1E40AF; text-decoration:underline; font-weight:700;">Verificar en portal DGII e-CF →</a>`
+                : 'Verificable en portal e-CF de Impuestos Internos.'}
             </div>
           </div>
 
@@ -1027,8 +1030,101 @@
     return rows.join('\n');
   }
 
+  function xmlEsc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
+
+  function fmtDgiiDate(isoOrDate) {
+    const d = isoOrDate ? new Date(isoOrDate) : new Date();
+    const safe = Number.isNaN(d.getTime()) ? new Date() : d;
+    const dd = String(safe.getDate()).padStart(2, '0');
+    const mm = String(safe.getMonth() + 1).padStart(2, '0');
+    const yyyy = safe.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  }
+
+  /* Genera una vista previa XML DGII e-CF v1.0 (cuando el XML firmado en servidor no está disponible aún) */
+  function buildEcfXmlPreview(rawBooking, config) {
+    const cfg = config || loadAdminConfig();
+    const b = normalizeBooking(rawBooking);
+    const typeCode = b.ncfType || 'E31';
+    const tipoNum = typeCode.replace(/^E/i, '');
+    const isExempt = typeCode === 'E44';
+    const emisorRnc = String(cfg.rnc || '132050738').replace(/\D/g, '');
+    const buyerRnc = String(b.renterRnc || '').replace(/\D/g, '');
+    const encf = b.encfNumber || `${typeCode}0000000001`;
+    const fechaEmision = fmtDgiiDate(b.encfIssuedAt || b.id);
+    const fechaVenc = fmtDgiiDate(b.encfExpires || '2026-12-31');
+    const formaPago = b.paymentMethod === 'card' ? '3' : (b.paymentMethod === 'transfer' ? '2' : '4');
+    const tipoPago = (b.paymentMethod === 'gov_po' || b.paymentMethod === 'credit') ? '2' : '1';
+    const net = Number(b.netSubtotal || 0).toFixed(2);
+    const itbis = Number(b.itbis || 0).toFixed(2);
+    const total = Number(b.total || 0).toFixed(2);
+    const qty = Number(b.qty || 1);
+    const unitPrice = (Number(b.netSubtotal || 0) / Math.max(1, qty)).toFixed(2);
+
+    return `<?xml version="1.0" encoding="utf-8"?>
+<ECF>
+  <Encabezado>
+    <Version>1.0</Version>
+    <IdDoc>
+      <TipoeCF>${xmlEsc(tipoNum)}</TipoeCF>
+      <eNCF>${xmlEsc(encf)}</eNCF>
+      <FechaVencimientoSecuencia>${xmlEsc(fechaVenc)}</FechaVencimientoSecuencia>
+      <TipoIngresos>01</TipoIngresos>
+      <TipoPago>${tipoPago}</TipoPago>
+      <TablaFormasPago>
+        <FormaDePago>
+          <FormaPago>${formaPago}</FormaPago>
+          <MontoPago>${total}</MontoPago>
+        </FormaDePago>
+      </TablaFormasPago>
+    </IdDoc>
+    <Emisor>
+      <RNCEmisor>${xmlEsc(emisorRnc)}</RNCEmisor>
+      <RazonSocialEmisor>${xmlEsc(cfg.companyName)}</RazonSocialEmisor>
+      <NombreComercial>GREEN MILE CONSTRUCTION RD</NombreComercial>
+      <DireccionEmisor>${xmlEsc(cfg.address)}</DireccionEmisor>
+      <CorreoEmisor>${xmlEsc(cfg.email)}</CorreoEmisor>
+      <FechaEmision>${xmlEsc(fechaEmision)}</FechaEmision>
+    </Emisor>
+    <Comprador>
+      ${buyerRnc ? `<RNCComprador>${xmlEsc(buyerRnc)}</RNCComprador>` : ''}
+      <RazonSocialComprador>${xmlEsc(b.renter)}</RazonSocialComprador>
+      <DireccionComprador>${xmlEsc(b.address || b.city)}</DireccionComprador>
+    </Comprador>
+    <Totales>
+      ${isExempt ? `<MontoExento>${net}</MontoExento>` : `<MontoGravadoTotal>${net}</MontoGravadoTotal>
+      <MontoGravadoI1>${net}</MontoGravadoI1>
+      <ITBIS1>18</ITBIS1>
+      <TotalITBIS>${itbis}</TotalITBIS>
+      <TotalITBIS1>${itbis}</TotalITBIS1>`}
+      <MontoTotal>${total}</MontoTotal>
+    </Totales>
+  </Encabezado>
+  <DetallesItems>
+    <Item>
+      <NumeroLinea>1</NumeroLinea>
+      <IndicadorFacturacion>${isExempt ? '4' : '1'}</IndicadorFacturacion>
+      <NombreItem>${xmlEsc(`Alquiler ${b.title} (${b.city})`)}</NombreItem>
+      <IndicadorBienoServicio>2</IndicadorBienoServicio>
+      <CantidadItem>${qty.toFixed(2)}</CantidadItem>
+      <PrecioUnitarioItem>${unitPrice}</PrecioUnitarioItem>
+      <MontoItem>${net}</MontoItem>
+    </Item>
+  </DetallesItems>
+  <FechaHoraFirma>${xmlEsc(fechaEmision)} 00:00:00</FechaHoraFirma>
+</ECF>`;
+  }
+
   function downloadTextFile(filename, content, mime = 'text/csv;charset=utf-8;') {
-    const blob = new Blob(['\uFEFF' + content], { type: mime });
+    const prefix = mime.includes('xml') || mime.includes('json') ? '' : '\uFEFF';
+    const blob = new Blob([prefix + content], { type: mime });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
@@ -1069,6 +1165,7 @@
     buildPrintableInvoiceHtml,
     buildGovDossierHtml,
     buildOwnerSettlementHtml,
+    buildEcfXmlPreview,
     exportDGII607CSV,
     exportDGII606CSV,
     downloadTextFile

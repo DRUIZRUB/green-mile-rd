@@ -10,3 +10,18 @@ android/local.properties
 ios/App/Pods/
 ios/App/build/
 ios/DerivedData/
+
+# Firebase Functions & Secrets (NUNCA subir llaves reales a Git)
+functions/node_modules/
+.env
+.env.*
+!.env.example
+functions/.env
+functions/.env.*
+!functions/.env.example
+*.p12
+*.pfx
+*.pem
+*.key
+*.crt
+
