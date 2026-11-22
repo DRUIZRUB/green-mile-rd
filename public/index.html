@@ -1042,6 +1042,15 @@
       box-shadow: 0 3px 10px rgba(13, 34, 58, 0.35);
     }
     .gm-map-pin span { transform: rotate(45deg); }
+    .permit-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 4px; }
+    .permit-chip {
+      border: 1.5px solid var(--border); background: var(--surface); color: var(--navy);
+      border-radius: 10px; padding: 7px 10px; font-size: 12px; font-weight: 700; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 5px; transition: all 0.14s;
+    }
+    .permit-chip.selected {
+      background: var(--orange-soft); border-color: var(--orange); color: var(--orange-hover);
+    }
   </style>
 </head>
 <body>
@@ -1536,6 +1545,16 @@
                   <div class="sw-knob"></div>
                 </label>
               </div>
+              <div class="f-field full">
+                <label>Documentación y Permisos del Equipo (RD) <small style="color:var(--text-muted); font-weight:500;">Aumenta la confianza de obras grandes</small></label>
+                <div class="permit-chips" id="pubCertChips">
+                  <button type="button" class="permit-chip selected" data-cert="Seguro Responsabilidad Civil al día" onclick="this.classList.toggle('selected')">🛡️ Seguro RC al día</button>
+                  <button type="button" class="permit-chip" data-cert="Certificación de Izaje vigente" onclick="this.classList.toggle('selected')">🏗️ Certificación de Izaje</button>
+                  <button type="button" class="permit-chip" data-cert="Permiso INTRANT Carga Pesada" onclick="this.classList.toggle('selected')">🚛 Permiso INTRANT</button>
+                  <button type="button" class="permit-chip" data-cert="Operador con Licencia / Certificación" onclick="this.classList.toggle('selected')">👷 Operador Certificado</button>
+                  <button type="button" class="permit-chip selected" data-cert="Mantenimiento Preventivo al día" onclick="this.classList.toggle('selected')">🔧 Mantenimiento al día</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1637,13 +1656,25 @@
               <div class="f-box"><span class="f-prefix">+1</span><input type="tel" id="rPhone" placeholder="829-555-0122" required></div>
             </div>
             <div class="f-field full">
+              <label>Permisos y Accesos de la Obra (RD)</label>
+              <div class="permit-chips" id="reqPermitChips">
+                <button type="button" class="permit-chip" data-permit="Ayuntamiento" onclick="toggleReqPermit(this)">🏛️ Ayuntamiento</button>
+                <button type="button" class="permit-chip" data-permit="INTRANT / DIGESETT" onclick="toggleReqPermit(this)">🚧 INTRANT / DIGESETT</button>
+                <button type="button" class="permit-chip" data-permit="Medio Ambiente" onclick="toggleReqPermit(this)">🌿 Medio Ambiente</button>
+                <button type="button" class="permit-chip" data-permit="Residencial / Plaza" onclick="toggleReqPermit(this)">🏘️ Residencial / Plaza</button>
+                <button type="button" class="permit-chip" data-permit="Salud Pública / Ruido" onclick="toggleReqPermit(this)">🏥 Salud Pública</button>
+                <button type="button" class="permit-chip" data-permit="Zona Franca / Hotel" onclick="toggleReqPermit(this)">🏭 Zona Franca / Hotel</button>
+                <button type="button" class="permit-chip selected" data-permit="Terreno privado libre" onclick="toggleReqPermit(this)">✅ Terreno privado libre</button>
+              </div>
+            </div>
+            <div class="f-field full">
               <label>Urgencia y detalles de obra</label>
               <div class="f-box"><textarea id="rNotes" placeholder="Para iniciar este lunes, terreno compacto..."></textarea></div>
             </div>
             <div class="f-field full">
               <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-muted); text-transform:none; letter-spacing:0;">
                 <input type="checkbox" id="reqTerms" required style="margin-top:3px; accent-color:var(--orange);">
-                <span>Acepto las <a href="#" onclick="event.preventDefault(); openSheet('policiesSheet');" style="color:var(--orange); font-weight:700; text-decoration:underline;">Políticas de Intermediación, Cobro y e-NCF</a> de Green Mile RD.</span>
+                <span>Confirmo que la obra gestiona sus permisos vigentes y acepto las <a href="#" onclick="event.preventDefault(); openSheet('policiesSheet');" style="color:var(--orange); font-weight:700; text-decoration:underline;">Políticas de Intermediación, Cobro y e-NCF</a> de Green Mile RD.</span>
               </label>
             </div>
           </div>
@@ -2033,11 +2064,15 @@
       box.innerHTML = list.map(r => {
         const refCode = `OBRA-${String(r.id).slice(-4)}`;
         const msg = encodeURIComponent(`Hola Green Mile RD, tengo equipo disponible para la solicitud ${refCode}: "${r.title}" en ${r.city} (Presupuesto ${fmtRD(r.budget)}/día). Quiero postular mi equipo.`);
+        const permitsHTML = Array.isArray(r.permits) && r.permits.length
+          ? `<div style="display:flex; flex-wrap:wrap; gap:5px;">${r.permits.map(p => `<span style="font-size:10.5px; font-weight:700; background:var(--navy-soft); color:var(--navy); padding:2px 7px; border-radius:999px;">📋 ${p}</span>`).join('')}</div>`
+          : '';
         return `
           <div style="background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--orange); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow-sm);">
             <div style="font-size:11px; font-weight:800; color:var(--orange); text-transform:uppercase;">${r.city} • Presupuesto ${fmtRD(r.budget)}/día</div>
             <strong style="font-size:16px; color:var(--navy);">${r.title}</strong>
             <p style="font-size:13px; color:var(--text-muted);">${r.notes || 'Disponibilidad inmediata requerida.'}</p>
+            ${permitsHTML}
             <div style="display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid var(--border); margin-top:auto; gap:8px;">
               <span style="font-size:12px; font-weight:700; color:var(--navy);">🔒 ${refCode} • Gestionado por Green Mile</span>
               <a class="btn btn-wa" style="padding:8px 14px; font-size:12px; white-space:nowrap;" target="_blank" rel="noopener" href="https://wa.me/${GREEN_MILE_WA}?text=${msg}">Postular mi Equipo</a>
@@ -2574,6 +2609,7 @@
         lat: basePt ? basePt.lat : null,
         lng: basePt ? basePt.lng : null,
         operator: document.getElementById('pubOp').checked,
+        certifications: Array.from(document.querySelectorAll('#pubCertChips .permit-chip.selected')).map(b => b.dataset.cert).filter(Boolean),
         owner: currentOwner.name,
         rnc: currentOwner.rncFormatted,
         phone: currentOwner.phone,
@@ -2595,9 +2631,24 @@
       }
     }
 
+    function toggleReqPermit(btn) {
+      if (!btn) return;
+      const isPrivate = btn.dataset.permit === 'Terreno privado libre';
+      const all = document.querySelectorAll('#reqPermitChips .permit-chip');
+      if (isPrivate) {
+        const next = !btn.classList.contains('selected');
+        all.forEach(b => b.classList.remove('selected'));
+        if (next) btn.classList.add('selected');
+      } else {
+        all.forEach(b => { if (b.dataset.permit === 'Terreno privado libre') b.classList.remove('selected'); });
+        btn.classList.toggle('selected');
+      }
+    }
+
     function submitReq(e) {
       e.preventDefault();
       if (!document.getElementById('reqTerms').checked) { toast('Debes aceptar las políticas de Green Mile RD'); return; }
+      const reqPermits = Array.from(document.querySelectorAll('#reqPermitChips .permit-chip.selected')).map(b => b.dataset.permit).filter(Boolean);
       const newReq = {
         id: Date.now(),
         title: document.getElementById('rTitle').value.trim(),
@@ -2605,6 +2656,7 @@
         budget: Number(document.getElementById('rBudget').value) || 0,
         author: document.getElementById('rAuthor').value.trim(),
         phone: document.getElementById('rPhone').value.trim(),
+        permits: reqPermits,
         notes: document.getElementById('rNotes').value.trim()
       };
       requests.unshift(newReq);
@@ -2627,6 +2679,12 @@
       const distLine = b.distanceKm
         ? `<p style="font-size:13px; margin-bottom:6px;"><strong>Logística / Traslado:</strong> ${b.distanceKm} km desde ${b.city} ${b.transportCost > 0 ? `(${fmtRD(b.transportCost)})` : '(Retiro en patio)'}</p>`
         : '';
+      const permitsLine = Array.isArray(b.worksitePermits) && b.worksitePermits.length
+        ? `<div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:10px; font-size:12px; color:#78350F; margin-bottom:12px;">
+            <strong>Permisos y Accesos de Obra:</strong> ${b.worksitePermits.join(' • ')}<br>
+            <span style="font-size:11px;">El contratista declara contar con estos permisos vigentes antes de la llegada del equipo y asume costos de standby, retención o viaje en vacío por falta de permisos.</span>
+          </div>`
+        : '';
       document.getElementById('contractBody').innerHTML = `
         <div style="border:1.5px solid var(--border); border-radius:14px; padding:20px; background:#fff;">
           <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--navy); padding-bottom:12px; margin-bottom:14px;">
@@ -2648,7 +2706,8 @@
           </div>
           <p style="font-size:13px; margin-bottom:6px;"><strong>Equipo:</strong> ${b.title} (${b.city})</p>
           ${distLine}
-          <p style="font-size:13px; margin-bottom:12px;"><strong>Plazo:</strong> ${b.qty} ${b.unitLabel} ${b.endDate && b.endDate !== b.startDate ? `del ${b.startDate} al ${b.endDate}` : `desde ${b.startDate}`}</p>
+          <p style="font-size:13px; margin-bottom:10px;"><strong>Plazo:</strong> ${b.qty} ${b.unitLabel} ${b.endDate && b.endDate !== b.startDate ? `del ${b.startDate} al ${b.endDate}` : `desde ${b.startDate}`}</p>
+          ${permitsLine}
           <div style="background:var(--navy-soft); padding:12px; border-radius:10px; font-size:13px; margin-bottom:14px;">
             <div style="display:flex; justify-content:space-between;"><span>Subtotal Neto:</span><span>${fmtRD(b.netSubtotal)}</span></div>
             ${b.ncf ? `<div style="display:flex; justify-content:space-between;"><span>ITBIS 18% (e-NCF):</span><span>${fmtRD(b.itbis)}</span></div>` : ''}

@@ -689,6 +689,38 @@
     }
   }
 
+  function getPermitHintForCategory(cat) {
+    const c = String(cat || '');
+    if (c.includes('Izaje')) return '💡 Para grúas y brazos articulados en zonas urbanas suele requerirse permiso de Ayuntamiento e INTRANT / DIGESETT.';
+    if (c.includes('Movimiento')) return '💡 En excavaciones, corte o bote de material recuerda verificar permiso de Medio Ambiente y Ayuntamiento.';
+    if (c.includes('Energía')) return '💡 Para plantas eléctricas en zonas urbanas, hoteles o residenciales verifica control de ruido (Salud Pública / Residencial).';
+    if (c.includes('Transporte')) return '💡 Verifica horarios permitidos de circulación pesada (INTRANT) y autorización de acceso en residenciales o plazas.';
+    return '💡 Indica qué permisos o autorizaciones aplican a esta obra para evitar retrasos, multas o viajes en vacío.';
+  }
+
+  function toggleWorksitePermit(btn) {
+    if (!btn) return;
+    const val = btn.dataset.permit || '';
+    const isPrivate = val === 'Terreno privado sin restricciones';
+    const allBtns = document.querySelectorAll('#qPermitChips .permit-chip');
+    if (isPrivate) {
+      const willSelect = !btn.classList.contains('selected');
+      allBtns.forEach((b) => b.classList.remove('selected'));
+      if (willSelect) btn.classList.add('selected');
+    } else {
+      allBtns.forEach((b) => {
+        if (b.dataset.permit === 'Terreno privado sin restricciones') b.classList.remove('selected');
+      });
+      btn.classList.toggle('selected');
+    }
+  }
+
+  function getSelectedWorksitePermits() {
+    return Array.from(document.querySelectorAll('#qPermitChips .permit-chip.selected'))
+      .map((b) => b.dataset.permit)
+      .filter(Boolean);
+  }
+
   function stepQty(delta) {
     const inp = document.getElementById('qQty');
     if (!inp) return;
@@ -732,6 +764,18 @@
       return;
     }
 
+    const worksitePermits = getSelectedWorksitePermits();
+    if (worksitePermits.length === 0) {
+      toast('Selecciona los permisos o tipo de acceso de la obra');
+      document.getElementById('qPermitChips')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (!document.getElementById('qPermitsDecl')?.checked) {
+      toast('Confirma la declaración de permisos vigentes de la obra');
+      document.getElementById('qPermitsDecl')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
     if (!sigSigned) {
       toast('Dibuja tu firma en pantalla para continuar');
       document.getElementById('sigCanvas')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -756,6 +800,8 @@
       distanceKm: geoState.distanceKm,
       durationMin: geoState.durationMin,
       transportCost: b.trans,
+      worksitePermits,
+      permitsDeclared: true,
       startDate: calState.start,
       endDate: calState.end || calState.start,
       qty: b.qty,
@@ -788,7 +834,7 @@
     calState.end = '';
     renderCalendar();
     openContract(rec);
-    toast('✓ Obra georreferenciada, RNC validado y contrato firmado');
+    toast('✓ Obra georreferenciada, permisos confirmados y contrato firmado');
   }
 
   function openContract(b) {
@@ -801,6 +847,12 @@
       : '';
     const distLine = b.distanceKm
       ? `<p style="font-size:13px; margin-bottom:6px;"><strong>Logística / Traslado:</strong> ${b.distanceKm} km desde ${esc(b.city)} ${b.transportCost > 0 ? `(${GM.fmtRD(b.transportCost)})` : '(Retiro en patio)'}</p>`
+      : '';
+    const permitsLine = Array.isArray(b.worksitePermits) && b.worksitePermits.length
+      ? `<div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:10px; font-size:12px; color:#78350F; margin-bottom:12px;">
+          <strong>Permisos y Accesos de Obra:</strong> ${b.worksitePermits.map(esc).join(' • ')}<br>
+          <span style="font-size:11px;">El contratista declara contar con estos permisos vigentes antes de la llegada del equipo y asume costos de standby, retención o viaje en vacío por falta de permisos.</span>
+        </div>`
       : '';
     document.getElementById('contractBody').innerHTML = `
       <div style="border:1.5px solid var(--border); border-radius:14px; padding:20px; background:#fff;">
@@ -823,7 +875,8 @@
         </div>
         <p style="font-size:13px; margin-bottom:6px;"><strong>Equipo:</strong> ${esc(b.title)} (${esc(b.city)})</p>
         ${distLine}
-        <p style="font-size:13px; margin-bottom:12px;"><strong>Plazo:</strong> ${b.qty} ${esc(b.unitLabel)} (${rangeLabel})</p>
+        <p style="font-size:13px; margin-bottom:10px;"><strong>Plazo:</strong> ${b.qty} ${esc(b.unitLabel)} (${rangeLabel})</p>
+        ${permitsLine}
         <div style="background:var(--navy-soft); padding:12px; border-radius:10px; font-size:13px; margin-bottom:14px;">
           <div style="display:flex; justify-content:space-between;"><span>Subtotal Neto:</span><span>${GM.fmtRD(b.netSubtotal)}</span></div>
           ${b.ncf ? `<div style="display:flex; justify-content:space-between;"><span>ITBIS 18% (e-NCF):</span><span>${GM.fmtRD(b.itbis)}</span></div>` : ''}
@@ -1015,6 +1068,11 @@
                 <div class="spec-item"><span>Disponibilidad</span><strong id="specAvail">${it.busy ? 'En Obra (consultar fecha)' : 'Disponible Hoy'}</strong></div>
                 <div class="spec-item"><span>Facturación Fiscal</span><strong>Comprobante e-NCF (e-CF 31 · DGII)</strong></div>
               </div>
+              ${Array.isArray(it.certifications) && it.certifications.length ? `
+                <div class="cert-pills" aria-label="Documentación y permisos del equipo">
+                  ${it.certifications.map(c => `<span class="cert-pill">✓ ${esc(c)}</span>`).join('')}
+                </div>
+              ` : ''}
 
               <h3 class="section-label">Descripción y Aditamentos</h3>
               <p class="desc-text">${esc(it.desc)}</p>
@@ -1167,6 +1225,24 @@
                   </div>
 
                   <div class="f-field full">
+                    <label>Permisos y Accesos de Obra (RD) <small class="req-tag">Obligatorio</small></label>
+                    <div class="permit-chips" id="qPermitChips">
+                      <button type="button" class="permit-chip" data-permit="Ayuntamiento / Vía pública" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🏛️ Ayuntamiento</button>
+                      <button type="button" class="permit-chip" data-permit="INTRANT / DIGESETT" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🚧 INTRANT / DIGESETT</button>
+                      <button type="button" class="permit-chip" data-permit="Medio Ambiente" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🌿 Medio Ambiente</button>
+                      <button type="button" class="permit-chip" data-permit="Residencial / Condominio / Plaza" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🏘️ Residencial / Plaza</button>
+                      <button type="button" class="permit-chip" data-permit="Salud Pública / Control de ruido" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🏥 Salud Pública / Ruido</button>
+                      <button type="button" class="permit-chip" data-permit="Zona Franca / Hotel / Puerto" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🏭 Zona Franca / Hotel</button>
+                      <button type="button" class="permit-chip" data-permit="Terreno privado sin restricciones" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">✅ Terreno privado libre</button>
+                    </div>
+                    <div class="permit-hint">${getPermitHintForCategory(it.category)}</div>
+                    <label class="permit-decl">
+                      <input type="checkbox" id="qPermitsDecl" required>
+                      <span>Confirmo que la obra cuenta con los permisos y accesos vigentes seleccionados antes de la llegada del equipo. En caso de espera (<em>standby</em>), retención o viaje en vacío por falta de permisos, el contratista asume dichos costos.</span>
+                    </label>
+                  </div>
+
+                  <div class="f-field full">
                     <label class="switch-row">
                       <div>
                         <strong>Comprobante Crédito Fiscal (e-NCF · e-CF 31)</strong>
@@ -1247,7 +1323,8 @@
     pickGeoSuggestion,
     useMyLocation,
     setReviewStars,
-    submitReview
+    submitReview,
+    toggleWorksitePermit
   };
 
   async function initPage() {
