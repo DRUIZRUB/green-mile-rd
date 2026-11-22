@@ -1,4 +1,4 @@
-/* Green Mile RD — Live GPS Tracking Controller (Client + Operator + Simulator) */
+/* Green Mile RD — Production Real-Time GPS Tracking Controller (Firestore + Native/Web GPS) */
 (function () {
   'use strict';
 
@@ -7,29 +7,10 @@
   const GEO = window.GM_GEO;
   const NATIVE = window.GM_NATIVE;
 
-  const DEMO_BOOKING = {
-    id: 'demo-sd-1001',
-    equipmentId: 1001,
-    title: 'Retroexcavadora CAT 416F2 4x4',
-    city: 'Santo Domingo',
-    owner: 'Maquinarias del Caribe SRL',
-    ownerPhone: '809-555-0101',
-    renter: 'Constructora Piantini RD',
-    address: 'Av. Abraham Lincoln esq. Gustavo Mejía Ricart, Piantini, Santo Domingo',
-    originLat: 18.4945,
-    originLng: -69.9852,
-    originLabel: 'Patio Zona Industrial de Herrera, Santo Domingo',
-    worksiteLat: 18.4728,
-    worksiteLng: -69.9369,
-    distanceKm: 7.4,
-    durationMin: 18,
-    equipmentImg: 'img/eq_retroexcavadora.webp',
-    isDemo: true
-  };
-
   let role = 'client';
   let currentBooking = null;
   let allBookings = [];
+  let allTrackingMap = {};
   let originPt = null;
   let destPt = null;
   let liveMap = null;
@@ -38,23 +19,13 @@
   let unsubTracking = null;
   let unsubBooking = null;
 
-  // Real GPS state
+  // Real GPS telemetry state
   let gpsActive = false;
   let lastWriteMs = 0;
   let lastWritePos = null;
   let lastRerouteMs = 0;
   let lastReroutePos = null;
   let arrivalGeofenceAlerted = false;
-
-  // Simulator state
-  let simPoints = [];
-  let simIndex = 0;
-  let simRunning = false;
-  let simTimer = null;
-  let simSpeedMultiplier = 3;
-
-  // Sync status
-  let cloudSynced = FB && FB.isReady();
   let lastTelemetryAtMs = 0;
 
   function $(id) {
@@ -68,7 +39,7 @@
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
   }
 
   function encodeBookingPayload(bk) {
@@ -153,10 +124,10 @@
         label: bk.address || `Obra en ${bk.city || 'RD'}`
       };
     } else {
-      // Offset 4.5km so map still shows a clear route if booking had no GPS pin
+      const cityCenter = GEO.getCityCoords(bk.city || 'Santo Domingo');
       dest = {
-        lat: origin.lat - 0.024,
-        lng: origin.lng + 0.036,
+        lat: cityCenter.lat,
+        lng: cityCenter.lng,
         label: bk.address || `Obra en ${bk.city || 'RD'}`
       };
     }
@@ -171,7 +142,7 @@
   }
 
   function formatRelativeTime(ms) {
-    if (!ms) return 'Sin señal GPS todavía';
+    if (!ms) return 'Esperando señal GPS del operador';
     const diffSec = Math.max(0, Math.round((Date.now() - ms) / 1000));
     if (diffSec < 5) return 'Actualizado ahora mismo';
     if (diffSec < 60) return `Actualizado hace ${diffSec} s`;
@@ -182,41 +153,37 @@
 
   function buildRoleUrl(targetRole) {
     const base = new URL('./tracking.html', window.location.href);
-    base.searchParams.set('booking', String(currentBooking.id));
+    if (currentBooking) {
+      base.searchParams.set('booking', String(currentBooking.id));
+    }
     if (targetRole === 'operator') base.searchParams.set('role', 'operator');
-    if (currentBooking.isDemo) base.searchParams.set('demo', '1');
-    const encoded = encodeBookingPayload(currentBooking);
-    if (encoded) base.hash = 'bk=' + encoded;
+    if (currentBooking) {
+      const encoded = encodeBookingPayload(currentBooking);
+      if (encoded) base.hash = 'bk=' + encoded;
+    }
     return base.href;
   }
 
   function getStatusMeta(status) {
     switch (status) {
       case 'en_route':
-        return {
-          eyebrow: 'EN CAMINO A OBRA',
-          topLabel: 'En camino • En vivo',
-          stepIndex: 1
-        };
+        return { eyebrow: 'EN CAMINO A OBRA', topLabel: 'En camino • En vivo', stepIndex: 1 };
       case 'arrived':
-        return {
-          eyebrow: 'UNIDAD EN OBRA',
-          topLabel: 'Llegó a la obra',
-          stepIndex: 2
-        };
+        return { eyebrow: 'UNIDAD EN OBRA', topLabel: 'Llegó a la obra', stepIndex: 2 };
       case 'operating':
       case 'completed':
-        return {
-          eyebrow: 'ENTREGA CONFIRMADA',
-          topLabel: 'En operación en obra',
-          stepIndex: 3
-        };
+        return { eyebrow: 'ENTREGA CONFIRMADA', topLabel: 'En operación en obra', stepIndex: 3 };
       default:
-        return {
-          eyebrow: 'DESPACHO PROGRAMADO',
-          topLabel: 'Esperando salida de patio',
-          stepIndex: 0
-        };
+        return { eyebrow: 'DESPACHO PROGRAMADO', topLabel: 'Esperando salida de patio', stepIndex: 0 };
+    }
+  }
+
+  function showEmptyState(isEmpty) {
+    $('emptyDispatchState').style.display = isEmpty ? 'block' : 'none';
+    $('dispatchContent').style.display = isEmpty ? 'none' : 'flex';
+    if (isEmpty) {
+      $('topStatusText').textContent = 'Sin despachos activos';
+      $('topLiveDot').className = 'live-dot';
     }
   }
 
@@ -225,6 +192,7 @@
     $('roleOperatorBtn').classList.toggle('active', role === 'operator');
     $('clientPanel').style.display = role === 'client' ? 'flex' : 'none';
     $('operatorPanel').style.display = role === 'operator' ? 'flex' : 'none';
+
     const scrollBox = document.querySelector('#trackSheet .sheet-scroll');
     if (scrollBox) scrollBox.scrollTop = 0;
 
@@ -243,10 +211,10 @@
         badge.textContent = 'App Nativa • GPS';
         badge.classList.add('native');
       } else if (env.supportsWakeLock) {
-        badge.textContent = 'Web • GPS + Pantalla Activa';
+        badge.textContent = 'GPS Real • Pantalla Activa';
         badge.classList.remove('native');
       } else {
-        badge.textContent = 'Web • GPS en Vivo';
+        badge.textContent = 'GPS Real en Vivo';
         badge.classList.remove('native');
       }
     }
@@ -259,9 +227,7 @@
     $('unitThumb').src = GM ? GM.resolveAsset(thumbSrc, './') : thumbSrc;
     $('unitTitle').textContent = currentBooking.title || 'Maquinaria Pesada';
     $('unitAddress').textContent = `Destino: ${currentBooking.address || currentBooking.city || 'Obra'}`;
-    $('clientBookingCode').textContent = currentBooking.isDemo
-      ? 'DEMO-RD'
-      : `#GM-${String(currentBooking.id).slice(-6)}`;
+    $('clientBookingCode').textContent = `#GM-${String(currentBooking.id).slice(-6)}`;
 
     $('lblOriginShort').textContent = (originPt && originPt.label ? originPt.label.split(',')[0] : 'Base').slice(0, 22);
     $('lblDestShort').textContent = (currentBooking.address ? currentBooking.address.split(',')[0] : 'Obra').slice(0, 22);
@@ -270,7 +236,7 @@
     const cleanPhone = String(phone).replace(/[^0-9+]/g, '');
     $('btnCallOp').href = `tel:${cleanPhone}`;
     const waNum = GM ? GM.cleanWA(phone) : '18095550100';
-    const waGreet = encodeURIComponent(`Hola, te escribo sobre el despacho de ${currentBooking.title} hacia ${currentBooking.address || 'la obra'} en Green Mile RD.`);
+    const waGreet = encodeURIComponent(`Hola, te escribo sobre el despacho #GM-${String(currentBooking.id).slice(-6)} (${currentBooking.title}) hacia ${currentBooking.address || 'la obra'} en Green Mile RD.`);
     $('btnWaOp').href = `https://wa.me/${waNum}?text=${waGreet}`;
 
     if (destPt) {
@@ -278,18 +244,36 @@
       $('btnNavGmaps').href = `https://www.google.com/maps/dir/?api=1&destination=${destPt.lat},${destPt.lng}&travelmode=driving`;
       $('btnNavWaze').href = `https://waze.com/ul?ll=${destPt.lat},${destPt.lng}&navigate=yes`;
     }
+  }
 
-    const showDemoHelpers = Boolean(currentBooking.isDemo);
-    $('demoBanner').style.display = showDemoHelpers ? 'block' : 'none';
-    $('clientDemoCta').style.display = showDemoHelpers ? 'block' : 'none';
+  function updateGpsDiagnostics(doc) {
+    const titleEl = $('gpsSignalTitle');
+    const readoutEl = $('gpsCoordsReadout');
+    if (!titleEl || !readoutEl) return;
+
+    if (gpsActive && doc && Number.isFinite(Number(doc.lat)) && Number.isFinite(Number(doc.lng))) {
+      const acc = Number.isFinite(Number(doc.accuracy)) ? ` (±${Math.round(doc.accuracy)} m)` : '';
+      titleEl.textContent = `🛰️ Transmitiendo GPS en vivo${acc}`;
+      readoutEl.textContent = `${Number(doc.lat).toFixed(5)}, ${Number(doc.lng).toFixed(5)} • ${Math.round(Number(doc.speedKmh) || 0)} km/h`;
+    } else if (doc && doc.status === 'en_route' && Number.isFinite(Number(doc.lat))) {
+      titleEl.textContent = '📡 Recorrido en curso (GPS en pausa en este equipo)';
+      readoutEl.textContent = `Última posición: ${Number(doc.lat).toFixed(5)}, ${Number(doc.lng).toFixed(5)}`;
+    } else if (doc && (doc.status === 'arrived' || doc.status === 'completed' || doc.status === 'operating')) {
+      titleEl.textContent = '✅ Unidad confirmada en obra';
+      readoutEl.textContent = `Obra: ${destPt ? `${destPt.lat.toFixed(5)}, ${destPt.lng.toFixed(5)}` : '--'}`;
+    } else {
+      titleEl.textContent = '📡 Señal GPS lista para transmitir';
+      readoutEl.textContent = 'Presiona "Iniciar Recorrido" para compartir tu ubicación GPS en tiempo real con la obra.';
+    }
   }
 
   function renderTrackingState(doc) {
+    if (!currentBooking) return;
     trackingDoc = doc || {
       bookingId: String(currentBooking.id),
       status: 'scheduled',
       operatorName: currentBooking.owner || 'Operador Certificado',
-      unitPlate: 'Lowboy / Unidad Asignada',
+      unitPlate: 'Unidad Asignada',
       remainingKm: plannedRoute ? plannedRoute.distanceKm : (currentBooking.distanceKm || 0),
       etaMin: plannedRoute ? plannedRoute.durationMin : (currentBooking.durationMin || 0),
       speedKmh: 0,
@@ -300,15 +284,14 @@
     const meta = getStatusMeta(status);
 
     // Top pill
-    const topDot = $('topLiveDot');
-    topDot.className = `live-dot ${status}`;
+    $('topLiveDot').className = `live-dot ${status}`;
     $('topStatusText').textContent = status === 'en_route' && Number.isFinite(Number(trackingDoc.etaMin))
       ? `En camino • ${Math.max(1, Math.round(trackingDoc.etaMin))} min`
       : meta.topLabel;
 
     // Hero ETA
     const eyebrow = $('etaEyebrow');
-    eyebrow.textContent = trackingDoc.isSimulated ? `${meta.eyebrow} (SIMULACIÓN)` : meta.eyebrow;
+    eyebrow.textContent = meta.eyebrow;
     eyebrow.className = `eta-eyebrow ${status}`;
 
     const totalKm = Math.max(0.5, Number(plannedRoute && plannedRoute.distanceKm) || Number(currentBooking.distanceKm) || 5);
@@ -338,7 +321,7 @@
       pct = 100;
     }
 
-    $('metricKm').textContent = status === 'arrived' || status === 'completed' || status === 'operating'
+    $('metricKm').textContent = (status === 'arrived' || status === 'completed' || status === 'operating')
       ? '0.0'
       : (Math.round(remKm * 10) / 10).toFixed(1);
     $('metricSpeed').textContent = status === 'en_route'
@@ -357,12 +340,12 @@
     document.querySelectorAll('#stageStepper .stage-step').forEach((el, idx) => {
       el.classList.remove('active', 'done');
       if (idx < meta.stepIndex) el.classList.add('done');
-      else if (idx === meta.stepIndex) el.classList.add(status === 'completed' || status === 'operating' ? 'done' : 'active');
+      else if (idx === meta.stepIndex) el.classList.add((status === 'completed' || status === 'operating') ? 'done' : 'active');
     });
 
     // Operator details
     const opName = trackingDoc.operatorName || currentBooking.owner || 'Operador Certificado';
-    const plate = trackingDoc.unitPlate || 'Lowboy / Unidad Asignada';
+    const plate = trackingDoc.unitPlate || 'Unidad Asignada';
     $('unitOperator').textContent = `👷 ${opName} • ${plate}`;
 
     if (document.activeElement !== $('inpOpName') && !$('inpOpName').value) {
@@ -372,7 +355,7 @@
       $('inpUnitPlate').value = plate;
     }
 
-    // Operator action visibility
+    // Operator action buttons
     $('opMainActions').style.display = (status === 'scheduled' || status === 'completed' || status === 'operating') ? 'flex' : 'none';
     $('btnStartTrip').textContent = (status === 'completed' || status === 'operating')
       ? '🚚 Iniciar Nuevo Recorrido'
@@ -381,7 +364,9 @@
     $('btnPauseGps').textContent = gpsActive ? '⏸ Pausar GPS' : '📡 Reanudar GPS';
     $('opArrivedActions').style.display = status === 'arrived' ? 'flex' : 'none';
 
-    // Update map vehicle marker
+    updateGpsDiagnostics(trackingDoc);
+
+    // Update live map vehicle position & route
     if (liveMap && Number.isFinite(Number(trackingDoc.lat)) && Number.isFinite(Number(trackingDoc.lng))) {
       liveMap.updateVehicle(
         {
@@ -392,21 +377,17 @@
         },
         {
           status,
-          durationMs: trackingDoc.isSimulated ? 420 : 800,
+          durationMs: 750,
           recordTrail: status === 'en_route'
         }
       );
 
-      // Update remaining active route if doc includes a compact polyline or slice from plannedRoute
       if (status === 'en_route') {
         if (Array.isArray(trackingDoc.remainingCoords) && trackingDoc.remainingCoords.length >= 2) {
-          liveMap.setActiveRoute(trackingDoc.remainingCoords, true);
-        } else if (plannedRoute && Array.isArray(plannedRoute.geometry) && plannedRoute.geometry.length >= 2) {
-          const sliced = sliceRemainingFromGeometry(plannedRoute.geometry, {
-            lat: Number(trackingDoc.lat),
-            lng: Number(trackingDoc.lng)
-          });
-          if (sliced.length >= 2) liveMap.setActiveRoute(sliced, plannedRoute.isRoadRoute);
+          const pairs = trackingDoc.remainingCoords
+            .map((pt) => (Array.isArray(pt) ? [Number(pt[0]), Number(pt[1])] : [Number(pt && pt.lat), Number(pt && pt.lng)]))
+            .filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+          if (pairs.length >= 2) liveMap.setActiveRoute(pairs, true);
         }
       } else if (status === 'arrived' || status === 'completed' || status === 'operating') {
         liveMap.setActiveRoute([], true);
@@ -420,86 +401,21 @@
   }
 
   function updateSyncBadge(isCloud, note) {
-    cloudSynced = isCloud;
     const pill = $('syncStatusPill');
     if (!pill) return;
     if (isCloud) {
       pill.textContent = '● En vivo • Nube Firestore';
       pill.classList.remove('local');
     } else {
-      pill.textContent = note || '● Sincronización local activa';
+      pill.textContent = note || '● Sin conexión a la nube';
       pill.classList.add('local');
     }
-  }
-
-  /**
-   * Resamples a polyline into evenly spaced points (in km) for ultra-smooth simulation.
-   */
-  function resamplePolyline(coords, stepKm) {
-    if (!Array.isArray(coords) || coords.length < 2) return [];
-    const out = [coords[0]];
-    let carry = 0;
-
-    for (let i = 1; i < coords.length; i++) {
-      const a = { lat: coords[i - 1][0], lng: coords[i - 1][1] };
-      const b = { lat: coords[i][0], lng: coords[i][1] };
-      const segKm = GEO.haversineKm(a, b);
-      if (segKm <= 0.0001) continue;
-
-      let dist = stepKm - carry;
-      while (dist <= segKm) {
-        const t = dist / segKm;
-        out.push([a.lat + (b.lat - a.lat) * t, a.lng + (b.lng - a.lng) * t]);
-        dist += stepKm;
-      }
-      carry = segKm - (dist - stepKm);
-    }
-
-    const last = coords[coords.length - 1];
-    const tail = out[out.length - 1];
-    if (GEO.haversineKm({ lat: tail[0], lng: tail[1] }, { lat: last[0], lng: last[1] }) > 0.005) {
-      out.push(last);
-    }
-    return out;
-  }
-
-  /**
-   * Given a road polyline and a live point, returns the remaining polyline ahead toward the worksite.
-   */
-  function sliceRemainingFromGeometry(geometry, pos) {
-    if (!Array.isArray(geometry) || geometry.length < 2 || !pos) return [];
-    let bestIdx = 0;
-    let bestDist = Infinity;
-    for (let i = 0; i < geometry.length; i++) {
-      const d = GEO.haversineKm(pos, { lat: geometry[i][0], lng: geometry[i][1] });
-      if (d < bestDist) {
-        bestDist = d;
-        bestIdx = i;
-      }
-    }
-    // If vehicle is far off the planned corridor (> 0.6 km), let OSRM handle full reroute
-    if (bestDist > 0.6) {
-      return [[pos.lat, pos.lng], [destPt.lat, destPt.lng]];
-    }
-    return [[pos.lat, pos.lng], ...geometry.slice(Math.min(bestIdx + 1, geometry.length - 1))];
-  }
-
-  function computePolylineKm(coords) {
-    if (!Array.isArray(coords) || coords.length < 2) return 0;
-    let total = 0;
-    for (let i = 1; i < coords.length; i++) {
-      total += GEO.haversineKm(
-        { lat: coords[i - 1][0], lng: coords[i - 1][1] },
-        { lat: coords[i][0], lng: coords[i][1] }
-      );
-    }
-    return total;
   }
 
   async function persistTracking(patch) {
     if (!currentBooking) return;
     const opName = ($('inpOpName') && $('inpOpName').value.trim()) || (trackingDoc && trackingDoc.operatorName) || currentBooking.owner || 'Operador Certificado';
-    const unitPlate = ($('inpUnitPlate') && $('inpUnitPlate').value.trim()) || (trackingDoc && trackingDoc.unitPlate) || 'Lowboy / Unidad Asignada';
+    const unitPlate = ($('inpUnitPlate') && $('inpUnitPlate').value.trim()) || (trackingDoc && trackingDoc.unitPlate) || 'Unidad Asignada';
 
     const payload = Object.assign(
       {
@@ -517,86 +433,111 @@
     );
 
     const res = FB ? await FB.upsertTracking(currentBooking.id, payload) : { ok: true, cloudSynced: false, data: payload };
-    updateSyncBadge(Boolean(res.cloudSynced), res.error ? '● Modo local (despliega firestore.rules para nube)' : null);
+    updateSyncBadge(Boolean(res.cloudSynced), res.error ? '● Reintentando conexión Firestore…' : null);
     renderTrackingState(res.data || payload);
   }
 
-  async function publishOperatorPosition(pos, extra = {}) {
+  async function publishRealPosition(pos, forceReroute) {
+    if (!destPt || !currentBooking) return;
     const totalKm = Math.max(0.5, Number(plannedRoute && plannedRoute.distanceKm) || Number(currentBooking.distanceKm) || 5);
     const straightRemKm = GEO.haversineKm(pos, destPt);
+    const fallbackRoadKm = Math.max(0, Math.round(straightRemKm * 1.22 * 10) / 10);
+    const speedKmh = Number.isFinite(Number(pos.speedKmh)) && pos.speedKmh > 2 ? Number(pos.speedKmh) : 34;
 
-    let remainingKm = Number.isFinite(extra.remainingKm) ? extra.remainingKm : Math.max(0, straightRemKm * 1.22);
-    let etaMin = Number.isFinite(extra.etaMin) ? extra.etaMin : null;
-    let remainingCoords = extra.remainingCoords || null;
+    const now = Date.now();
+    const movedSinceReroute = lastReroutePos ? GEO.haversineKm(lastReroutePos, pos) : Infinity;
+    let remainingKm = fallbackRoadKm;
+    let etaMin = Math.max(1, Math.round((fallbackRoadKm / Math.max(18, speedKmh)) * 60));
+    let compactCoords;
 
-    // For real GPS updates, dynamically refresh OSRM road route every ~15s or >150m moved
-    if (!extra.isSimulated && destPt) {
-      const now = Date.now();
-      const movedSinceReroute = lastReroutePos ? GEO.haversineKm(lastReroutePos, pos) : Infinity;
-      if (now - lastRerouteMs > 15000 || movedSinceReroute > 0.15) {
-        lastRerouteMs = now;
-        lastReroutePos = { lat: pos.lat, lng: pos.lng };
-        GEO.calculateRoute(pos, destPt).then((rt) => {
-          if (rt && liveMap && trackingDoc && trackingDoc.status === 'en_route') {
-            liveMap.setActiveRoute(rt.geometry, rt.isRoadRoute);
-            persistTracking({
-              status: 'en_route',
-              lat: pos.lat,
-              lng: pos.lng,
-              remainingKm: rt.distanceKm,
-              etaMin: rt.durationMin,
-              progressPct: Math.round(Math.max(2, Math.min(99, (1 - rt.distanceKm / totalKm) * 100)))
-            });
+    if (forceReroute || now - lastRerouteMs > 12000 || movedSinceReroute > 0.12) {
+      lastRerouteMs = now;
+      lastReroutePos = { lat: pos.lat, lng: pos.lng };
+      try {
+        const rt = await GEO.calculateRoute(pos, destPt);
+        if (rt) {
+          remainingKm = rt.distanceKm;
+          etaMin = rt.durationMin;
+          if (liveMap) liveMap.setActiveRoute(rt.geometry, rt.isRoadRoute);
+          if (Array.isArray(rt.geometry) && rt.geometry.length >= 2) {
+            const stride = Math.max(1, Math.ceil(rt.geometry.length / 55));
+            compactCoords = rt.geometry
+              .filter((_, i) => i % stride === 0 || i === rt.geometry.length - 1)
+              .map(([lat, lng]) => ({
+                lat: Math.round(Number(lat) * 100000) / 100000,
+                lng: Math.round(Number(lng) * 100000) / 100000
+              }));
           }
-        }).catch(() => {});
-      }
-    }
-
-    const speedKmh = Number.isFinite(Number(pos.speedKmh)) && pos.speedKmh > 2
-      ? Number(pos.speedKmh)
-      : (extra.isSimulated ? 42 : 34);
-
-    if (etaMin == null) {
-      etaMin = Math.max(1, Math.round((remainingKm / Math.max(18, speedKmh)) * 60));
+        }
+      } catch (_) {}
     }
 
     const progressPct = Math.round(Math.max(2, Math.min(99, (1 - remainingKm / totalKm) * 100)));
 
-    // Keep Firestore doc light: store at most ~60 thinned route coordinates
-    let compactCoords;
-    if (Array.isArray(remainingCoords) && remainingCoords.length >= 2) {
-      const stride = Math.max(1, Math.ceil(remainingCoords.length / 55));
-      compactCoords = remainingCoords.filter((_, i) => i % stride === 0 || i === remainingCoords.length - 1);
-    }
-
     await persistTracking({
-      status: extra.status || 'en_route',
+      status: 'en_route',
       lat: pos.lat,
       lng: pos.lng,
       heading: Number.isFinite(Number(pos.heading)) ? Math.round(Number(pos.heading)) : undefined,
-      speedKmh: Math.round(speedKmh),
+      speedKmh: Math.round(Number(pos.speedKmh) || 0),
       accuracy: pos.accuracy || null,
       remainingKm: Math.round(remainingKm * 10) / 10,
       etaMin,
       progressPct,
-      isSimulated: Boolean(extra.isSimulated),
-      source: pos.source || (extra.isSimulated ? 'simulator' : 'web-gps'),
+      source: pos.source || 'web-gps',
       remainingCoords: compactCoords
     });
 
-    // Automatic geofence arrival alert for real GPS when within 150 meters
-    if (!extra.isSimulated && straightRemKm <= 0.15 && !arrivalGeofenceAlerted) {
+    // Automatic worksite arrival geofence (150 meters)
+    if (straightRemKm <= 0.15 && !arrivalGeofenceAlerted) {
       arrivalGeofenceAlerted = true;
-      toast('📍 Estás a menos de 150 m de la obra. Pulsa "Llegué a Obra" al llegar.');
+      toast('📍 Estás a menos de 150 m de la obra. Pulsa "Llegué a Obra" al estacionar.');
     }
   }
 
-  async function startRealGpsTrip() {
-    stopSimulator(false);
-    arrivalGeofenceAlerted = false;
+  async function captureSingleGpsFix() {
+    if (!navigator || !navigator.geolocation) {
+      toast('Este dispositivo no soporta geolocalización GPS');
+      return;
+    }
+    toast('📡 Obteniendo ubicación GPS actual…');
+    navigator.geolocation.getCurrentPosition(
+      async (raw) => {
+        const pos = {
+          lat: raw.coords.latitude,
+          lng: raw.coords.longitude,
+          speedKmh: Number.isFinite(raw.coords.speed) && raw.coords.speed >= 0 ? Math.round(raw.coords.speed * 3.6 * 10) / 10 : 0,
+          heading: Number.isFinite(raw.coords.heading) && raw.coords.heading >= 0 ? raw.coords.heading : null,
+          accuracy: Math.round(raw.coords.accuracy || 0),
+          source: 'web-gps'
+        };
+        if (trackingDoc && trackingDoc.status === 'en_route') {
+          await publishRealPosition(pos, true);
+        } else {
+          await persistTracking({
+            status: (trackingDoc && trackingDoc.status) || 'scheduled',
+            lat: pos.lat,
+            lng: pos.lng,
+            accuracy: pos.accuracy,
+            source: 'web-gps'
+          });
+        }
+        if (liveMap) liveMap.focusVehicle();
+        toast('✓ Ubicación GPS actualizada en la nube');
+      },
+      (err) => {
+        toast(err && err.code === 1
+          ? 'Permiso de ubicación denegado. Activa el GPS en la configuración del navegador o app.'
+          : 'No se pudo obtener señal GPS en este momento.');
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    );
+  }
 
+  async function startRealGpsTrip() {
+    arrivalGeofenceAlerted = false;
     if (!NATIVE) {
-      toast('Puente GPS no disponible en este navegador');
+      toast('Puente GPS no disponible en este dispositivo');
       return;
     }
 
@@ -604,15 +545,14 @@
       toast('📡 Activando señal GPS de alta precisión…');
       const started = await NATIVE.startLiveGps({
         title: `Green Mile RD — ${currentBooking.title}`,
-        message: `En camino hacia ${currentBooking.address || 'la obra'}. Tracking activo en segundo plano.`,
+        message: `En camino hacia ${currentBooking.address || 'la obra'}. Tracking GPS activo en segundo plano.`,
         onPosition: (pos) => {
           const now = Date.now();
           const movedKm = lastWritePos ? GEO.haversineKm(lastWritePos, pos) : Infinity;
-          // Throttle Firestore writes cleanly to every 2.5s or >= 15m moved
           if (now - lastWriteMs < 2500 && movedKm < 0.015) return;
           lastWriteMs = now;
           lastWritePos = { lat: pos.lat, lng: pos.lng };
-          publishOperatorPosition(pos, { isSimulated: false });
+          publishRealPosition(pos, false);
         },
         onError: (errMsg) => {
           toast(errMsg);
@@ -623,7 +563,6 @@
       await persistTracking({
         status: 'en_route',
         startedAtMs: (trackingDoc && trackingDoc.startedAtMs) || Date.now(),
-        isSimulated: false,
         lat: (trackingDoc && trackingDoc.lat) || originPt.lat,
         lng: (trackingDoc && trackingDoc.lng) || originPt.lng
       });
@@ -631,13 +570,13 @@
       if (started.mode === 'native-background') {
         toast('🛰️ Recorrido iniciado con GPS nativo en 2.º plano');
       } else if (started.wakeLock) {
-        toast('🚚 Recorrido iniciado (GPS activo + pantalla encendida)');
+        toast('🚚 Recorrido iniciado — GPS en vivo + pantalla activa');
       } else {
         toast('🚚 Recorrido iniciado — transmitiendo ubicación GPS');
       }
     } catch (err) {
       gpsActive = false;
-      toast(err && err.message ? err.message : 'No se pudo iniciar el GPS');
+      toast(err && err.message ? err.message : 'No se pudo activar el GPS');
     }
   }
 
@@ -646,6 +585,7 @@
       await NATIVE.stopLiveGps();
       gpsActive = false;
       $('btnPauseGps').textContent = '📡 Reanudar GPS';
+      updateGpsDiagnostics(trackingDoc);
       toast('⏸ Transmisión GPS pausada');
     } else {
       await startRealGpsTrip();
@@ -653,7 +593,6 @@
   }
 
   async function markArrived() {
-    stopSimulator(false);
     if (gpsActive && NATIVE) {
       await NATIVE.stopLiveGps();
       gpsActive = false;
@@ -669,11 +608,10 @@
       arrivedAtMs: Date.now(),
       remainingCoords: []
     });
-    toast('📍 Llegada a obra confirmada');
+    toast('📍 Llegada a obra confirmada en Firestore');
   }
 
   async function markCompleted() {
-    stopSimulator(false);
     if (gpsActive && NATIVE) {
       await NATIVE.stopLiveGps();
       gpsActive = false;
@@ -689,128 +627,16 @@
       completedAtMs: Date.now(),
       remainingCoords: []
     });
-    toast('✅ Entrega confirmada — equipo en operación');
+    toast('✅ Entrega confirmada — equipo operando en obra');
   }
 
-  async function resetTrip() {
-    stopSimulator(false);
-    if (gpsActive && NATIVE) {
-      await NATIVE.stopLiveGps();
-      gpsActive = false;
-    }
-    simIndex = 0;
-    arrivalGeofenceAlerted = false;
-    if (liveMap) {
-      liveMap.clearTrail();
-      if (plannedRoute) liveMap.setActiveRoute(plannedRoute.geometry, plannedRoute.isRoadRoute);
-    }
-    await persistTracking({
-      status: 'scheduled',
-      lat: originPt.lat,
-      lng: originPt.lng,
-      heading: plannedRoute && plannedRoute.geometry.length > 1
-        ? GEO.computeBearing(
-            { lat: plannedRoute.geometry[0][0], lng: plannedRoute.geometry[0][1] },
-            { lat: plannedRoute.geometry[1][0], lng: plannedRoute.geometry[1][1] }
-          )
-        : 0,
-      remainingKm: plannedRoute ? plannedRoute.distanceKm : (currentBooking.distanceKm || 0),
-      etaMin: plannedRoute ? plannedRoute.durationMin : (currentBooking.durationMin || 0),
-      speedKmh: 0,
-      progressPct: 0,
-      isSimulated: false,
-      remainingCoords: []
-    });
-    if (liveMap) liveMap.fitAll();
-    toast('↺ Despacho reiniciado en patio');
-  }
-
-  function stopSimulator(showToast) {
-    simRunning = false;
-    if (simTimer) {
-      clearTimeout(simTimer);
-      simTimer = null;
-    }
-    const btn = $('btnToggleSim');
-    if (btn) btn.textContent = '▶ Simular recorrido';
-    if (showToast) toast('⏸ Simulación pausada');
-  }
-
-  function startSimulator() {
-    if (!plannedRoute || !Array.isArray(plannedRoute.geometry) || plannedRoute.geometry.length < 2) {
-      toast('Calculando ruta por carretera… intenta en 1 segundo');
-      return;
-    }
-
-    if (gpsActive && NATIVE) {
-      NATIVE.stopLiveGps();
-      gpsActive = false;
-    }
-
-    if (simPoints.length < 2) {
-      const totalKm = Math.max(0.5, plannedRoute.distanceKm || 5);
-      // Target ~75–110 smooth steps across the real road route
-      const stepKm = Math.max(0.04, Math.min(0.18, totalKm / 85));
-      simPoints = resamplePolyline(plannedRoute.geometry, stepKm);
-    }
-
-    if (simIndex >= simPoints.length - 1) {
-      simIndex = 0;
-      if (liveMap) liveMap.clearTrail();
-    }
-
-    simRunning = true;
-    $('btnToggleSim').textContent = '⏸ Pausar simulación';
-    toast(`▶ Simulando recorrido en vivo (${simSpeedMultiplier}x)`);
-
-    const stepTick = async () => {
-      if (!simRunning) return;
-      const curr = simPoints[simIndex];
-      const next = simPoints[Math.min(simIndex + 1, simPoints.length - 1)];
-      const heading = GEO.computeBearing(
-        { lat: curr[0], lng: curr[1] },
-        { lat: next[0], lng: next[1] }
-      );
-      const remainingSlice = simPoints.slice(simIndex);
-      const remKm = computePolylineKm(remainingSlice);
-      // Realistic heavy-truck speed in RD urban/highway traffic (32–48 km/h)
-      const simSpeedKmh = Math.round(36 + Math.sin(simIndex * 0.35) * 8);
-      const etaMin = Math.max(1, Math.round((remKm / Math.max(24, simSpeedKmh)) * 60));
-
-      await publishOperatorPosition(
-        {
-          lat: curr[0],
-          lng: curr[1],
-          heading,
-          speedKmh: simSpeedKmh,
-          source: 'simulator'
-        },
-        {
-          status: 'en_route',
-          remainingKm: remKm,
-          etaMin,
-          remainingCoords: remainingSlice,
-          isSimulated: true
-        }
-      );
-
-      simIndex += 1;
-      if (simIndex >= simPoints.length) {
-        stopSimulator(false);
-        await markArrived();
-        return;
-      }
-
-      const delayMs = Math.max(220, Math.round(1300 / simSpeedMultiplier));
-      simTimer = setTimeout(stepTick, delayMs);
-    };
-
-    stepTick();
-  }
-
-  async function shareClientLink(viaWhatsApp) {
-    const clientUrl = buildRoleUrl('client');
-    const msg = `🚚 *Tracking en Vivo — Green Mile RD*\n\nEquipo: *${currentBooking.title}*\nDestino: ${currentBooking.address || currentBooking.city}\n\nSigue el recorrido en el mapa en tiempo real:\n${clientUrl}`;
+  async function shareRoleLink(targetRole, viaWhatsApp) {
+    if (!currentBooking) return;
+    const url = buildRoleUrl(targetRole);
+    const code = `#GM-${String(currentBooking.id).slice(-6)}`;
+    const msg = targetRole === 'operator'
+      ? `👷 *Consola GPS del Operador — Green Mile RD*\nOrden ${code} • *${currentBooking.title}*\nDestino: ${currentBooking.address || currentBooking.city}\n\nAbre este enlace al salir del patio y pulsa *Iniciar Recorrido*:\n${url}`
+      : `🚚 *Tracking GPS en Vivo — Green Mile RD*\nOrden ${code} • *${currentBooking.title}*\nObra: ${currentBooking.address || currentBooking.city}\n\nSigue la unidad en el mapa en tiempo real:\n${url}`;
 
     if (viaWhatsApp) {
       window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
@@ -818,22 +644,52 @@
     }
 
     if (GM) {
-      await GM.copyToClipboard(clientUrl);
-      toast('✓ Enlace de tracking copiado al portapapeles');
+      await GM.copyToClipboard(url);
+      toast('✓ Enlace de tracking copiado');
     }
+  }
+
+  function pickDefaultBooking(list) {
+    if (!Array.isArray(list) || !list.length) return null;
+    const enRoute = list.find((b) => allTrackingMap[String(b.id)] && allTrackingMap[String(b.id)].status === 'en_route');
+    if (enRoute) return enRoute;
+    const arrived = list.find((b) => allTrackingMap[String(b.id)] && allTrackingMap[String(b.id)].status === 'arrived');
+    if (arrived) return arrived;
+    return list[0];
+  }
+
+  function populateBookingPicker(selectedId) {
+    const wrap = $('bookingPickerWrap');
+    const sel = $('bookingPicker');
+    if (!wrap || !sel) return;
+
+    if (allBookings.length <= 1) {
+      wrap.style.display = 'none';
+      return;
+    }
+
+    wrap.style.display = 'flex';
+    sel.innerHTML = allBookings.map((b) => {
+      const tr = allTrackingMap[String(b.id)];
+      const tag = tr && tr.status === 'en_route' ? '🟢 ' : (tr && tr.status === 'arrived' ? '📍 ' : '');
+      return `<option value="${b.id}"${String(b.id) === String(selectedId) ? ' selected' : ''}>${tag}#GM-${String(b.id).slice(-6)} — ${b.title} (${b.renter || b.city})</option>`;
+    }).join('');
   }
 
   async function loadSelectedBooking(bk) {
     if (unsubTracking) { unsubTracking(); unsubTracking = null; }
     if (unsubBooking) { unsubBooking(); unsubBooking = null; }
-    stopSimulator(false);
     if (gpsActive && NATIVE) {
       await NATIVE.stopLiveGps();
       gpsActive = false;
     }
-    simPoints = [];
-    simIndex = 0;
 
+    if (!bk) {
+      showEmptyState(true);
+      return;
+    }
+
+    showEmptyState(false);
     currentBooking = bk;
     const ep = resolveEndpoints(bk);
     originPt = ep.origin;
@@ -855,7 +711,7 @@
       }
     });
 
-    // Compute real OSRM road route from patio to worksite
+    // Compute real road route from equipment patio to worksite via OSRM
     plannedRoute = await GEO.calculateRoute(originPt, destPt);
     if (liveMap && plannedRoute) {
       liveMap.setPlannedRoute(plannedRoute.geometry, plannedRoute.isRoadRoute);
@@ -878,7 +734,7 @@
 
     renderTrackingState(FB ? FB.getLocalTracking(bk.id) : null);
 
-    // Subscribe to live Firestore + BroadcastChannel updates
+    // Subscribe to real-time Cloud Firestore tracking updates
     if (FB) {
       unsubTracking = FB.subscribeTracking(
         bk.id,
@@ -887,43 +743,17 @@
           renderTrackingState(doc);
         },
         () => {
-          updateSyncBadge(false, '● Modo local activo');
+          updateSyncBadge(false, '● Error de permisos en Firestore');
         }
       );
 
-      if (!bk.isDemo) {
-        unsubBooking = FB.subscribeBookingById(bk.id, (freshBk) => {
-          if (freshBk) {
-            currentBooking = Object.assign({}, currentBooking, freshBk);
-            renderBookingMeta();
-          }
-        });
-      }
+      unsubBooking = FB.subscribeBookingById(bk.id, (freshBk) => {
+        if (freshBk) {
+          currentBooking = Object.assign({}, currentBooking, freshBk);
+          renderBookingMeta();
+        }
+      });
     }
-  }
-
-  function populateBookingPicker(selectedId) {
-    const wrap = $('bookingPickerWrap');
-    const sel = $('bookingPicker');
-    if (!wrap || !sel) return;
-
-    const options = [
-      ...allBookings.map((b) => ({
-        id: String(b.id),
-        label: `#GM-${String(b.id).slice(-6)} — ${b.title} (${b.renter || b.city})`
-      })),
-      { id: DEMO_BOOKING.id, label: `🧪 Demo en Vivo — ${DEMO_BOOKING.title} (Santo Domingo)` }
-    ];
-
-    if (options.length <= 1) {
-      wrap.style.display = 'none';
-      return;
-    }
-
-    wrap.style.display = 'flex';
-    sel.innerHTML = options.map((o) =>
-      `<option value="${o.id}"${String(o.id) === String(selectedId) ? ' selected' : ''}>${o.label}</option>`
-    ).join('');
   }
 
   function bindEvents() {
@@ -966,44 +796,22 @@
     $('btnZoomIn').addEventListener('click', () => { if (liveMap) liveMap.zoomIn(); });
     $('btnZoomOut').addEventListener('click', () => { if (liveMap) liveMap.zoomOut(); });
 
-    $('btnCopyClientLink').addEventListener('click', () => shareClientLink(false));
-    $('btnShareClientWa').addEventListener('click', () => shareClientLink(true));
-    $('btnOpShareWa').addEventListener('click', () => shareClientLink(true));
-
-    $('btnOpenClientTab').addEventListener('click', () => {
-      window.open(buildRoleUrl('client'), '_blank', 'noopener');
-    });
-
-    $('btnSwitchToOpSim').addEventListener('click', () => {
-      role = 'operator';
-      updateRoleUI();
-      startSimulator();
-    });
+    $('btnCopyClientLink').addEventListener('click', () => shareRoleLink('client', false));
+    $('btnShareClientWa').addEventListener('click', () => shareRoleLink('client', true));
+    $('btnOpShareWa').addEventListener('click', () => shareRoleLink('client', true));
+    $('btnShareOpWa').addEventListener('click', () => shareRoleLink('operator', true));
 
     $('btnStartTrip').addEventListener('click', startRealGpsTrip);
     $('btnPauseGps').addEventListener('click', togglePauseRealGps);
     $('btnMarkArrived').addEventListener('click', markArrived);
     $('btnMarkCompleted').addEventListener('click', markCompleted);
-    $('btnResetTrip').addEventListener('click', resetTrip);
-
-    $('btnToggleSim').addEventListener('click', () => {
-      if (simRunning) stopSimulator(true);
-      else startSimulator();
-    });
-
-    document.querySelectorAll('#simSpeedPills .speed-pill').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        simSpeedMultiplier = Number(btn.dataset.speed) || 3;
-        document.querySelectorAll('#simSpeedPills .speed-pill').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
+    $('btnRefreshGpsFix').addEventListener('click', captureSingleGpsFix);
 
     const saveOpMeta = () => {
       if (!currentBooking) return;
       persistTracking({
         operatorName: $('inpOpName').value.trim() || currentBooking.owner || 'Operador Certificado',
-        unitPlate: $('inpUnitPlate').value.trim() || 'Lowboy / Unidad Asignada'
+        unitPlate: $('inpUnitPlate').value.trim() || 'Unidad Asignada'
       });
     };
     $('inpOpName').addEventListener('change', saveOpMeta);
@@ -1011,22 +819,14 @@
 
     $('bookingPicker').addEventListener('change', (ev) => {
       const chosenId = ev.target.value;
-      const found = chosenId === DEMO_BOOKING.id
-        ? DEMO_BOOKING
-        : allBookings.find((b) => String(b.id) === String(chosenId)) || DEMO_BOOKING;
+      const found = allBookings.find((b) => String(b.id) === String(chosenId));
+      if (!found) return;
       const url = new URL(window.location.href);
       url.searchParams.set('booking', String(found.id));
-      if (found.isDemo) url.searchParams.set('demo', '1');
-      else url.searchParams.delete('demo');
       window.history.replaceState({}, '', url.toString());
       loadSelectedBooking(found);
     });
 
-    window.addEventListener('beforeunload', () => {
-      stopSimulator(false);
-    });
-
-    // Keep relative timestamp fresh every 2s
     setInterval(() => {
       if (lastTelemetryAtMs) {
         $('lastUpdateText').textContent = formatRelativeTime(lastTelemetryAtMs);
@@ -1045,12 +845,19 @@
     allBookings = Array.isArray(state.bookings) ? state.bookings.slice() : [];
 
     const bookingParam = params.get('booking');
-    const isDemoParam = params.get('demo') === '1';
     const hashBooking = decodeBookingPayload(window.location.hash);
 
-    let targetBooking = null;
+    if (FB && FB.subscribeAllTracking) {
+      FB.subscribeAllTracking((tMap) => {
+        allTrackingMap = tMap || {};
+        if (allBookings.length > 1 && currentBooking) {
+          populateBookingPicker(currentBooking.id);
+        }
+      });
+    }
 
-    if (bookingParam && bookingParam !== DEMO_BOOKING.id) {
+    let targetBooking = null;
+    if (bookingParam) {
       targetBooking = allBookings.find((b) => String(b.id) === String(bookingParam)) || null;
       if (!targetBooking && FB && FB.isReady()) {
         targetBooking = await FB.getBookingById(bookingParam);
@@ -1058,23 +865,43 @@
       if (!targetBooking && hashBooking && String(hashBooking.id) === String(bookingParam)) {
         targetBooking = hashBooking;
       }
-    } else if (!isDemoParam && allBookings.length > 0 && !bookingParam) {
-      targetBooking = allBookings[0];
+    } else if (allBookings.length > 0) {
+      targetBooking = pickDefaultBooking(allBookings);
+    } else if (hashBooking) {
+      targetBooking = hashBooking;
     }
 
-    if (!targetBooking) {
-      targetBooking = hashBooking || DEMO_BOOKING;
+    if (targetBooking) {
+      populateBookingPicker(targetBooking.id);
+      await loadSelectedBooking(targetBooking);
+    } else {
+      // Wait briefly for Cloud Firestore bookings before displaying empty state
+      if (FB && FB.isReady()) {
+        $('topStatusText').textContent = 'Buscando despachos en Firestore…';
+      } else {
+        showEmptyState(true);
+      }
     }
 
-    populateBookingPicker(targetBooking.id);
-    await loadSelectedBooking(targetBooking);
-
-    // Sync full bookings list from cloud so switcher always stays fresh
+    // Subscribe to real Cloud Firestore bookings
     if (FB && FB.isReady()) {
-      FB.subscribeBookings((cloudBookings) => {
-        if (Array.isArray(cloudBookings) && cloudBookings.length) {
+      updateSyncBadge(true);
+      FB.subscribeBookings(async (cloudBookings) => {
+        if (Array.isArray(cloudBookings)) {
           allBookings = cloudBookings;
-          populateBookingPicker(currentBooking ? currentBooking.id : targetBooking.id);
+          if (!currentBooking) {
+            const picked = bookingParam
+              ? cloudBookings.find((b) => String(b.id) === String(bookingParam)) || pickDefaultBooking(cloudBookings)
+              : pickDefaultBooking(cloudBookings);
+            if (picked) {
+              populateBookingPicker(picked.id);
+              await loadSelectedBooking(picked);
+            } else {
+              showEmptyState(true);
+            }
+          } else {
+            populateBookingPicker(currentBooking.id);
+          }
         }
       });
     }

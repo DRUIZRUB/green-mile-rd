@@ -635,6 +635,7 @@
                         <td>
                           <div style="display:flex; gap:5px; flex-wrap:wrap;">
                             <button type="button" class="btn btn-navy btn-sm" onclick="window.GM_ADMIN.openManageOrder('${b.id}')">Gestionar</button>
+                            <a class="btn btn-primary btn-sm" href="./tracking.html?booking=${encodeURIComponent(b.id)}" style="text-decoration:none;">🗺️ GPS</a>
                             <button type="button" class="btn btn-ghost btn-sm" onclick="window.GM_ADMIN.openPrintDoc('${b.id}', 'invoice')">🧾 PDF</button>
                           </div>
                         </td>

@@ -1213,7 +1213,7 @@
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <a class="btn btn-primary" href="./tracking.html" style="padding:8px 13px; font-size:12px; text-decoration:none;">🗺️ Ver Mapa en Vivo</a>
-            <a class="btn btn-ghost" href="./tracking.html?role=operator&demo=1" style="padding:8px 13px; font-size:12px; background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.22); text-decoration:none;">🧪 Demo Operador</a>
+            <a class="btn btn-ghost" href="./tracking.html?role=operator" style="padding:8px 13px; font-size:12px; background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.22); text-decoration:none;">🚚 Consola Operador</a>
             <button class="btn btn-ghost" id="btnInstallPwa" onclick="handleInstallPwa()" style="display:none; padding:8px 13px; font-size:12px; background:#059669; color:#fff; border-color:transparent;">📲 Instalar App</button>
           </div>
         </div>
@@ -2309,7 +2309,7 @@
 
       const cBox = document.getElementById('profileContracts');
       if (bookings.length === 0) {
-        cBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No hay contratos ni facturas e-CF generados todavía. Al confirmar un alquiler aparecerá aquí con su tracking en vivo. Mientras tanto puedes probar el <a href="./tracking.html?demo=1" style="color:var(--orange); font-weight:700;">Demo de Tracking GPS</a>.</p>`;
+        cBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No hay contratos ni facturas e-CF generados todavía. Al confirmar un alquiler aparecerá aquí con su enlace de tracking GPS en tiempo real.</p>`;
       } else {
         cBox.innerHTML = bookings.map(raw => {
           const b = window.GM_BILLING ? window.GM_BILLING.normalizeBooking(raw) : raw;

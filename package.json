@@ -17,9 +17,9 @@
     "cap:android": "npm run cap:sync && npx cap open android",
     "cap:ios": "npm run cap:sync && npx cap open ios",
     "deploy": "npm run build:pages && npx firebase-tools deploy --only hosting",
-    "deploy:rules": "npx firebase-tools deploy --only firestore:rules",
+    "deploy:rules": "node scripts/deploy-firestore-rules.mjs",
     "deploy:functions": "npx firebase-tools deploy --only functions",
-    "deploy:all": "npm run build:pages && npx firebase-tools deploy --only hosting,firestore:rules,functions"
+    "deploy:all": "npm run build:pages && npx firebase-tools deploy --only hosting && node scripts/deploy-firestore-rules.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.2",
