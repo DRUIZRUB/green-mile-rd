@@ -358,9 +358,10 @@
     const shareUrl = GM.getShareUrl(it, BASE);
     const shareText = getShareText(it, shareUrl);
     const waShareHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-    const waOwnerMsg = encodeURIComponent(`Hola ${it.owner}, vi tu anuncio "${it.title}" (${it.city}) en Green Mile App RD y quiero consultar disponibilidad:\n${shareUrl}`);
-    const waOwnerHref = `https://wa.me/${GM.cleanWA(it.phone)}?text=${waOwnerMsg}`;
-    const telHref = `tel:+${GM.cleanWA(it.phone)}`;
+    const GREEN_MILE_WA = '18095550100'; // Número oficial de Green Mile RD
+    const waOwnerMsg = encodeURIComponent(`Hola Green Mile RD, quiero cotizar/alquilar el equipo #GM-${it.id}: "${it.title}" (${it.city}):\n${shareUrl}`);
+    const waOwnerHref = `https://wa.me/${GREEN_MILE_WA}?text=${waOwnerMsg}`;
+    const telHref = `tel:+${GREEN_MILE_WA}`;
     const today = new Date().toISOString().split('T')[0];
     const fallbackCat = esc(it.category).replace(/'/g, "\\'");
     const weekSavings = it.priceDay > 0 ? Math.max(0, Math.round((1 - (it.priceWeek / (it.priceDay * 6))) * 100)) : 0;
@@ -400,7 +401,7 @@
               <div class="eq-subline">
                 <span>⚡ ${esc(it.power || 'Estándar')}</span>
                 <span>📅 Año ${esc(it.year || 'Verificado')}</span>
-                <span>🏢 ${esc(it.owner)}</span>
+                <span>🏢 Flota Verificada • Green Mile RD</span>
               </div>
 
               <!-- BARRA PARA COMPARTIR ESTE ANUNCIO -->
@@ -448,21 +449,21 @@
                 <div class="spec-item"><span>Operador</span><strong>${it.operator ? 'Incluido en la tarifa' : 'Opcional / Equipo seco'}</strong></div>
                 <div class="spec-item"><span>Traslado Lowboy (Ida)</span><strong>${it.transportCost > 0 ? GM.fmtRD(it.transportCost) : 'Incluido / Retiro en patio'}</strong></div>
                 <div class="spec-item"><span>Disponibilidad</span><strong id="specAvail">${it.busy ? 'En Obra (consultar fecha)' : 'Disponible Hoy'}</strong></div>
-                <div class="spec-item"><span>Facturación Fiscal</span><strong>Comprobante NCF B01 (18% ITBIS)</strong></div>
+                <div class="spec-item"><span>Facturación Fiscal</span><strong>Comprobante e-NCF (e-CF 31 · Hi Estratos)</strong></div>
               </div>
 
               <h3 class="section-label">Descripción y Aditamentos</h3>
               <p class="desc-text">${esc(it.desc)}</p>
 
-              <!-- PROVEEDOR / CONTACTO DIRECTO -->
+              <!-- GESTIÓN CENTRALIZADA GREEN MILE RD -->
               <div class="owner-card">
                 <div class="owner-meta">
-                  <small>Propietario Verificado • Green Mile RD</small>
-                  <strong>${esc(it.owner)}</strong>
-                  <span>RNC: ${esc(it.rnc || 'N/A')} • Base en ${esc(it.city)} • +1 ${esc(it.phone)}</span>
+                  <small>Cobro y Garantía • Green Mile RD</small>
+                  <strong>Equipo Verificado #GM-${esc(it.id)}</strong>
+                  <span>Base en ${esc(it.city)} • Facturación e-NCF (Hi Estratos) • Coordinación directa vía Green Mile</span>
                 </div>
                 <div class="owner-actions">
-                  <a class="btn btn-wa" target="_blank" rel="noopener" href="${waOwnerHref}">💬 WhatsApp Directo</a>
+                  <a class="btn btn-wa" target="_blank" rel="noopener" href="${waOwnerHref}">💬 Solicitar vía Green Mile</a>
                   <a class="btn btn-ghost" style="background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.28);" href="${telHref}">📞 Llamar</a>
                 </div>
               </div>
@@ -470,13 +471,13 @@
           </article>
         </div>
 
-        <!-- COLUMNA DERECHA: COTIZADOR + CONTRATO DIGITAL NCF -->
+        <!-- COLUMNA DERECHA: COTIZADOR + CONTRATO DIGITAL e-NCF -->
         <aside class="booking-col" id="bookingBox">
           <div class="panel">
             <div class="booking-head">
               <div>
                 <h2>Cotizar y Contratar</h2>
-                <p>Cálculo con ITBIS (NCF B01) y firma digital</p>
+                <p>Cálculo con ITBIS (e-NCF · Hi Estratos) y firma digital</p>
               </div>
               <button type="button" class="pro-pill ${state.isPro ? 'active' : ''}" id="bookingProBtn" onclick="window.GM_DETAIL.openSheet('proSheet')">
                 ${state.isPro ? '⭐ Pro (-10%)' : '⭐ Plan Pro'}

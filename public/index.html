@@ -980,7 +980,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:10px;">
           <div>
             <h2 style="font-size:18px; color:var(--navy);">Obras Buscando Equipo</h2>
-            <p style="font-size:12px; color:var(--text-muted);">Cotiza directo al WhatsApp del ingeniero</p>
+            <p style="font-size:12px; color:var(--text-muted);">Postula tu equipo vía Green Mile RD • Cobro garantizado y e-NCF</p>
           </div>
           <button class="btn btn-primary" style="padding:9px 14px; font-size:12px;" onclick="openSheet('reqSheet')">+ Pedir Máquina</button>
         </div>
@@ -1069,6 +1069,15 @@
         <span>Mi Panel</span>
       </button>
     </nav>
+
+    <footer style="max-width:1180px; margin:24px auto 12px; padding:16px 20px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--text-muted);">
+      <span>© 2026 Green Mile RD • Facturación e-NCF vía Hi Estratos</span>
+      <div style="display:flex; gap:14px; flex-wrap:wrap;">
+        <a href="acerca-de.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Acerca de</a>
+        <a href="terminos.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Términos y Condiciones</a>
+        <a href="privacidad.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Seguridad y Privacidad</a>
+      </div>
+    </footer>
   </div>
 
   <!-- =========================================================
@@ -1253,11 +1262,17 @@
                 <div class="f-box"><input type="text" id="pubRnc" placeholder="1-31-00000-1"></div>
               </div>
               <div class="f-field full">
-                <label>WhatsApp en RD</label>
+                <label>WhatsApp en RD (uso interno de Green Mile)</label>
                 <div class="f-box">
                   <span class="f-prefix">+1</span>
                   <input type="tel" id="pubPhone" placeholder="809-555-0199">
                 </div>
+              </div>
+              <div class="f-field full">
+                <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-muted); text-transform:none; letter-spacing:0;">
+                  <input type="checkbox" id="pubTerms" required style="margin-top:3px; accent-color:var(--orange);">
+                  <span>Acepto las <a href="#" onclick="event.preventDefault(); openSheet('policiesSheet');" style="color:var(--orange); font-weight:700; text-decoration:underline;">Políticas de Intermediación, Cobro y e-NCF (Hi Estratos)</a> de Green Mile RD.</span>
+                </label>
               </div>
             </div>
           </div>
@@ -1283,7 +1298,7 @@
       <div class="sheet-head">
         <div>
           <h3>Pedir Máquina para Obra</h3>
-          <p>Recibe ofertas de dueños directos en tu WhatsApp</p>
+          <p>Recibe propuestas verificadas y facturación e-NCF vía Green Mile RD</p>
         </div>
         <button class="close-x" onclick="closeSheet('reqSheet')">&times;</button>
       </div>
@@ -1322,16 +1337,22 @@
               <div class="f-box"><span class="f-prefix">RD$</span><input type="number" id="rBudget" placeholder="18000" required></div>
             </div>
             <div class="f-field">
-              <label>Ingeniero / Empresa</label>
+              <label>Ingeniero / Empresa (confidencial)</label>
               <div class="f-box"><input type="text" id="rAuthor" placeholder="Ing. Luis Pérez" required></div>
             </div>
             <div class="f-field">
-              <label>WhatsApp</label>
+              <label>WhatsApp (uso interno de Green Mile)</label>
               <div class="f-box"><span class="f-prefix">+1</span><input type="tel" id="rPhone" placeholder="829-555-0122" required></div>
             </div>
             <div class="f-field full">
               <label>Urgencia y detalles de obra</label>
               <div class="f-box"><textarea id="rNotes" placeholder="Para iniciar este lunes, terreno compacto..."></textarea></div>
+            </div>
+            <div class="f-field full">
+              <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-muted); text-transform:none; letter-spacing:0;">
+                <input type="checkbox" id="reqTerms" required style="margin-top:3px; accent-color:var(--orange);">
+                <span>Acepto las <a href="#" onclick="event.preventDefault(); openSheet('policiesSheet');" style="color:var(--orange); font-weight:700; text-decoration:underline;">Políticas de Intermediación, Cobro y e-NCF (Hi Estratos)</a> de Green Mile RD.</span>
+              </label>
             </div>
           </div>
         </div>
@@ -1377,11 +1398,52 @@
           <div style="font-size:26px; font-weight:800; color:var(--navy);">RD$ 2,900 <span style="font-size:12px; font-weight:500; color:var(--text-muted);">/ mes</span></div>
           <ul style="list-style:none; margin-top:12px; font-size:13px; display:flex; flex-direction:column; gap:7px;">
             <li>✓ <strong>10% de descuento</strong> automático en alquileres</li>
-            <li>✓ Contratos digitales ilimitados con NCF</li>
+            <li>✓ Contratos digitales ilimitados con e-NCF (Hi Estratos)</li>
             <li>✓ Prioridad de soporte en obra</li>
           </ul>
         </div>
         <button class="btn btn-primary" style="width:100%;" onclick="activatePro()">Activar Plan Pro</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       BOTTOM SHEET 6: POLÍTICAS DE INTERMEDIACIÓN Y e-NCF
+       ========================================================= -->
+  <div class="sheet-backdrop" id="policiesSheet">
+    <div class="sheet" style="max-width:560px;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <div>
+          <h3>Políticas de Green Mile RD</h3>
+          <p>Intermediación, cobro centralizado y facturación e-NCF</p>
+        </div>
+        <button class="close-x" onclick="closeSheet('policiesSheet')">&times;</button>
+      </div>
+      <div class="sheet-body" style="font-size:13px; line-height:1.55; color:var(--text);">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="background:var(--surface-2, #F8FAFC); border:1px solid var(--border); border-radius:12px; padding:12px;">
+            <strong style="color:var(--navy); display:block; margin-bottom:4px;">1. Cobro Centralizado y Liquidación al Propietario</strong>
+            Green Mile RD gestiona el contrato y el cobro directo al contratista/obra. Una vez confirmado el servicio y recibido el conduce firmado, Green Mile RD liquida el pago al propietario del equipo descontando la comisión de intermediación acordada.
+          </div>
+          <div style="background:var(--surface-2, #F8FAFC); border:1px solid var(--border); border-radius:12px; padding:12px;">
+            <strong style="color:var(--navy); display:block; margin-bottom:4px;">2. Facturación Electrónica (e-NCF / Hi Estratos)</strong>
+            Todas las transacciones gestionadas a través de la plataforma se facturan mediante Comprobantes Fiscales Electrónicos (e-CF / e-NCF) emitidos vía <strong>Hi Estratos</strong> conforme a las normativas vigentes de la DGII en República Dominicana.
+          </div>
+          <div style="background:var(--surface-2, #F8FAFC); border:1px solid var(--border); border-radius:12px; padding:12px;">
+            <strong style="color:var(--navy); display:block; margin-bottom:4px;">3. Confidencialidad y Cláusula Anti-Elusión (No Bypass)</strong>
+            Los datos de contacto de obras y propietarios son confidenciales y de uso exclusivo de Green Mile RD. Queda prohibido contactar, negociar o cerrar alquileres por fuera de la plataforma con clientes o proveedores conocidos a través de Green Mile RD.
+          </div>
+          <div style="background:var(--surface-2, #F8FAFC); border:1px solid var(--border); border-radius:12px; padding:12px;">
+            <strong style="color:var(--navy); display:block; margin-bottom:4px;">4. Disponibilidad y Condiciones Operativas</strong>
+            El propietario garantiza que el equipo publicado está en condiciones mecánicas óptimas y cumple con las tarifas, disponibilidad y condiciones de operador/traslado declaradas.
+          </div>
+        </div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:14px; font-size:12px;">
+          <a href="terminos.html" target="_blank" style="color:var(--orange); font-weight:700; text-decoration:underline;">Leer Términos y Condiciones completos →</a>
+          <a href="privacidad.html" target="_blank" style="color:var(--navy); font-weight:700; text-decoration:underline;">Política de Seguridad y Privacidad →</a>
+        </div>
+        <button type="button" class="btn btn-navy" style="width:100%; margin-top:12px;" onclick="closeSheet('policiesSheet')">Entendido</button>
       </div>
     </div>
   </div>
@@ -1642,6 +1704,9 @@
       box.innerHTML = list.map(cardHTML).join('');
     }
 
+    // Número oficial de WhatsApp de Green Mile RD (reemplazar por tu número real en formato 1809XXXXXXX)
+    const GREEN_MILE_WA = '18095550100';
+
     function renderRequests() {
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
       const city = document.getElementById('cityFilter').value;
@@ -1653,7 +1718,7 @@
           <div class="empty-state">
             <div class="empty-badge">👷</div>
             <h3>No hay solicitudes abiertas</h3>
-            <p>Publica qué máquina necesitas en obra para recibir cotizaciones directas en tu WhatsApp.</p>
+            <p>Publica qué máquina necesitas en obra y Green Mile RD te conecta con equipos verificados y e-NCF.</p>
             <button class="btn btn-primary" onclick="openSheet('reqSheet')">+ Pedir Máquina Ahora</button>
           </div>
         `;
@@ -1661,15 +1726,16 @@
       }
 
       box.innerHTML = list.map(r => {
-        const msg = encodeURIComponent(`Hola ${r.author}, vi tu solicitud "${r.title}" en Green Mile App RD (${r.city}) y tengo disponibilidad.`);
+        const refCode = `OBRA-${String(r.id).slice(-4)}`;
+        const msg = encodeURIComponent(`Hola Green Mile RD, tengo equipo disponible para la solicitud ${refCode}: "${r.title}" en ${r.city} (Presupuesto ${fmtRD(r.budget)}/día). Quiero postular mi equipo.`);
         return `
           <div style="background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--orange); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow-sm);">
             <div style="font-size:11px; font-weight:800; color:var(--orange); text-transform:uppercase;">${r.city} • Presupuesto ${fmtRD(r.budget)}/día</div>
             <strong style="font-size:16px; color:var(--navy);">${r.title}</strong>
             <p style="font-size:13px; color:var(--text-muted);">${r.notes || 'Disponibilidad inmediata requerida.'}</p>
-            <div style="display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid var(--border); margin-top:auto;">
-              <span style="font-size:12px; font-weight:700; color:var(--navy);">${r.author}</span>
-              <a class="btn btn-wa" style="padding:8px 14px; font-size:12px;" target="_blank" rel="noopener" href="https://wa.me/${cleanWA(r.phone)}?text=${msg}">WhatsApp</a>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid var(--border); margin-top:auto; gap:8px;">
+              <span style="font-size:12px; font-weight:700; color:var(--navy);">🔒 ${refCode} • Gestionado por Green Mile</span>
+              <a class="btn btn-wa" style="padding:8px 14px; font-size:12px; white-space:nowrap;" target="_blank" rel="noopener" href="https://wa.me/${GREEN_MILE_WA}?text=${msg}">Postular mi Equipo</a>
             </div>
           </div>
         `;
@@ -1815,6 +1881,7 @@
       const owner = document.getElementById('pubOwner').value.trim();
       const phone = document.getElementById('pubPhone').value.trim();
       if (!owner || !phone) { toast('Completa propietario y WhatsApp'); return; }
+      if (!document.getElementById('pubTerms').checked) { toast('Debes aceptar las políticas de Green Mile RD'); return; }
 
       const day = Number(document.getElementById('pubPriceDay').value);
       const cat = document.getElementById('pubCat').value;
@@ -1852,6 +1919,7 @@
 
     function submitReq(e) {
       e.preventDefault();
+      if (!document.getElementById('reqTerms').checked) { toast('Debes aceptar las políticas de Green Mile RD'); return; }
       const newReq = {
         id: Date.now(),
         title: document.getElementById('rTitle').value.trim(),
