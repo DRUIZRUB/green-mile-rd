@@ -328,12 +328,72 @@
   async function saveBooking(booking, equipmentId) {
     if (!db) return booking;
     await db.collection('bookings').doc(String(booking.id)).set(Object.assign({}, booking, {
-      createdAt: global.firebase.firestore.FieldValue.serverTimestamp()
+      createdAt: global.firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: global.firebase.firestore.FieldValue.serverTimestamp()
     }), { merge: true });
     if (equipmentId != null) {
       await db.collection('equipment').doc(String(equipmentId)).set({ busy: true }, { merge: true });
     }
     return booking;
+  }
+
+  async function updateBooking(bookingId, fullOrPatchDoc) {
+    if (!db || bookingId == null) return fullOrPatchDoc;
+    await db.collection('bookings').doc(String(bookingId)).set(Object.assign({}, fullOrPatchDoc, {
+      updatedAt: global.firebase.firestore.FieldValue.serverTimestamp()
+    }), { merge: true });
+    return fullOrPatchDoc;
+  }
+
+  function subscribeOwners(onData) {
+    if (!db) return () => {};
+    return db.collection('owners').onSnapshot(
+      (snap) => {
+        const list = [];
+        snap.forEach((doc) => list.push(Object.assign({}, doc.data(), { id: doc.data().id ?? doc.id })));
+        onData(list);
+      },
+      (err) => console.warn('[Green Mile Firebase] Owners listener error:', err.message)
+    );
+  }
+
+  function subscribePayouts(onData) {
+    if (!db) return () => {};
+    return db.collection('payouts').onSnapshot(
+      (snap) => {
+        const list = [];
+        snap.forEach((doc) => list.push(Object.assign({}, doc.data(), { id: doc.data().id ?? doc.id })));
+        list.sort((a, b) => Number(b.id) - Number(a.id));
+        onData(list);
+      },
+      (err) => console.warn('[Green Mile Firebase] Payouts listener error:', err.message)
+    );
+  }
+
+  async function savePayout(payout) {
+    if (!db || !payout || payout.id == null) return payout;
+    await db.collection('payouts').doc(String(payout.id)).set(Object.assign({}, payout, {
+      updatedAt: global.firebase.firestore.FieldValue.serverTimestamp()
+    }), { merge: true });
+    return payout;
+  }
+
+  function subscribeAdminConfig(onData) {
+    if (!db) return () => {};
+    return db.collection('admin_config').doc('main').onSnapshot(
+      (snap) => {
+        if (snap.exists) onData(snap.data());
+      },
+      (err) => console.warn('[Green Mile Firebase] Admin config listener error:', err.message)
+    );
+  }
+
+  async function saveAdminConfig(cfg) {
+    if (!db || !cfg) return cfg;
+    await db.collection('admin_config').doc('main').set(Object.assign({}, cfg, {
+      updatedAt: global.firebase.firestore.FieldValue.serverTimestamp()
+    }), { merge: true });
+    return cfg;
   }
 
   global.GM_FIREBASE = {
@@ -346,6 +406,9 @@
     subscribeEquipment,
     subscribeRequests,
     subscribeBookings,
+    subscribeOwners,
+    subscribePayouts,
+    subscribeAdminConfig,
     getEquipmentById,
     subscribeEquipmentById,
     saveEquipment,
@@ -353,6 +416,9 @@
     deleteEquipment,
     saveRequest,
     deleteRequest,
-    saveBooking
+    saveBooking,
+    updateBooking,
+    savePayout,
+    saveAdminConfig
   };
 })(window);

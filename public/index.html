@@ -1189,9 +1189,12 @@
         </div>
 
         <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <strong style="font-size:15px; color:var(--navy);">Contratos Firmados (PDF)</strong>
-            <button class="btn btn-ghost" style="padding:5px 10px; font-size:11px;" onclick="exportBackup()">Respaldo JSON</button>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+            <strong style="font-size:15px; color:var(--navy);">Contratos y Facturas e-CF (PDF)</strong>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <a class="btn btn-navy" style="padding:5px 10px; font-size:11px;" href="admin.html">⚙️ Centro Administrativo</a>
+              <button class="btn btn-ghost" style="padding:5px 10px; font-size:11px;" onclick="exportBackup()">Respaldo JSON</button>
+            </div>
           </div>
           <div id="profileContracts"></div>
         </div>
@@ -1244,6 +1247,7 @@
         <a href="acerca-de.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Acerca de</a>
         <a href="terminos.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Términos y Condiciones</a>
         <a href="privacidad.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Seguridad y Privacidad</a>
+        <a href="admin.html" style="color:var(--orange); font-weight:700; text-decoration:none;">⚙️ Administración</a>
       </div>
     </footer>
   </div>
@@ -1730,6 +1734,7 @@
   <script src="js/catalog-data.js"></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/dgii-validator.js"></script>
+  <script src="js/billing-engine.js"></script>
   <script>
     const GM = window.GM_CATALOG;
     const LOGO_URI = document.getElementById('brandLogo').src;
@@ -2209,17 +2214,29 @@
 
       const cBox = document.getElementById('profileContracts');
       if (bookings.length === 0) {
-        cBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No hay contratos generados todavía.</p>`;
+        cBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No hay contratos ni facturas e-CF generados todavía.</p>`;
       } else {
-        cBox.innerHTML = bookings.map(b => `
-          <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-            <div>
-              <strong style="font-size:14px; color:var(--navy); display:block;">${b.title}</strong>
-              <span style="font-size:11px; color:var(--text-muted);">${b.renter} • ${fmtRD(b.total)}</span>
+        cBox.innerHTML = bookings.map(raw => {
+          const b = window.GM_BILLING ? window.GM_BILLING.normalizeBooking(raw) : raw;
+          const pBadge = window.GM_BILLING ? window.GM_BILLING.paymentStatusBadge(b) : { text: 'REGISTRADO', bg: '#F1F5F9', color: '#0D223A' };
+          return `
+            <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+              <div>
+                <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
+                  <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${b.ncfType === 'E45' ? '#EFF6FF' : '#0D223A'}; color:${b.ncfType === 'E45' ? '#1E40AF' : '#fff'};">${b.ncfType || 'E31'}</span>
+                  <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${pBadge.bg}; color:${pBadge.color};">${pBadge.text}</span>
+                  ${b.encfNumber ? `<span style="font-size:10px; font-family:monospace; font-weight:800; color:var(--orange);">${b.encfNumber}</span>` : ''}
+                </div>
+                <strong style="font-size:14px; color:var(--navy); display:block;">${b.title}</strong>
+                <span style="font-size:11px; color:var(--text-muted);">${b.renter} • ${fmtRD(b.total)}</span>
+              </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button class="btn btn-navy" style="padding:7px 11px; font-size:11px;" onclick="openContract(${b.id}, 'invoice')">🧾 Factura e-CF</button>
+                <button class="btn btn-ghost" style="padding:7px 11px; font-size:11px;" onclick="openContract(${b.id}, 'contract')">📄 Contrato</button>
+              </div>
             </div>
-            <button class="btn btn-navy" style="padding:7px 12px; font-size:11px;" onclick="openContract(${b.id})">Ver PDF</button>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
 
       const fBox = document.getElementById('profileFleet');
@@ -2541,45 +2558,50 @@
       toast('☁️ Solicitud publicada y sincronizada en Obras RD');
     }
 
-    function openContract(id) {
-      const b = bookings.find(x => String(x.id) === String(id));
-      if (!b) return;
+    let activeHomeDocId = null;
+    let activeHomeDocTab = 'contract';
+
+    function openContract(id, tab = 'contract') {
+      activeHomeDocId = id;
+      activeHomeDocTab = tab;
+      renderHomeDocModal();
+      openSheet('contractModal');
+    }
+
+    function switchHomeDocTab(tab) {
+      activeHomeDocTab = tab;
+      renderHomeDocModal();
+    }
+
+    function renderHomeDocModal() {
+      const raw = bookings.find(x => String(x.id) === String(activeHomeDocId));
+      if (!raw) return;
+      const BILL = window.GM_BILLING;
+      if (!BILL) return;
+      const b = BILL.normalizeBooking(raw);
+      const isGov = b.ncfType === 'E45';
+
+      let docHtml = '';
+      if (activeHomeDocTab === 'invoice') {
+        docHtml = BILL.buildPrintableInvoiceHtml(b, null, LOGO_URI);
+      } else if (activeHomeDocTab === 'gov' && isGov) {
+        docHtml = BILL.buildGovDossierHtml(b, null, LOGO_URI);
+      } else {
+        docHtml = BILL.buildPrintableContractHtml(b, null, LOGO_URI);
+      }
+
       document.getElementById('contractBody').innerHTML = `
-        <div style="border:1.5px solid var(--border); border-radius:14px; padding:20px; background:#fff;">
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--navy); padding-bottom:12px; margin-bottom:14px;">
-            <div>
-              <strong style="font-size:16px; color:var(--navy);">GREEN MILE CONSTRUCTION RD</strong>
-              <div style="font-size:11px; font-weight:800; color:var(--orange);">CONTRATO #GM-${String(b.id).slice(-6)}</div>
-            </div>
-            <img src="${LOGO_URI}" style="height:40px;" alt="Logo">
-          </div>
-          <div style="font-size:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
-            <div style="background:var(--bg); padding:10px; border-radius:10px;">
-              <strong style="color:var(--navy); display:block;">ARRENDADOR</strong>
-              ${b.owner}<br>RNC: ${b.ownerRnc}<br>Tel: +1 ${b.ownerPhone}
-            </div>
-            <div style="background:var(--bg); padding:10px; border-radius:10px;">
-              <strong style="color:var(--navy); display:block;">CONTRATISTA</strong>
-              ${b.renter}<br>RNC: ${b.renterRnc}<br>Obra: ${b.address}
-            </div>
-          </div>
-          <p style="font-size:13px; margin-bottom:6px;"><strong>Equipo:</strong> ${b.title} (${b.city})</p>
-          <p style="font-size:13px; margin-bottom:12px;"><strong>Plazo:</strong> ${b.qty} ${b.unitLabel} desde ${b.startDate}</p>
-          <div style="background:var(--navy-soft); padding:12px; border-radius:10px; font-size:13px; margin-bottom:14px;">
-            <div style="display:flex; justify-content:space-between;"><span>Subtotal Neto:</span><span>${fmtRD(b.netSubtotal)}</span></div>
-            ${b.ncf ? `<div style="display:flex; justify-content:space-between;"><span>ITBIS 18% (NCF B01):</span><span>${fmtRD(b.itbis)}</span></div>` : ''}
-            <div style="display:flex; justify-content:space-between; font-weight:800; color:var(--navy); border-top:1px solid #CBD5E1; margin-top:6px; padding-top:6px;">
-              <span>Total Acordado:</span><span>${fmtRD(b.total)}</span>
-            </div>
-          </div>
-          <div style="text-align:center; margin-top:12px;">
-            ${b.signature ? `<img src="${b.signature}" alt="Firma" style="height:52px; border-bottom:1px solid var(--navy); margin:0 auto 4px; display:block;">` : ''}
-            <span style="font-size:11px; font-weight:700; color:var(--navy);">Firma Digital — ${b.renter}</span>
-          </div>
-          <button class="btn btn-navy no-print" style="width:100%; margin-top:16px;" onclick="window.print()">Imprimir / Guardar PDF</button>
+        <div class="auth-tabs no-print" style="grid-template-columns:repeat(${isGov ? 3 : 2}, 1fr); margin-bottom:12px;">
+          <button type="button" class="auth-tab ${activeHomeDocTab === 'contract' ? 'active' : ''}" onclick="switchHomeDocTab('contract')">📄 Contrato</button>
+          <button type="button" class="auth-tab ${activeHomeDocTab === 'invoice' ? 'active' : ''}" onclick="switchHomeDocTab('invoice')">🧾 Factura ${b.ncfType}</button>
+          ${isGov ? `<button type="button" class="auth-tab ${activeHomeDocTab === 'gov' ? 'active' : ''}" onclick="switchHomeDocTab('gov')">🏛️ Estado E45</button>` : ''}
+        </div>
+        ${docHtml}
+        <div class="no-print" style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;">
+          <button class="btn btn-navy" style="flex:1;" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+          <a class="btn btn-ghost" href="admin.html">⚙️ Gestionar en Admin</a>
         </div>
       `;
-      openSheet('contractModal');
     }
 
     function activatePro() {

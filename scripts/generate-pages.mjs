@@ -88,8 +88,8 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
     <div class="sheet">
       <div class="sheet-head no-print">
         <div>
-          <h3>Contrato Digital Firmado</h3>
-          <p>Listo para guardar en PDF o compartir</p>
+          <h3>Contrato Digital y Factura e-CF</h3>
+          <p>Listo para guardar en PDF, imprimir o radicar</p>
         </div>
         <button type="button" class="close-x" onclick="window.GM_DETAIL.closeSheet('contractModal')">&times;</button>
       </div>
@@ -112,8 +112,8 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
           <div style="font-size:26px; font-weight:800; color:var(--navy);">RD$ 2,900 <span style="font-size:12px; font-weight:500; color:var(--text-muted);">/ mes</span></div>
           <ul style="list-style:none; margin-top:12px; font-size:13px; display:flex; flex-direction:column; gap:7px;">
             <li>✓ <strong>10% de descuento</strong> automático en alquileres</li>
-            <li>✓ Contratos digitales ilimitados con NCF</li>
-            <li>✓ Prioridad de soporte en obra</li>
+            <li>✓ Contratos digitales ilimitados con e-NCF</li>
+            <li>✓ Prioridad de soporte en obra y acceso a crédito corporativo</li>
           </ul>
         </div>
         <button type="button" class="btn btn-primary" style="width:100%;" onclick="window.GM_DETAIL.activatePro()">Activar Plan Pro</button>
@@ -132,6 +132,7 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
   <script src="${dataJs}"></script>
   <script src="${basePrefix}js/firebase-config.js"></script>
   <script src="${basePrefix}js/dgii-validator.js"></script>
+  <script src="${basePrefix}js/billing-engine.js"></script>
   <script src="${pageJs}"></script>
 </body>
 </html>

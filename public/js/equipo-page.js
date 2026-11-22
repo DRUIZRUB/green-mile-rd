@@ -1,12 +1,17 @@
-/* Green Mile Construction RD — Página Individual de Anuncio */
+/* Green Mile Construction RD — Página Individual de Anuncio con Facturación e-CF, Pago con Tarjeta y Flujo Gubernamental E45 */
 (function () {
   const GM = window.GM_CATALOG;
+  const BILL = window.GM_BILLING;
   const CFG = window.GM_PAGE || { basePrefix: './', equipmentId: null };
   const BASE = CFG.basePrefix || './';
 
   let state = GM.loadState();
   let currentItem = null;
   let sigSigned = false;
+  let selectedNcfType = 'E31';
+  let selectedPaymentMethod = 'card';
+  let activeContractRecord = null;
+  let activeContractTab = 'contract';
 
   function esc(str) {
     return String(str == null ? '' : str)
@@ -23,7 +28,7 @@
     el.textContent = msg;
     el.style.display = 'block';
     clearTimeout(toast._t);
-    toast._t = setTimeout(() => { el.style.display = 'none'; }, 2800);
+    toast._t = setTimeout(() => { el.style.display = 'none'; }, 3200);
   }
 
   function openSheet(id) {
@@ -101,6 +106,15 @@
     }
   }
 
+  async function copyBankAccount(acctNum) {
+    try {
+      await GM.copyToClipboard(acctNum);
+      toast(`Cuenta ${acctNum} copiada`);
+    } catch (_) {
+      toast('No se pudo copiar la cuenta');
+    }
+  }
+
   async function nativeShare() {
     if (!currentItem) return;
     const url = GM.getShareUrl(currentItem, BASE);
@@ -108,7 +122,7 @@
       try {
         await navigator.share({
           title: `${currentItem.title} en ${currentItem.city} — Green Mile RD`,
-          text: `${currentItem.title} (${GM.fmtRD(currentItem.priceDay)}/día) en ${currentItem.city}. Alquiler directo con NCF en Green Mile RD.`,
+          text: `${currentItem.title} (${GM.fmtRD(currentItem.priceDay)}/día) en ${currentItem.city}. Alquiler directo con e-NCF en Green Mile RD.`,
           url
         });
         return;
@@ -160,12 +174,95 @@
     toast('Plan Pro activado (-10% aplicado)');
   }
 
+  /* =========================================================
+     SELECTOR DE COMPROBANTE e-CF Y MÉTODO DE PAGO
+     ========================================================= */
+  function selectNcfType(code, autoSwitchPay = true) {
+    if (!BILL || !BILL.NCF_TYPES[code]) return;
+    selectedNcfType = code;
+
+    document.querySelectorAll('.ncf-card').forEach(btn => {
+      btn.classList.toggle('selected', btn.dataset.ncf === code);
+    });
+
+    const govPanel = document.getElementById('govFieldsPanel');
+    const exemptPanel = document.getElementById('exemptFieldsPanel');
+    const govBanner = document.getElementById('govDetectBanner');
+
+    if (govPanel) govPanel.style.display = code === 'E45' ? 'flex' : 'none';
+    if (exemptPanel) exemptPanel.style.display = code === 'E44' ? 'flex' : 'none';
+    if (govBanner && code === 'E45') govBanner.style.display = 'none';
+
+    if (autoSwitchPay) {
+      if (code === 'E45') {
+        selectPaymentMethod('gov_po');
+      } else if (selectedPaymentMethod === 'gov_po') {
+        selectPaymentMethod('card');
+      }
+    }
+
+    updateSubmitButtonLabel();
+    calcReceipt();
+  }
+
+  function selectPaymentMethod(methodId) {
+    if (!BILL || !BILL.PAYMENT_METHODS[methodId]) return;
+    selectedPaymentMethod = methodId;
+
+    document.querySelectorAll('.pay-opt').forEach(btn => {
+      btn.classList.toggle('selected', btn.dataset.pay === methodId);
+    });
+
+    const cardBox = document.getElementById('payCardPanel');
+    const transferBox = document.getElementById('payTransferPanel');
+    const govPayBox = document.getElementById('payGovPoPanel');
+    const creditBox = document.getElementById('payCreditPanel');
+
+    if (cardBox) cardBox.style.display = methodId === 'card' ? 'flex' : 'none';
+    if (transferBox) transferBox.style.display = methodId === 'transfer' ? 'flex' : 'none';
+    if (govPayBox) govPayBox.style.display = methodId === 'gov_po' ? 'flex' : 'none';
+    if (creditBox) creditBox.style.display = methodId === 'credit' ? 'flex' : 'none';
+
+    updateSubmitButtonLabel();
+    calcReceipt();
+  }
+
+  function updateSubmitButtonLabel() {
+    const btn = document.getElementById('bookingSubmitBtn');
+    if (!btn) return;
+    const b = currentBreakdown();
+    if (selectedPaymentMethod === 'card') {
+      btn.textContent = `💳 Pagar ${GM.fmtRD(b.total)} y Emitir ${selectedNcfType}`;
+    } else if (selectedNcfType === 'E45' || selectedPaymentMethod === 'gov_po') {
+      btn.textContent = `🏛️ Firmar y Radicar Expediente Estatal (e-CF 45)`;
+    } else if (selectedPaymentMethod === 'transfer') {
+      btn.textContent = `🏦 Firmar Contrato y Reservar (Transferencia)`;
+    } else {
+      btn.textContent = `📄 Firmar y Solicitar Crédito Corporativo`;
+    }
+  }
+
+  function onCardNumberInput(el) {
+    if (!BILL) return;
+    el.value = BILL.formatCardNumber(el.value);
+    const brand = BILL.detectCardBrand(el.value);
+    const pill = document.getElementById('cardBrandPill');
+    if (pill) {
+      pill.textContent = brand.toUpperCase();
+    }
+  }
+
+  function onCardExpiryInput(el) {
+    if (!BILL) return;
+    el.value = BILL.formatCardExpiry(el.value);
+  }
+
   function currentBreakdown() {
     const it = currentItem;
     const mode = document.getElementById('qMode').value;
     const qty = Math.max(1, Number(document.getElementById('qQty').value) || 1);
     const trans = document.getElementById('qTrans').value === 'yes' ? (it.transportCost || 0) : 0;
-    const ncf = document.getElementById('qNcf').checked;
+    const govApplyItbisRet = Boolean(document.getElementById('qGovItbisRet')?.checked);
 
     let unit = it.priceDay, label = 'días';
     if (mode === 'hour') { unit = it.priceHour; label = 'horas'; }
@@ -173,23 +270,55 @@
 
     const base = unit * qty;
     const disc = state.isPro ? Math.round(base * 0.10) : 0;
+
+    if (BILL) {
+      const fin = BILL.calculateFinancials({
+        baseAmount: base,
+        proDiscount: disc,
+        transportCost: trans,
+        ncfType: selectedNcfType,
+        paymentMethod: selectedPaymentMethod,
+        govApplyItbisRet,
+        ownerRnc: it.rnc || ''
+      });
+      return Object.assign(fin, { qty, unit, label, govApplyItbisRet, ncf: selectedNcfType !== 'E32' });
+    }
+
     const net = base - disc + trans;
-    const itbis = ncf ? Math.round(net * 0.18) : 0;
-    const total = net + itbis;
-    return { qty, unit, label, base, disc, trans, net, itbis, total, ncf };
+    const itbis = Math.round(net * 0.18);
+    return { qty, unit, label, base, disc, trans, netSubtotal: net, itbis, total: net + itbis, ncf: true, ncfType: 'E31' };
   }
 
   function calcReceipt() {
     const box = document.getElementById('qReceipt');
     if (!currentItem || !box) return;
     const b = currentBreakdown();
+    const ncfMeta = (BILL && BILL.NCF_TYPES[b.ncfType]) || { badge: 'e-CF 31', isExempt: false, isGov: false };
+
     box.innerHTML = `
       <div class="r-row"><span>${GM.fmtRD(b.unit)} × ${b.qty} ${b.label}</span><span>${GM.fmtRD(b.base)}</span></div>
       ${b.disc > 0 ? `<div class="r-row" style="color:var(--success); font-weight:700;"><span>Descuento Pro (-10%)</span><span>- ${GM.fmtRD(b.disc)}</span></div>` : ''}
       ${b.trans > 0 ? `<div class="r-row"><span>Traslado Lowboy</span><span>${GM.fmtRD(b.trans)}</span></div>` : ''}
-      ${b.ncf ? `<div class="r-row"><span>ITBIS 18% (e-NCF)</span><span>${GM.fmtRD(b.itbis)}</span></div>` : ''}
-      <div class="r-total"><span>Total a Pagar</span><span>${GM.fmtRD(b.total)}</span></div>
+      <div class="r-row">
+        <span>${ncfMeta.isExempt ? 'ITBIS 0% (Exento · e-CF 44)' : `ITBIS 18% (${ncfMeta.badge})`}</span>
+        <span>${GM.fmtRD(b.itbis)}</span>
+      </div>
+      <div class="r-total"><span>Total a Facturar (${ncfMeta.badge})</span><span>${GM.fmtRD(b.total)}</span></div>
+      ${ncfMeta.isGov ? `
+        <div class="r-subnote">
+          <strong style="font-size:11px; color:#1E40AF;">Proyección de Retenciones Estatales al Libramiento:</strong>
+          <div class="r-row"><span>(−) Retención 5% ISR Estado (Art. 309)</span><span>− ${GM.fmtRD(b.govIsrRetention)}</span></div>
+          ${b.govItbisRetention > 0 ? `<div class="r-row"><span>(−) Retención 30% ITBIS (Norma 02-05)</span><span>− ${GM.fmtRD(b.govItbisRetention)}</span></div>` : ''}
+          <div class="r-row" style="font-weight:800;"><span>Desembolso Neto Tesorería SIGEF</span><span>${GM.fmtRD(b.expectedTreasuryNet)}</span></div>
+        </div>
+      ` : ''}
+      ${selectedPaymentMethod === 'card' ? `
+        <div style="margin-top:8px; font-size:11px; color:#065F46; font-weight:700;">
+          ⚡ Cargo inmediato con tarjeta • Emisión automática de ${ncfMeta.badge} y bloqueo de fechas al instante.
+        </div>
+      ` : ''}
     `;
+    updateSubmitButtonLabel();
   }
 
   /* =========================================================
@@ -224,7 +353,7 @@
     const set = new Set();
     if (!currentItem) return set;
     const eqBookings = (state.bookings || []).filter(b =>
-      String(b.equipmentId) === String(currentItem.id) || b.title === currentItem.title
+      b.stage !== 'cancelled' && (String(b.equipmentId) === String(currentItem.id) || b.title === currentItem.title)
     );
     eqBookings.forEach(b => {
       if (!b.startDate) return;
@@ -417,9 +546,13 @@
       return;
     }
 
-    const ncfChecked = Boolean(document.getElementById('qNcf')?.checked);
+    const ncfMeta = BILL.NCF_TYPES[selectedNcfType] || BILL.NCF_TYPES.E31;
+
     if (dgiiController) {
-      const check = await dgiiController.validateBeforeSubmit({ requireActiveForNcf: ncfChecked });
+      const check = await dgiiController.validateBeforeSubmit({
+        requireActiveForNcf: ncfMeta.requiresActiveRnc,
+        ncfCode: selectedNcfType
+      });
       if (!check.valid) {
         toast(check.error);
         document.getElementById('qRnc')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -427,13 +560,88 @@
       }
     }
 
+    // Validación Comprobante Gubernamental (e-CF 45)
+    let govData = { poNumber: '', capNumber: '', entityEmail: '', paymentTermsDays: 45 };
+    if (selectedNcfType === 'E45') {
+      const poNumber = (document.getElementById('qGovPo')?.value || '').trim();
+      const capNumber = (document.getElementById('qGovCap')?.value || '').trim();
+      const entityEmail = (document.getElementById('qGovEmail')?.value || '').trim();
+      const paymentTermsDays = Number(document.getElementById('qGovTerms')?.value || 45);
+      if (poNumber.length < 3) {
+        toast('Ingresa el No. de Orden de Compra o Contrato DGCP para facturación estatal (e-CF 45)');
+        document.getElementById('qGovPo')?.focus();
+        return;
+      }
+      if (!entityEmail || !entityEmail.includes('@')) {
+        toast('Ingresa el correo institucional de la unidad de Compras o Cuentas por Pagar');
+        document.getElementById('qGovEmail')?.focus();
+        return;
+      }
+      govData = { poNumber, capNumber, entityEmail, paymentTermsDays };
+    }
+
+    // Validación Régimen Especial (e-CF 44)
+    let exemptionCode = '';
+    if (selectedNcfType === 'E44') {
+      exemptionCode = (document.getElementById('qExemptCode')?.value || '').trim();
+      if (exemptionCode.length < 4) {
+        toast('Ingresa el No. de Resolución o Carnet de Exención DGII para aplicar e-CF 44 (ITBIS 0%)');
+        document.getElementById('qExemptCode')?.focus();
+        return;
+      }
+    }
+
+    // Validación de Tarjeta (si eligió pago con tarjeta)
+    let cardInfo = null;
+    if (selectedPaymentMethod === 'card') {
+      const cardCheck = BILL.validateCard({
+        holder: document.getElementById('cHolder')?.value,
+        number: document.getElementById('cNumber')?.value,
+        expiry: document.getElementById('cExpiry')?.value,
+        cvv: document.getElementById('cCvv')?.value
+      });
+      if (!cardCheck.valid) {
+        toast(cardCheck.error);
+        document.getElementById('payCardPanel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      cardInfo = {
+        brand: cardCheck.brand,
+        last4: cardCheck.last4,
+        holder: cardCheck.holder,
+        expiry: cardCheck.expiry,
+        authCode: cardCheck.authCode,
+        processedAt: cardCheck.processedAt
+      };
+    }
+
     if (!sigSigned) {
       toast('Dibuja tu firma en pantalla para continuar');
       document.getElementById('sigCanvas')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
+
+    const submitBtn = document.getElementById('bookingSubmitBtn');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = selectedPaymentMethod === 'card'
+        ? '🔒 Autorizando tarjeta (3D Secure) y emitiendo e-NCF…'
+        : '⏳ Registrando contrato y expediente fiscal…';
+    }
+
+    if (selectedPaymentMethod === 'card') {
+      await new Promise(r => setTimeout(r, 650));
+    }
+
     const b = currentBreakdown();
     const sig = document.getElementById('sigCanvas').toDataURL('image/png');
+    const isCardPaid = selectedPaymentMethod === 'card';
+    const issued = isCardPaid ? BILL.issueNextEncf(selectedNcfType) : null;
+
+    const initialStage = selectedNcfType === 'E45'
+      ? (isCardPaid ? 'invoiced_dispatched' : 'gov_review')
+      : (isCardPaid ? 'invoiced_dispatched' : 'pending_validation');
+
     const rec = {
       id: Date.now(),
       equipmentId: currentItem.id,
@@ -450,10 +658,42 @@
       endDate: calState.end || calState.start,
       qty: b.qty,
       unitLabel: b.label,
-      netSubtotal: b.net,
+      baseAmount: b.base,
+      proDiscount: b.disc,
+      transportCost: b.trans,
+      netSubtotal: b.netSubtotal,
       itbis: b.itbis,
       total: b.total,
-      ncf: b.ncf,
+      ncf: selectedNcfType !== 'E32',
+      ncfType: selectedNcfType,
+      encfNumber: issued ? issued.encf : '',
+      encfSecurityCode: issued ? issued.securityCode : '',
+      encfExpires: issued ? issued.expires : '',
+      encfIssuedAt: issued ? issued.issuedAt : '',
+      exemptionCode,
+      paymentMethod: selectedPaymentMethod,
+      paymentStatus: isCardPaid ? 'paid' : 'pending',
+      cardInfo,
+      transferBank: selectedPaymentMethod === 'transfer' ? (document.getElementById('qTransferBank')?.value || '') : '',
+      transferRef: selectedPaymentMethod === 'transfer' ? (document.getElementById('qTransferRef')?.value || '').trim() : '',
+      govApplyItbisRet: b.govApplyItbisRet,
+      govIsrRetention: b.govIsrRetention,
+      govItbisRetention: b.govItbisRetention,
+      cardGatewayFee: b.cardGatewayFee,
+      cardItbisRetention: b.cardItbisRetention,
+      gmCommissionPct: b.gmCommissionPct,
+      govData,
+      govChecklist: selectedNcfType === 'E45' ? {
+        rncVerified: true,
+        poReceived: Boolean(govData.poNumber),
+        capVerified: Boolean(govData.capNumber),
+        compliancePack: true,
+        conduceStamped: false,
+        encfFiled: Boolean(issued),
+        treasuryPaid: isCardPaid,
+        isrLetterReceived: false
+      } : {},
+      stage: initialStage,
       signature: sig
     };
 
@@ -477,50 +717,57 @@
     calState.start = '';
     calState.end = '';
     renderCalendar();
-    openContract(rec);
-    toast('✓ RNC validado en DGII y contrato firmado');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      updateSubmitButtonLabel();
+    }
+
+    openContract(rec, isCardPaid ? 'invoice' : 'contract');
+    toast(isCardPaid
+      ? `✓ Pago aprobado (${cardInfo.authCode}) y ${rec.encfNumber} emitido`
+      : (selectedNcfType === 'E45'
+        ? '✓ Expediente Gubernamental (e-CF 45) registrado y enviado a Administración'
+        : '✓ Contrato firmado y reserva enviada a validación'));
   }
 
-  function openContract(b) {
+  function switchContractTab(tab) {
+    activeContractTab = tab;
+    renderContractModalBody();
+  }
+
+  function renderContractModalBody() {
+    if (!activeContractRecord || !BILL) return;
+    const b = activeContractRecord;
     const logoSrc = BASE + 'logo.png';
-    const rangeLabel = b.endDate && b.endDate !== b.startDate
-      ? `del ${esc(b.startDate)} al ${esc(b.endDate)}`
-      : `desde ${esc(b.startDate)}`;
+    const isGov = (b.ncfType === 'E45');
+
+    let docHtml = '';
+    if (activeContractTab === 'invoice') {
+      docHtml = BILL.buildPrintableInvoiceHtml(b, null, logoSrc);
+    } else if (activeContractTab === 'gov' && isGov) {
+      docHtml = BILL.buildGovDossierHtml(b, null, logoSrc);
+    } else {
+      docHtml = BILL.buildPrintableContractHtml(b, null, logoSrc);
+    }
+
     document.getElementById('contractBody').innerHTML = `
-      <div style="border:1.5px solid var(--border); border-radius:14px; padding:20px; background:#fff;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--navy); padding-bottom:12px; margin-bottom:14px; gap:10px;">
-          <div>
-            <strong style="font-size:16px; color:var(--navy);">GREEN MILE CONSTRUCTION RD</strong>
-            <div style="font-size:11px; font-weight:800; color:var(--orange);">CONTRATO #GM-${String(b.id).slice(-6)}</div>
-          </div>
-          <img src="${logoSrc}" style="height:42px; object-fit:contain;" alt="Green Mile RD">
-        </div>
-        <div style="font-size:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
-          <div style="background:var(--bg); padding:10px; border-radius:10px;">
-            <strong style="color:var(--navy); display:block;">GESTOR / FACTURADOR</strong>
-            Green Mile Construction RD<br>Facturación Electrónica e-NCF<br>Cobro y Garantía Centralizada
-          </div>
-          <div style="background:var(--bg); padding:10px; border-radius:10px;">
-            <strong style="color:var(--navy); display:block;">CONTRATISTA</strong>
-            ${esc(b.renter)}<br>RNC: ${esc(b.renterRnc)}<br>Obra: ${esc(b.address)}
-          </div>
-        </div>
-        <p style="font-size:13px; margin-bottom:6px;"><strong>Equipo:</strong> ${esc(b.title)} (${esc(b.city)})</p>
-        <p style="font-size:13px; margin-bottom:12px;"><strong>Plazo:</strong> ${b.qty} ${esc(b.unitLabel)} (${rangeLabel})</p>
-        <div style="background:var(--navy-soft); padding:12px; border-radius:10px; font-size:13px; margin-bottom:14px;">
-          <div style="display:flex; justify-content:space-between;"><span>Subtotal Neto:</span><span>${GM.fmtRD(b.netSubtotal)}</span></div>
-          ${b.ncf ? `<div style="display:flex; justify-content:space-between;"><span>ITBIS 18% (e-NCF):</span><span>${GM.fmtRD(b.itbis)}</span></div>` : ''}
-          <div style="display:flex; justify-content:space-between; font-weight:800; color:var(--navy); border-top:1px solid #CBD5E1; margin-top:6px; padding-top:6px;">
-            <span>Total Acordado:</span><span>${GM.fmtRD(b.total)}</span>
-          </div>
-        </div>
-        <div style="text-align:center; margin-top:12px;">
-          ${b.signature ? `<img src="${b.signature}" alt="Firma" style="height:52px; border-bottom:1px solid var(--navy); margin:0 auto 4px; display:block;">` : ''}
-          <span style="font-size:11px; font-weight:700; color:var(--navy);">Firma Digital — ${esc(b.renter)}</span>
-        </div>
-        <button class="btn btn-navy no-print" style="width:100%; margin-top:16px;" onclick="window.print()">Imprimir / Guardar PDF</button>
+      <div class="doc-tabs no-print">
+        <button type="button" class="doc-tab ${activeContractTab === 'contract' ? 'active' : ''}" onclick="window.GM_DETAIL.switchContractTab('contract')">📄 Contrato Digital</button>
+        <button type="button" class="doc-tab ${activeContractTab === 'invoice' ? 'active' : ''}" onclick="window.GM_DETAIL.switchContractTab('invoice')">🧾 ${b.encfNumber ? 'Factura ' + esc(b.ncfType) : 'Proforma ' + esc(b.ncfType)}</button>
+        ${isGov ? `<button type="button" class="doc-tab ${activeContractTab === 'gov' ? 'active' : ''}" onclick="window.GM_DETAIL.switchContractTab('gov')">🏛️ Carátula Estado</button>` : ''}
+      </div>
+      ${docHtml}
+      <div class="no-print" style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-navy" style="flex:1;" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+        <a class="btn btn-ghost" href="${BASE}admin.html" style="font-size:12px;">⚙️ Gestionar en Admin</a>
       </div>
     `;
+  }
+
+  function openContract(b, initialTab = 'contract') {
+    activeContractRecord = b;
+    activeContractTab = initialTab;
+    renderContractModalBody();
     openSheet('contractModal');
   }
 
@@ -586,10 +833,11 @@
     }
 
     const it = currentItem;
+    const adminCfg = BILL ? BILL.loadAdminConfig() : { banks: [], rpeNumber: 'RPE Activo' };
     const shareUrl = GM.getShareUrl(it, BASE);
     const shareText = getShareText(it, shareUrl);
     const waShareHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-    const GREEN_MILE_WA = '18095550100'; // Número oficial de Green Mile RD
+    const GREEN_MILE_WA = adminCfg.whatsapp || '18095550100';
     const waOwnerMsg = encodeURIComponent(`Hola Green Mile RD, quiero cotizar/alquilar el equipo #GM-${it.id}: "${it.title}" (${it.city}):\n${shareUrl}`);
     const waOwnerHref = `https://wa.me/${GREEN_MILE_WA}?text=${waOwnerMsg}`;
     const telHref = `tel:+${GREEN_MILE_WA}`;
@@ -607,6 +855,16 @@
           `).join('')}
         </div>`
       : '';
+
+    const banksHtml = (adminCfg.banks || []).map(bk => `
+      <div class="bank-row">
+        <div>
+          <strong>${esc(bk.bank)}</strong>
+          <span>${esc(bk.type)} • <code>${esc(bk.number)}</code></span>
+        </div>
+        <button type="button" class="bank-copy-btn" onclick="window.GM_DETAIL.copyBankAccount('${esc(bk.number)}')">Copiar</button>
+      </div>
+    `).join('');
 
     document.title = `${it.title} en ${it.city} — ${GM.fmtRD(it.priceDay)}/día | Green Mile RD`;
 
@@ -695,7 +953,7 @@
                 <div class="spec-item"><span>Operador</span><strong>${it.operator ? 'Incluido en la tarifa' : 'Opcional / Equipo seco'}</strong></div>
                 <div class="spec-item"><span>Traslado Lowboy (Ida)</span><strong>${it.transportCost > 0 ? GM.fmtRD(it.transportCost) : 'Incluido / Retiro en patio'}</strong></div>
                 <div class="spec-item"><span>Disponibilidad</span><strong id="specAvail">${it.busy ? 'En Obra (consultar fecha)' : 'Disponible Hoy'}</strong></div>
-                <div class="spec-item"><span>Facturación Fiscal</span><strong>Comprobante e-NCF (e-CF 31 · DGII)</strong></div>
+                <div class="spec-item"><span>Facturación e-CF DGII</span><strong>e-CF 31 · 32 · 45 (Estado) · 44</strong></div>
               </div>
 
               <h3 class="section-label">Descripción y Aditamentos</h3>
@@ -704,9 +962,9 @@
               <!-- GESTIÓN CENTRALIZADA GREEN MILE RD -->
               <div class="owner-card">
                 <div class="owner-meta">
-                  <small>Cobro y Garantía • Green Mile RD</small>
+                  <small>Cobro, Facturación y Garantía • Green Mile RD</small>
                   <strong>Equipo Verificado #GM-${esc(it.id)}</strong>
-                  <span>Base en ${esc(it.city)} • Facturación Electrónica e-NCF • Coordinación directa vía Green Mile</span>
+                  <span>Tarjeta · Transferencia · Proveedor del Estado (${esc(adminCfg.rpeNumber)}) • Facturación e-NCF</span>
                 </div>
                 <div class="owner-actions">
                   <a class="btn btn-wa" target="_blank" rel="noopener" href="${waOwnerHref}">💬 Solicitar vía Green Mile</a>
@@ -717,13 +975,13 @@
           </article>
         </div>
 
-        <!-- COLUMNA DERECHA: COTIZADOR + CONTRATO DIGITAL e-NCF -->
+        <!-- COLUMNA DERECHA: COTIZADOR + FACTURACIÓN e-CF + PAGO + FIRMA -->
         <aside class="booking-col" id="bookingBox">
           <div class="panel">
             <div class="booking-head">
               <div>
-                <h2>Cotizar y Contratar</h2>
-                <p>Cálculo con ITBIS (e-NCF) y firma digital</p>
+                <h2>Cotizar, Facturar y Pagar</h2>
+                <p>e-CF 31 / 32 / 45 (Estado) • Tarjeta o Transferencia</p>
               </div>
               <button type="button" class="pro-pill ${state.isPro ? 'active' : ''}" id="bookingProBtn" onclick="window.GM_DETAIL.openSheet('proSheet')">
                 ${state.isPro ? '⭐ Pro (-10%)' : '⭐ Plan Pro'}
@@ -783,34 +1041,215 @@
                       </select>
                     </div>
                   </div>
+
+                  <!-- DATOS FISCALES + VALIDACIÓN DGII -->
                   <div class="f-field full">
                     <label>RNC (9 dígitos) o Cédula <small class="req-tag">Validación DGII</small></label>
-                    <div class="f-box"><input type="text" id="qRnc" inputmode="numeric" placeholder="Ej. 1-01-01992-1" enterkeyhint="next" required></div>
+                    <div class="f-box"><input type="text" id="qRnc" inputmode="numeric" placeholder="Ej. 1-01-01992-1 o 4-01-00755-1" enterkeyhint="next" required></div>
                   </div>
                   <div class="f-field full">
-                    <label>Contratista / Razón Social DGII <small class="req-tag">Búsqueda en vivo</small></label>
-                    <div class="f-box"><input type="text" id="qRenter" placeholder="Escribe empresa o autocompleta por RNC" enterkeyhint="next" required></div>
+                    <label>Contratista / Institución (Razón Social DGII) <small class="req-tag">Búsqueda en vivo</small></label>
+                    <div class="f-box"><input type="text" id="qRenter" placeholder="Escribe empresa, institución o autocompleta por RNC" enterkeyhint="next" required></div>
                     <div id="qDgiiSuggestions" class="dgii-sugg-list"></div>
                     <div id="qDgiiStatus" class="dgii-badge" style="display:none;"></div>
+                    <div id="govDetectBanner" class="gov-detect-banner" style="display:none; margin-top:4px;">
+                      <span>🏛️ Detectamos una <strong>institución del Estado</strong> en DGII. Aplica <strong>e-CF 45 (Gubernamental)</strong>.</span>
+                      <button type="button" onclick="window.GM_DETAIL.selectNcfType('E45', true)">Activar e-CF 45</button>
+                    </div>
                   </div>
                   <div class="f-field full">
                     <label>Dirección de Obra en RD</label>
-                    <div class="f-box"><input type="text" id="qAddr" placeholder="Sector, calle o referencia del proyecto" enterkeyhint="done" required></div>
+                    <div class="f-box"><input type="text" id="qAddr" placeholder="Sector, calle o referencia del proyecto" enterkeyhint="next" required></div>
                   </div>
 
+                  <!-- MODO DE FACTURACIÓN ELECTRÓNICA (e-CF / DGII) -->
                   <div class="f-field full">
-                    <label class="switch-row">
-                      <div>
-                        <strong>Comprobante Crédito Fiscal (e-NCF · e-CF 31)</strong>
-                        <span>Desglosa ITBIS 18% con RNC activo en DGII</span>
+                    <label>Modo de Facturación (e-CF · DGII) <small class="req-tag">Ley 32-23</small></label>
+                    <div class="ncf-grid">
+                      <button type="button" class="ncf-card selected" data-ncf="E31" onclick="window.GM_DETAIL.selectNcfType('E31', true)">
+                        <span class="ncf-code"><span>e-CF 31</span><span>ITBIS 18%</span></span>
+                        <strong>Crédito Fiscal</strong>
+                        <small>Empresas y constructoras (antes B01)</small>
+                      </button>
+                      <button type="button" class="ncf-card" data-ncf="E32" onclick="window.GM_DETAIL.selectNcfType('E32', true)">
+                        <span class="ncf-code"><span>e-CF 32</span><span>ITBIS 18%</span></span>
+                        <strong>Consumo</strong>
+                        <small>Particular / Cédula (antes B02)</small>
+                      </button>
+                      <button type="button" class="ncf-card" data-ncf="E45" onclick="window.GM_DETAIL.selectNcfType('E45', true)">
+                        <span class="ncf-code"><span>e-CF 45</span><span>5% ISR</span></span>
+                        <strong>🏛️ Gubernamental</strong>
+                        <small>Estado, Ministerios y Alcaldías (antes B15)</small>
+                      </button>
+                      <button type="button" class="ncf-card" data-ncf="E44" onclick="window.GM_DETAIL.selectNcfType('E44', true)">
+                        <span class="ncf-code"><span>e-CF 44</span><span>0% Exento</span></span>
+                        <strong>Régimen Especial</strong>
+                        <small>Zona Franca / CONFOTUR (antes B14)</small>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- BLOQUE CONDICIONAL: EXPEDIENTE GUBERNAMENTAL e-CF 45 -->
+                  <div id="govFieldsPanel" class="f-field full sub-panel gov-panel" style="display:none;">
+                    <div class="sub-panel-head">
+                      <strong>🏛️ Expediente Gubernamental (e-CF 45 · Ley 340-06)</strong>
+                      <span class="dgii-pill ok" style="background:#1D4ED8;">${esc(adminCfg.rpeNumber)}</span>
+                    </div>
+                    <div class="sub-panel-note">
+                      <strong>¿Cómo gestiona Green Mile RD tu comprobante gubernamental?</strong>
+                      <ul>
+                        <li>Validamos el RNC estatal (Norma 05-19) y adjuntamos nuestro paquete vigente: <strong>RPE activo + Certificación DGII + Certificación TSS</strong>.</li>
+                        <li>Emitimos factura electrónica <strong>e-CF 45</strong> (antiguo B15) con ITBIS 18% transparentado y desglosamos la <strong>retención de ley 5% ISR Estado (Art. 309)</strong> al libramiento SIGEF.</li>
+                        <li>Despachamos contra Orden de Compra verificada y radicamos expediente con Conduce sellado en Cuentas por Pagar.</li>
+                      </ul>
+                    </div>
+                    <div class="f-field full">
+                      <label>No. Orden de Compra / Contrato DGCP <small class="req-tag">* Obligatorio</small></label>
+                      <div class="f-box"><input type="text" id="qGovPo" placeholder="Ej. MOPC-DAF-CM-2026-0148"></div>
+                    </div>
+                    <div class="f-field full">
+                      <label>Certificación Apropiación Presupuestaria (CAP / SIGEF)</label>
+                      <div class="f-box"><input type="text" id="qGovCap" placeholder="Ej. CAP-2026-00921 (opcional si ya figura en OC)"></div>
+                    </div>
+                    <div class="f-field full">
+                      <label>Correo Institucional Compras / Cuentas por Pagar <small class="req-tag">* Obligatorio</small></label>
+                      <div class="f-box"><input type="email" id="qGovEmail" placeholder="compras@institucion.gob.do"></div>
+                    </div>
+                    <div class="f-field full">
+                      <label>Plazo de Libramiento Tesorería (SIGEF)</label>
+                      <div class="f-box">
+                        <select id="qGovTerms">
+                          <option value="30">30 días contra recepción conformada</option>
+                          <option value="45" selected>45 días (estándar institucional)</option>
+                          <option value="60">60 días (proyectos de infraestructura)</option>
+                        </select>
                       </div>
-                      <input type="checkbox" id="qNcf" checked style="display:none;" onchange="window.GM_DETAIL.calcReceipt()">
+                    </div>
+                    <label class="switch-row" style="background:#fff; padding:10px 12px;">
+                      <div>
+                        <strong style="font-size:12px;">Aplicar retención 30% ITBIS estatal</strong>
+                        <span style="font-size:11px;">Marca si la entidad retiene 30% del ITBIS (Norma 02-05)</span>
+                      </div>
+                      <input type="checkbox" id="qGovItbisRet" style="display:none;" onchange="window.GM_DETAIL.calcReceipt()">
                       <div class="sw-knob"></div>
                     </label>
                   </div>
 
+                  <!-- BLOQUE CONDICIONAL: EXENCIÓN e-CF 44 -->
+                  <div id="exemptFieldsPanel" class="f-field full sub-panel" style="display:none;">
+                    <div class="sub-panel-head">
+                      <strong>🏷️ Regímenes Especiales (e-CF 44 · ITBIS 0%)</strong>
+                    </div>
+                    <div class="f-field full">
+                      <label>No. Resolución / Carnet de Exención DGII <small class="req-tag">* Obligatorio</small></label>
+                      <div class="f-box"><input type="text" id="qExemptCode" placeholder="Ej. RES-CONFOTUR-2026-0412 / ZF-0082"></div>
+                    </div>
+                    <div style="font-size:11.5px; color:var(--text-muted);">
+                      Aplica a empresas de Zona Franca, proyectos turísticos amparados en Ley 158-01 (CONFOTUR) u organismos internacionales con certificación vigente DGII.
+                    </div>
+                  </div>
+
+                  <!-- MÉTODO DE PAGO -->
                   <div class="f-field full">
-                    <label>Firma Táctil del Contratista <small style="color:var(--orange); cursor:pointer; font-weight:800;" onclick="window.GM_DETAIL.clearSig()">Limpiar firma</small></label>
+                    <label>Forma de Pago</label>
+                    <div class="pay-methods-list">
+                      <button type="button" class="pay-opt selected" data-pay="card" onclick="window.GM_DETAIL.selectPaymentMethod('card')">
+                        <strong>💳 Tarjeta</strong>
+                        <small>Visa / MC / AMEX · 3DS</small>
+                      </button>
+                      <button type="button" class="pay-opt" data-pay="transfer" onclick="window.GM_DETAIL.selectPaymentMethod('transfer')">
+                        <strong>🏦 Transferencia</strong>
+                        <small>Popular · Banreservas · BHD</small>
+                      </button>
+                      <button type="button" class="pay-opt" data-pay="gov_po" onclick="window.GM_DETAIL.selectPaymentMethod('gov_po')">
+                        <strong>🏛️ OC Estatal</strong>
+                        <small>Libramiento SIGEF</small>
+                      </button>
+                      <button type="button" class="pay-opt" data-pay="credit" onclick="window.GM_DETAIL.selectPaymentMethod('credit')">
+                        <strong>📄 Crédito Corp.</strong>
+                        <small>15–30 días · Pro</small>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- PANEL DE PAGO CON TARJETA -->
+                  <div id="payCardPanel" class="f-field full sub-panel card-panel">
+                    <div class="sub-panel-head">
+                      <strong>💳 Pago Seguro con Tarjeta</strong>
+                      <span class="card-brand-pill" id="cardBrandPill">VISA · MC · AMEX</span>
+                    </div>
+                    <div class="f-field full">
+                      <label>Nombre en la Tarjeta</label>
+                      <div class="f-box"><input type="text" id="cHolder" placeholder="COMO APARECE EN LA TARJETA" autocomplete="cc-name"></div>
+                    </div>
+                    <div class="f-field full">
+                      <label>Número de Tarjeta</label>
+                      <div class="f-box"><input type="text" id="cNumber" inputmode="numeric" maxlength="19" placeholder="4532 •••• •••• ••••" oninput="window.GM_DETAIL.onCardNumberInput(this)" autocomplete="cc-number"></div>
+                    </div>
+                    <div class="f-grid">
+                      <div class="f-field">
+                        <label>Vencimiento</label>
+                        <div class="f-box"><input type="text" id="cExpiry" inputmode="numeric" maxlength="5" placeholder="MM/AA" oninput="window.GM_DETAIL.onCardExpiryInput(this)" autocomplete="cc-exp"></div>
+                      </div>
+                      <div class="f-field">
+                        <label>CVV / CVC</label>
+                        <div class="f-box"><input type="password" id="cCvv" inputmode="numeric" maxlength="4" placeholder="123" autocomplete="cc-csc"></div>
+                      </div>
+                    </div>
+                    <div class="card-security-row">
+                      <span>🔒 Cifrado TLS + 3D Secure • PCI-DSS</span>
+                      <span>Solo últimos 4 dígitos</span>
+                    </div>
+                  </div>
+
+                  <!-- PANEL DE TRANSFERENCIA BANCARIA -->
+                  <div id="payTransferPanel" class="f-field full sub-panel" style="display:none;">
+                    <div class="sub-panel-head">
+                      <strong>🏦 Cuentas Corporativas — ${esc(adminCfg.companyName)}</strong>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted);">RNC Beneficiario: <strong>${esc(adminCfg.rnc)}</strong></div>
+                    ${banksHtml}
+                    <div class="f-field full">
+                      <label>Banco Origen</label>
+                      <div class="f-box">
+                        <select id="qTransferBank">
+                          <option value="Banco Popular">Banco Popular Dominicano</option>
+                          <option value="Banreservas">Banreservas</option>
+                          <option value="Banco BHD">Banco BHD</option>
+                          <option value="Scotiabank">Scotiabank RD</option>
+                          <option value="Asociación Popular (APAP)">APAP / Banesco / Otro LBTR</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="f-field full">
+                      <label>No. de Referencia / Comprobante <small>Opcional ahora</small></label>
+                      <div class="f-box"><input type="text" id="qTransferRef" placeholder="Ej. LBTR-8849201 (o envíalo luego por WhatsApp)"></div>
+                    </div>
+                  </div>
+
+                  <!-- PANEL DE ORDEN DE COMPRA ESTATAL -->
+                  <div id="payGovPoPanel" class="f-field full sub-panel gov-panel" style="display:none;">
+                    <div class="sub-panel-head">
+                      <strong>🏛️ Pago vía Tesorería Nacional / Libramiento SIGEF</strong>
+                    </div>
+                    <div style="font-size:11.5px; color:#1E3A8A; line-height:1.45;">
+                      No requiere cargo en tarjeta. Al firmar, tu solicitud entra automáticamente al módulo de <strong>Gestión Gubernamental</strong> de Green Mile RD para verificar la Orden de Compra, emitir el <strong>e-CF 45</strong> y coordinar el despacho a obra pública.
+                    </div>
+                  </div>
+
+                  <!-- PANEL DE CRÉDITO CORPORATIVO -->
+                  <div id="payCreditPanel" class="f-field full sub-panel" style="display:none;">
+                    <div class="sub-panel-head">
+                      <strong>📄 Línea de Crédito Corporativo (15–30 días)</strong>
+                    </div>
+                    <div style="font-size:11.5px; color:var(--text-muted); line-height:1.45;">
+                      Sujeto a validación de RNC activo en DGII y aprobación del departamento de Tesorería de Green Mile RD. La factura electrónica <strong>e-CF 31</strong> se emite contra confirmación del despacho.
+                    </div>
+                  </div>
+
+                  <!-- FIRMA DIGITAL -->
+                  <div class="f-field full">
+                    <label>Firma Táctil del Contratista / Responsable <small style="color:var(--orange); cursor:pointer; font-weight:800;" onclick="window.GM_DETAIL.clearSig()">Limpiar firma</small></label>
                     <div class="sig-pad">
                       <canvas id="sigCanvas" width="520" height="118"></canvas>
                       <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Firma aquí con el dedo o cursor</div>
@@ -819,7 +1258,7 @@
                 </div>
 
                 <div class="receipt" id="qReceipt"></div>
-                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:14px; min-height:50px; font-size:15px;">Firmar y Reservar Fechas</button>
+                <button type="submit" id="bookingSubmitBtn" class="btn btn-primary" style="width:100%; margin-top:14px; min-height:50px; font-size:14.5px;">💳 Pagar y Emitir e-CF 31</button>
               </form>
             </div>
           </div>
@@ -845,6 +1284,8 @@
     updateFavoriteButtons();
     renderCalendar();
     setupSig();
+    selectNcfType(selectedNcfType, false);
+    selectPaymentMethod(selectedPaymentMethod);
     calcReceipt();
 
     if (window.GM_DGII && window.GM_DGII.attachPair) {
@@ -852,7 +1293,17 @@
         rncInputId: 'qRnc',
         nameInputId: 'qRenter',
         statusBoxId: 'qDgiiStatus',
-        suggestionsBoxId: 'qDgiiSuggestions'
+        suggestionsBoxId: 'qDgiiSuggestions',
+        onRecordChange: (rec) => {
+          const banner = document.getElementById('govDetectBanner');
+          if (!banner || !BILL) return;
+          if (rec && rec.found && selectedNcfType !== 'E45') {
+            const det = BILL.detectGovEntity(rec.digits, rec.razonSocial);
+            banner.style.display = det.isLikelyGov ? 'flex' : 'none';
+          } else {
+            banner.style.display = 'none';
+          }
+        }
       });
     }
   }
@@ -860,11 +1311,17 @@
   window.GM_DETAIL = {
     selectPhoto,
     copyShareLink,
+    copyBankAccount,
     nativeShare,
     toggleFavorite,
     openSheet,
     closeSheet,
     activatePro,
+    selectNcfType,
+    selectPaymentMethod,
+    onCardNumberInput,
+    onCardExpiryInput,
+    switchContractTab,
     calcReceipt,
     stepQty,
     clearSig,

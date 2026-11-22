@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0D223A" />
+  <title>Centro Administrativo, Facturación e-CF y Estado — Green Mile RD</title>
+  <meta name="description" content="Back-office administrativo de Green Mile Construction RD: facturación electrónica e-CF (31, 32, 45 Gubernamental, 44), conciliación de tarjetas, liquidaciones a propietarios y reportes DGII 607/606." />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+  <!-- PANTALLA DE ACCESO ADMINISTRATIVO -->
+  <div id="adminGate" class="admin-gate">
+    <div class="gate-card">
+      <img src="logo.png" alt="Green Mile Construction RD" />
+      <h1>Centro Administrativo Green Mile RD</h1>
+      <p>Facturación e-CF (DGII), Pagos con Tarjeta, Gestión Gubernamental (E45) y Liquidaciones</p>
+      <div class="gate-hint">
+        🔐 Acceso de Administración y Tesorería<br>
+        PIN inicial configurado: <strong>2026</strong> (modificable en Configuración)
+      </div>
+      <form onsubmit="window.GM_ADMIN.submitPin(event)">
+        <div class="f-field full" style="text-align:left; margin-bottom:14px;">
+          <label for="adminPinInput">PIN de Acceso Administrativo</label>
+          <div class="f-box">
+            <input type="password" id="adminPinInput" inputmode="numeric" placeholder="Ingresa el PIN (2026)" required autofocus />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; min-height:46px; font-size:14.5px;">Entrar al Centro Administrativo →</button>
+      </form>
+      <div style="margin-top:14px;">
+        <a href="index.html" style="font-size:12.5px; font-weight:700; color:var(--steel); text-decoration:none;">← Volver al Catálogo Público</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONSOLA ADMINISTRATIVA PRINCIPAL -->
+  <div id="adminApp" class="admin-shell" style="display:none;">
+    <aside class="admin-sidebar">
+      <a class="sb-brand" href="index.html">
+        <img src="logo.png" alt="Green Mile RD" />
+        <div class="sb-brand-meta">
+          <strong>GREEN MILE RD</strong>
+          <span>Administración &amp; Fiscal</span>
+        </div>
+      </a>
+
+      <nav class="sb-nav" aria-label="Módulos administrativos">
+        <button type="button" class="sb-btn active" data-sec="overview" onclick="window.GM_ADMIN.switchSection('overview')">
+          <span class="sb-btn-left">📊 Resumen Ejecutivo</span>
+        </button>
+        <button type="button" class="sb-btn" data-sec="orders" onclick="window.GM_ADMIN.switchSection('orders')">
+          <span class="sb-btn-left">🧾 Facturación y Órdenes</span>
+          <span class="sb-badge" id="navCountOrders">0</span>
+        </button>
+        <button type="button" class="sb-btn" data-sec="gov" onclick="window.GM_ADMIN.switchSection('gov')">
+          <span class="sb-btn-left">🏛️ Gubernamental (E45)</span>
+          <span class="sb-badge" id="navCountGov">0</span>
+        </button>
+        <button type="button" class="sb-btn" data-sec="payouts" onclick="window.GM_ADMIN.switchSection('payouts')">
+          <span class="sb-btn-left">💸 Liquidaciones Flota</span>
+          <span class="sb-badge" id="navCountPayouts">0</span>
+        </button>
+        <button type="button" class="sb-btn" data-sec="fiscal" onclick="window.GM_ADMIN.switchSection('fiscal')">
+          <span class="sb-btn-left">🏦 Tarjetas, e-NCF y DGII</span>
+        </button>
+        <button type="button" class="sb-btn" data-sec="sop" onclick="window.GM_ADMIN.switchSection('sop')">
+          <span class="sb-btn-left">📋 Proceso Administrativo</span>
+        </button>
+        <button type="button" class="sb-btn" data-sec="config" onclick="window.GM_ADMIN.switchSection('config')">
+          <span class="sb-btn-left">⚙️ Configuración Empresa</span>
+        </button>
+      </nav>
+
+      <div class="sb-foot">
+        <div class="sb-status" id="sidebarCloudStatus">
+          <strong>☁️ Cloud Firestore Activo</strong>
+          Sincronizado en tiempo real con el marketplace
+        </div>
+        <a href="index.html" class="btn btn-ghost" style="width:100%; background:rgba(255,255,255,0.1); color:#fff; border-color:rgba(255,255,255,0.18);">🚜 Ver Catálogo Público</a>
+        <button type="button" class="btn btn-ghost" style="width:100%; background:transparent; color:#FCA5A5; border-color:rgba(252,165,165,0.28);" onclick="window.GM_ADMIN.logoutAdmin()">🔒 Bloquear Sesión</button>
+      </div>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <div class="topbar-title">
+          <h2 id="topbarTitle">Resumen Ejecutivo y Control Operativo</h2>
+          <p id="topbarSubtitle">Operación centralizada • Facturación e-CF (DGII) • Tesorería y Liquidaciones</p>
+        </div>
+        <div class="topbar-actions">
+          <button type="button" class="btn btn-ghost" onclick="window.GM_ADMIN.export607()">📥 607 DGII</button>
+          <button type="button" class="btn btn-ghost" onclick="window.GM_ADMIN.export606()">📥 606 DGII</button>
+          <button type="button" class="btn btn-primary" onclick="window.GM_ADMIN.openNewInvoiceModal()">+ Nueva Factura / Orden</button>
+        </div>
+      </header>
+
+      <!-- NAVEGACIÓN MÓVIL -->
+      <div class="mobile-tabs-bar">
+        <button type="button" class="m-tab active" data-sec="overview" onclick="window.GM_ADMIN.switchSection('overview')">📊 Resumen</button>
+        <button type="button" class="m-tab" data-sec="orders" onclick="window.GM_ADMIN.switchSection('orders')">🧾 Órdenes</button>
+        <button type="button" class="m-tab" data-sec="gov" onclick="window.GM_ADMIN.switchSection('gov')">🏛️ Estado E45</button>
+        <button type="button" class="m-tab" data-sec="payouts" onclick="window.GM_ADMIN.switchSection('payouts')">💸 Propietarios</button>
+        <button type="button" class="m-tab" data-sec="fiscal" onclick="window.GM_ADMIN.switchSection('fiscal')">🏦 DGII/Tarjetas</button>
+        <button type="button" class="m-tab" data-sec="sop" onclick="window.GM_ADMIN.switchSection('sop')">📋 Proceso SOP</button>
+        <button type="button" class="m-tab" data-sec="config" onclick="window.GM_ADMIN.switchSection('config')">⚙️ Config</button>
+      </div>
+
+      <main class="admin-content" id="adminContent"></main>
+    </div>
+  </div>
+
+  <!-- MODAL 1: CREAR NUEVA FACTURA / ORDEN MANUAL -->
+  <div class="modal-backdrop" id="newInvoiceModal" onclick="if(event.target===this)window.GM_ADMIN.closeModal('newInvoiceModal')">
+    <div class="modal-box" style="max-width:680px;">
+      <div class="modal-head">
+        <div>
+          <h3>Nueva Orden / Factura Electrónica (e-CF)</h3>
+          <p>Registra alquileres cerrados por WhatsApp, licitaciones estatales o clientes directos</p>
+        </div>
+        <button type="button" class="modal-close" onclick="window.GM_ADMIN.closeModal('newInvoiceModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="manualInvoiceForm" onsubmit="window.GM_ADMIN.submitManualInvoice(event)" autocomplete="off">
+          <div class="f-grid">
+            <div class="f-field full">
+              <label>Equipo del Catálogo</label>
+              <div class="f-box">
+                <select id="mEqId" onchange="window.GM_ADMIN.onManualEqChange()"></select>
+              </div>
+            </div>
+            <div class="f-field">
+              <label>Tipo de Comprobante (e-CF · DGII)</label>
+              <div class="f-box">
+                <select id="mNcfType" onchange="window.GM_ADMIN.onManualNcfChange()">
+                  <option value="E31">e-CF 31 · Crédito Fiscal (ITBIS 18%)</option>
+                  <option value="E32">e-CF 32 · Consumo (ITBIS 18%)</option>
+                  <option value="E45">e-CF 45 · Gubernamental (ITBIS 18% + Ret. 5% ISR)</option>
+                  <option value="E44">e-CF 44 · Regímenes Especiales (Exento ITBIS 0%)</option>
+                </select>
+              </div>
+            </div>
+            <div class="f-field">
+              <label>Forma de Pago</label>
+              <div class="f-box">
+                <select id="mPayMethod" onchange="window.GM_ADMIN.updateManualPreview()">
+                  <option value="transfer">🏦 Transferencia Bancaria / LBTR</option>
+                  <option value="card">💳 Tarjeta Crédito / Débito (3DS)</option>
+                  <option value="gov_po">🏛️ Orden de Compra Estatal (SIGEF)</option>
+                  <option value="credit">📄 Crédito Corporativo (15–30d)</option>
+                </select>
+              </div>
+            </div>
+            <div class="f-field">
+              <label>RNC (9 dígitos) o Cédula Cliente *</label>
+              <div class="f-box"><input type="text" id="mRnc" placeholder="Ej. 1-01-01992-1 o 4-01-00755-1" required /></div>
+            </div>
+            <div class="f-field">
+              <label>Razón Social / Institución *</label>
+              <div class="f-box"><input type="text" id="mRenter" placeholder="Autocompleta desde DGII" required /></div>
+              <div id="mDgiiSuggestions" class="dgii-sugg-list"></div>
+              <div id="mDgiiStatus" class="dgii-badge" style="display:none; margin-top:4px;"></div>
+            </div>
+            <div class="f-field full">
+              <label>Dirección / Proyecto de Obra *</label>
+              <div class="f-box"><input type="text" id="mAddress" placeholder="Ej. Ampliación Av. Ecológica, Santo Domingo Este" required /></div>
+            </div>
+            <div class="f-field">
+              <label>Fecha Inicio</label>
+              <div class="f-box"><input type="date" id="mStartDate" required /></div>
+            </div>
+            <div class="f-field">
+              <label>Cantidad de Días</label>
+              <div class="f-box"><input type="number" id="mQty" value="5" min="1" oninput="window.GM_ADMIN.updateManualPreview()" required /></div>
+            </div>
+            <div class="f-field">
+              <label>Subtotal Neto Alquiler + Traslado (RD$)</label>
+              <div class="f-box"><input type="number" id="mNetSubtotal" min="500" oninput="window.GM_ADMIN.updateManualPreview()" required /></div>
+            </div>
+            <div class="f-field">
+              <label>Comisión Green Mile RD (%)</label>
+              <div class="f-box"><input type="number" id="mCommPct" value="12" min="1" max="50" step="0.5" oninput="window.GM_ADMIN.updateManualPreview()" required /></div>
+            </div>
+
+            <!-- Campos Gubernamentales E45 -->
+            <div id="mGovBox" class="f-field full" style="display:none; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:12px; padding:12px;">
+              <strong style="font-size:12px; color:#1E3A8A; display:block; margin-bottom:8px;">🏛️ Datos Expediente Gubernamental (e-CF 45 · Ley 340-06)</strong>
+              <div class="f-grid">
+                <div class="f-field">
+                  <label>No. Orden de Compra / Contrato DGCP</label>
+                  <div class="f-box"><input type="text" id="mGovPo" placeholder="Ej. MOPC-DAF-CM-2026-0148" /></div>
+                </div>
+                <div class="f-field">
+                  <label>No. CAP / Preventivo SIGEF</label>
+                  <div class="f-box"><input type="text" id="mGovCap" placeholder="Ej. CAP-2026-00921" /></div>
+                </div>
+                <div class="f-field">
+                  <label>Correo Institucional (.gob.do)</label>
+                  <div class="f-box"><input type="email" id="mGovEmail" placeholder="compras@institucion.gob.do" /></div>
+                </div>
+                <div class="f-field">
+                  <label>Plazo Libramiento (Días)</label>
+                  <div class="f-box">
+                    <select id="mGovTerms">
+                      <option value="30">30 días</option>
+                      <option value="45" selected>45 días</option>
+                      <option value="60">60 días</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="f-field full">
+                  <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:700;">
+                    <input type="checkbox" id="mGovItbisRet" onchange="window.GM_ADMIN.updateManualPreview()" style="accent-color:var(--orange);" />
+                    <span>Aplicar retención 30% ITBIS estatal (Norma 02-05)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Campo Exención E44 -->
+            <div id="mExemptBox" class="f-field full" style="display:none;">
+              <label>No. Resolución / Carnet Exención DGII (e-CF 44)</label>
+              <div class="f-box"><input type="text" id="mExemptCode" placeholder="Ej. RES-CONFOTUR-2026-0412" /></div>
+            </div>
+
+            <div class="f-field full">
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:700;">
+                <input type="checkbox" id="mIssueNow" checked style="accent-color:var(--orange);" />
+                <span>Emitir secuencia oficial e-NCF inmediatamente al guardar</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="manualCalcPreview" style="background:var(--navy-soft); border:1px solid #CBD5E1; border-radius:12px; padding:12px 14px; margin-top:14px; font-size:12.5px;"></div>
+
+          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+            <button type="button" class="btn btn-ghost" onclick="window.GM_ADMIN.closeModal('newInvoiceModal')">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar Orden y Facturar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: GESTIÓN ADMINISTRATIVA DE UNA ORDEN -->
+  <div class="modal-backdrop" id="manageOrderModal" onclick="if(event.target===this)window.GM_ADMIN.closeModal('manageOrderModal')">
+    <div class="modal-box" style="max-width:740px;">
+      <div class="modal-head">
+        <div>
+          <h3 id="moTitle">Gestionar Orden</h3>
+          <p id="moSub">Control integral: pago, emisión e-NCF, despacho, conduce y liquidación</p>
+        </div>
+        <button type="button" class="modal-close" onclick="window.GM_ADMIN.closeModal('manageOrderModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="manageOrderBody"></div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: DOCUMENTOS IMPRIMIBLES (CONTRATO / FACTURA e-CF / CARÁTULA ESTADO / LIQUIDACIÓN) -->
+  <div class="modal-backdrop" id="printModal" onclick="if(event.target===this)window.GM_ADMIN.closeModal('printModal')">
+    <div class="modal-box" style="max-width:800px;">
+      <div class="modal-head no-print">
+        <div>
+          <h3 id="printModalTitle">Documento Oficial Green Mile RD</h3>
+          <p>Listo para imprimir o guardar como PDF</p>
+        </div>
+        <button type="button" class="modal-close" onclick="window.GM_ADMIN.closeModal('printModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="printModalBody"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  <script src="js/catalog-data.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/dgii-validator.js"></script>
+  <script src="js/billing-engine.js"></script>
+  <script src="js/admin-app.js"></script>
+</body>
+</html>
