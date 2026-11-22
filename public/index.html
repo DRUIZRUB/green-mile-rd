@@ -1120,24 +1120,24 @@
       <div class="sheet-handle"></div>
       <div class="sheet-head">
         <div>
-          <h3>Publicar Equipo en RD</h3>
-          <p>Formulario rápido en 3 pasos</p>
+          <h3>Registrar Equipo en Flota Green Mile</h3>
+          <p>Sube tu maquinaria en 3 pasos • Cobro garantizado y e-NCF</p>
         </div>
-        <button class="close-x" onclick="closeSheet('publishSheet')">&times;</button>
+        <button type="button" class="close-x" onclick="closeSheet('publishSheet')">&times;</button>
       </div>
 
-      <form id="publishForm" onsubmit="submitPublish(event)" style="display:flex; flex-direction:column; overflow:hidden; flex:1;">
-        <div class="sheet-body">
+      <form id="publishForm" novalidate onsubmit="submitPublish(event)" onkeydown="if(event.key==='Enter' && event.target.tagName!=='TEXTAREA' && wizStep<3){event.preventDefault(); stepWizard(1);}" style="display:flex; flex-direction:column; overflow:hidden; flex:1;">
+        <div class="sheet-body" id="publishSheetBody">
           <div class="stepper">
-            <div class="s-pill active" id="ws1">1. Equipo</div>
-            <div class="s-pill" id="ws2">2. Tarifas RD$</div>
-            <div class="s-pill" id="ws3">3. Foto y Datos</div>
+            <div class="s-pill active" id="ws1" style="cursor:pointer;" onclick="goToWizardStep(1)">1. Equipo</div>
+            <div class="s-pill" id="ws2" style="cursor:pointer;" onclick="goToWizardStep(2)">2. Tarifas RD$</div>
+            <div class="s-pill" id="ws3" style="cursor:pointer;" onclick="goToWizardStep(3)">3. Foto y Propietario</div>
           </div>
 
           <!-- Step 1 -->
           <div id="pStep1">
             <div class="f-field full" style="margin-bottom:14px;">
-              <label>Categoría</label>
+              <label>Categoría <small>Obligatorio</small></label>
               <div class="cat-grid-tiles" id="pubCatTiles">
                 <div class="c-tile selected" data-val="Movimiento de Tierra" onclick="pickTile(this)">Movimiento Tierra</div>
                 <div class="c-tile" data-val="Izaje y Grúas" onclick="pickTile(this)">Grúas e Izaje</div>
@@ -1153,16 +1153,16 @@
               <div class="f-field full">
                 <label>Marca y Modelo <small>Obligatorio</small></label>
                 <div class="f-box">
-                  <input type="text" id="pubTitle" placeholder="Ej. Retroexcavadora CAT 416F2" required>
+                  <input type="text" id="pubTitle" placeholder="Ej. Retroexcavadora CAT 416F2">
                 </div>
               </div>
               <div class="f-field">
                 <label>Potencia / Capacidad</label>
-                <div class="f-box"><input type="text" id="pubPower" placeholder="Ej. 95 HP"></div>
+                <div class="f-box"><input type="text" id="pubPower" placeholder="Ej. 95 HP / 20 Ton"></div>
               </div>
               <div class="f-field">
                 <label>Año</label>
-                <div class="f-box"><input type="number" id="pubYear" placeholder="2022"></div>
+                <div class="f-box"><input type="number" id="pubYear" placeholder="2022" min="1970" max="2027"></div>
               </div>
               <div class="f-field full">
                 <label>Detalles y aditamentos incluidos</label>
@@ -1178,21 +1178,21 @@
                 <label>Tarifa por Día <small>Obligatorio</small></label>
                 <div class="f-box">
                   <span class="f-prefix">RD$</span>
-                  <input type="number" id="pubPriceDay" placeholder="16500" oninput="suggestRates()">
+                  <input type="number" id="pubPriceDay" placeholder="16500" min="500" oninput="suggestRates()">
                 </div>
               </div>
               <div class="f-field">
-                <label>Tarifa por Hora</label>
+                <label>Tarifa por Hora <small>Opcional</small></label>
                 <div class="f-box">
                   <span class="f-prefix">RD$</span>
-                  <input type="number" id="pubPriceHour" placeholder="2400">
+                  <input type="number" id="pubPriceHour" placeholder="2400" min="0">
                 </div>
               </div>
               <div class="f-field">
-                <label>Tarifa por Semana</label>
+                <label>Tarifa por Semana <small>Opcional</small></label>
                 <div class="f-box">
                   <span class="f-prefix">RD$</span>
-                  <input type="number" id="pubPriceWeek" placeholder="90000">
+                  <input type="number" id="pubPriceWeek" placeholder="90000" min="0">
                 </div>
               </div>
               <div class="f-field">
@@ -1229,7 +1229,7 @@
                 <label class="switch-row">
                   <div>
                     <strong>Incluye Operador Certificado</strong>
-                    <span>Operador incluido en el precio</span>
+                    <span>Operador incluido en la tarifa diaria</span>
                   </div>
                   <input type="checkbox" id="pubOp" style="display:none;">
                   <div class="sw-knob"></div>
@@ -1254,15 +1254,15 @@
 
             <div class="f-grid">
               <div class="f-field">
-                <label>Propietario / Empresa</label>
+                <label>Propietario / Empresa <small>Obligatorio</small></label>
                 <div class="f-box"><input type="text" id="pubOwner" placeholder="Equipos Ozama SRL"></div>
               </div>
               <div class="f-field">
-                <label>RNC o Cédula</label>
+                <label>RNC o Cédula <small>Obligatorio</small></label>
                 <div class="f-box"><input type="text" id="pubRnc" placeholder="1-31-00000-1"></div>
               </div>
               <div class="f-field full">
-                <label>WhatsApp en RD (uso interno de Green Mile)</label>
+                <label>WhatsApp en RD (confidencial · uso interno) <small>Obligatorio</small></label>
                 <div class="f-box">
                   <span class="f-prefix">+1</span>
                   <input type="tel" id="pubPhone" placeholder="809-555-0199">
@@ -1270,7 +1270,7 @@
               </div>
               <div class="f-field full">
                 <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-muted); text-transform:none; letter-spacing:0;">
-                  <input type="checkbox" id="pubTerms" required style="margin-top:3px; accent-color:var(--orange);">
+                  <input type="checkbox" id="pubTerms" style="margin-top:3px; accent-color:var(--orange);">
                   <span>Acepto las <a href="#" onclick="event.preventDefault(); openSheet('policiesSheet');" style="color:var(--orange); font-weight:700; text-decoration:underline;">Políticas de Intermediación, Cobro y e-NCF (Hi Estratos)</a> de Green Mile RD.</span>
                 </label>
               </div>
@@ -1282,7 +1282,7 @@
           <button type="button" class="btn btn-ghost" id="wBack" style="visibility:hidden;" onclick="stepWizard(-1)">← Atrás</button>
           <div style="display:flex; gap:8px;">
             <button type="button" class="btn btn-navy" id="wNext" onclick="stepWizard(1)">Siguiente →</button>
-            <button type="submit" class="btn btn-primary" id="wSubmit" style="display:none;">Publicar Ahora</button>
+            <button type="submit" class="btn btn-primary" id="wSubmit" style="display:none;">Registrar Equipo</button>
           </div>
         </div>
       </form>
@@ -1811,6 +1811,9 @@
       photoData = '';
       document.getElementById('publishForm').reset();
       document.getElementById('camPreview').style.display = 'none';
+      document.getElementById('camText').style.display = 'block';
+      document.getElementById('pubCat').value = 'Movimiento de Tierra';
+      document.querySelectorAll('#pubCatTiles .c-tile').forEach((t, idx) => t.classList.toggle('selected', idx === 0));
       updateWiz();
       openSheet('publishSheet');
     }
@@ -1852,13 +1855,73 @@
       r.readAsDataURL(f);
     }
 
+    function validateWizardStep(step) {
+      if (step === 1) {
+        if (!document.getElementById('pubCat').value) {
+          toast('Selecciona una categoría'); return false;
+        }
+        if (document.getElementById('pubTitle').value.trim().length < 3) {
+          toast('Ingresa la marca y modelo del equipo');
+          document.getElementById('pubTitle').focus();
+          return false;
+        }
+        const yr = document.getElementById('pubYear').value.trim();
+        if (yr && (Number(yr) < 1970 || Number(yr) > 2027)) {
+          toast('Ingresa un año válido (1970–2027)');
+          document.getElementById('pubYear').focus();
+          return false;
+        }
+      }
+      if (step === 2) {
+        const day = Number(document.getElementById('pubPriceDay').value);
+        if (!(day >= 500)) {
+          toast('Ingresa una tarifa diaria válida (mín. RD$ 500)');
+          document.getElementById('pubPriceDay').focus();
+          return false;
+        }
+      }
+      if (step === 3) {
+        const owner = document.getElementById('pubOwner').value.trim();
+        const rnc = document.getElementById('pubRnc').value.trim();
+        const phoneDigits = document.getElementById('pubPhone').value.replace(/\D/g, '');
+        if (!owner) {
+          toast('Ingresa el nombre del propietario o empresa');
+          document.getElementById('pubOwner').focus();
+          return false;
+        }
+        if (rnc.length < 9) {
+          toast('Ingresa un RNC o Cédula válido para e-NCF y pagos');
+          document.getElementById('pubRnc').focus();
+          return false;
+        }
+        if (phoneDigits.length < 10) {
+          toast('Ingresa un WhatsApp válido de 10 dígitos en RD');
+          document.getElementById('pubPhone').focus();
+          return false;
+        }
+        if (!document.getElementById('pubTerms').checked) {
+          toast('Debes aceptar las políticas de Green Mile RD');
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function goToWizardStep(target) {
+      if (target < wizStep) {
+        wizStep = target;
+        updateWiz();
+        return;
+      }
+      for (let s = wizStep; s < target; s++) {
+        if (!validateWizardStep(s)) return;
+      }
+      wizStep = target;
+      updateWiz();
+    }
+
     function stepWizard(dir) {
-      if (dir === 1 && wizStep === 1 && !document.getElementById('pubTitle').value.trim()) {
-        toast('Ingresa la marca y modelo'); return;
-      }
-      if (dir === 1 && wizStep === 2 && !(Number(document.getElementById('pubPriceDay').value) >= 100)) {
-        toast('Ingresa una tarifa diaria en RD$'); return;
-      }
+      if (dir === 1 && !validateWizardStep(wizStep)) return;
       wizStep = Math.min(3, Math.max(1, wizStep + dir));
       updateWiz();
     }
@@ -1874,14 +1937,18 @@
       document.getElementById('wBack').style.visibility = wizStep > 1 ? 'visible' : 'hidden';
       document.getElementById('wNext').style.display = wizStep < 3 ? 'inline-flex' : 'none';
       document.getElementById('wSubmit').style.display = wizStep === 3 ? 'inline-flex' : 'none';
+      const bodyEl = document.getElementById('publishSheetBody');
+      if (bodyEl) bodyEl.scrollTop = 0;
     }
 
     function submitPublish(e) {
       e.preventDefault();
+      if (!validateWizardStep(1)) { wizStep = 1; updateWiz(); return; }
+      if (!validateWizardStep(2)) { wizStep = 2; updateWiz(); return; }
+      if (!validateWizardStep(3)) { wizStep = 3; updateWiz(); return; }
+
       const owner = document.getElementById('pubOwner').value.trim();
       const phone = document.getElementById('pubPhone').value.trim();
-      if (!owner || !phone) { toast('Completa propietario y WhatsApp'); return; }
-      if (!document.getElementById('pubTerms').checked) { toast('Debes aceptar las políticas de Green Mile RD'); return; }
 
       const day = Number(document.getElementById('pubPriceDay').value);
       const cat = document.getElementById('pubCat').value;
