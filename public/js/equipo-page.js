@@ -451,7 +451,7 @@
         <div style="font-size:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
           <div style="background:var(--bg); padding:10px; border-radius:10px;">
             <strong style="color:var(--navy); display:block;">GESTOR / FACTURADOR</strong>
-            Green Mile Construction RD<br>Facturación e-NCF (Hi Estratos)<br>Cobro y Garantía Centralizada
+            Green Mile Construction RD<br>Facturación Electrónica e-NCF<br>Cobro y Garantía Centralizada
           </div>
           <div style="background:var(--bg); padding:10px; border-radius:10px;">
             <strong style="color:var(--navy); display:block;">CONTRATISTA</strong>
@@ -462,7 +462,7 @@
         <p style="font-size:13px; margin-bottom:12px;"><strong>Plazo:</strong> ${b.qty} ${esc(b.unitLabel)} (${rangeLabel})</p>
         <div style="background:var(--navy-soft); padding:12px; border-radius:10px; font-size:13px; margin-bottom:14px;">
           <div style="display:flex; justify-content:space-between;"><span>Subtotal Neto:</span><span>${GM.fmtRD(b.netSubtotal)}</span></div>
-          ${b.ncf ? `<div style="display:flex; justify-content:space-between;"><span>ITBIS 18% (e-NCF · Hi Estratos):</span><span>${GM.fmtRD(b.itbis)}</span></div>` : ''}
+          ${b.ncf ? `<div style="display:flex; justify-content:space-between;"><span>ITBIS 18% (e-NCF):</span><span>${GM.fmtRD(b.itbis)}</span></div>` : ''}
           <div style="display:flex; justify-content:space-between; font-weight:800; color:var(--navy); border-top:1px solid #CBD5E1; margin-top:6px; padding-top:6px;">
             <span>Total Acordado:</span><span>${GM.fmtRD(b.total)}</span>
           </div>
@@ -633,7 +633,7 @@
                 <div class="spec-item"><span>Operador</span><strong>${it.operator ? 'Incluido en la tarifa' : 'Opcional / Equipo seco'}</strong></div>
                 <div class="spec-item"><span>Traslado Lowboy (Ida)</span><strong>${it.transportCost > 0 ? GM.fmtRD(it.transportCost) : 'Incluido / Retiro en patio'}</strong></div>
                 <div class="spec-item"><span>Disponibilidad</span><strong id="specAvail">${it.busy ? 'En Obra (consultar fecha)' : 'Disponible Hoy'}</strong></div>
-                <div class="spec-item"><span>Facturación Fiscal</span><strong>Comprobante e-NCF (e-CF 31 · Hi Estratos)</strong></div>
+                <div class="spec-item"><span>Facturación Fiscal</span><strong>Comprobante e-NCF (e-CF 31 · DGII)</strong></div>
               </div>
 
               <h3 class="section-label">Descripción y Aditamentos</h3>
@@ -644,7 +644,7 @@
                 <div class="owner-meta">
                   <small>Cobro y Garantía • Green Mile RD</small>
                   <strong>Equipo Verificado #GM-${esc(it.id)}</strong>
-                  <span>Base en ${esc(it.city)} • Facturación e-NCF (Hi Estratos) • Coordinación directa vía Green Mile</span>
+                  <span>Base en ${esc(it.city)} • Facturación Electrónica e-NCF • Coordinación directa vía Green Mile</span>
                 </div>
                 <div class="owner-actions">
                   <a class="btn btn-wa" target="_blank" rel="noopener" href="${waOwnerHref}">💬 Solicitar vía Green Mile</a>
@@ -661,7 +661,7 @@
             <div class="booking-head">
               <div>
                 <h2>Cotizar y Contratar</h2>
-                <p>Cálculo con ITBIS (e-NCF · Hi Estratos) y firma digital</p>
+                <p>Cálculo con ITBIS (e-NCF) y firma digital</p>
               </div>
               <button type="button" class="pro-pill ${state.isPro ? 'active' : ''}" id="bookingProBtn" onclick="window.GM_DETAIL.openSheet('proSheet')">
                 ${state.isPro ? '⭐ Pro (-10%)' : '⭐ Plan Pro'}
@@ -733,7 +733,7 @@
                   <div class="f-field full">
                     <label class="switch-row">
                       <div>
-                        <strong>Comprobante Crédito Fiscal (e-NCF · Hi Estratos)</strong>
+                        <strong>Comprobante Crédito Fiscal (e-NCF · e-CF 31)</strong>
                         <span>Agrega ITBIS 18% desglosado</span>
                       </div>
                       <input type="checkbox" id="qNcf" checked style="display:none;" onchange="window.GM_DETAIL.calcReceipt()">
