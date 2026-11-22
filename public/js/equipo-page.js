@@ -620,7 +620,10 @@
         item: currentItem,
         onAddressResolved: (addr) => {
           const inp = document.getElementById('qAddr');
-          if (inp && addr) inp.value = addr;
+          if (inp && addr) {
+            inp.value = addr;
+            syncClearAddrBtn();
+          }
         },
         onRoutingStart: (pt) => {
           geoState.lat = pt.lat;
@@ -648,13 +651,218 @@
     updateGeoUI();
   }
 
-  async function searchWorksiteAddr() {
-    const inp = document.getElementById('qAddr');
+  let geoSearchTimer = null;
+  let geoAbortCtrl = null;
+  let geoActiveIdx = -1;
+  let geoOutsideBound = false;
+
+  function highlightMatch(text, query) {
+    const raw = String(text || '');
+    const q = String(query || '').trim();
+    if (!q || q.length < 2) return esc(raw);
+    const idx = raw.toLowerCase().indexOf(q.toLowerCase());
+    if (idx === -1) return esc(raw);
+    return esc(raw.slice(0, idx)) + '<mark class="geo-hl">' + esc(raw.slice(idx, idx + q.length)) + '</mark>' + esc(raw.slice(idx + q.length));
+  }
+
+  function closeGeoSuggestions() {
     const listBox = document.getElementById('qAddrSuggestions');
+    if (listBox) {
+      listBox.classList.remove('open');
+    }
+    geoActiveIdx = -1;
+  }
+
+  function bindGeoOutsideClose() {
+    if (geoOutsideBound) return;
+    geoOutsideBound = true;
+    document.addEventListener('click', (ev) => {
+      const wrap = document.getElementById('geoSearchWrap');
+      if (wrap && !wrap.contains(ev.target)) {
+        closeGeoSuggestions();
+      }
+    });
+  }
+
+  function renderGeoSuggestions(results, opts = {}) {
+    const listBox = document.getElementById('qAddrSuggestions');
+    if (!listBox) return;
+    const q = String(opts.query || '').trim();
+    const isLoading = Boolean(opts.loading);
+    const origin = (window.GM_GEO && currentItem) ? window.GM_GEO.getEquipmentOrigin(currentItem) : null;
+    geoSuggestions = Array.isArray(results) ? results : [];
+    if (geoActiveIdx >= geoSuggestions.length) geoActiveIdx = -1;
+
+    const gpsActionHtml = `
+      <button type="button" class="geo-sugg-gps" onclick="window.GM_DETAIL.useMyLocation()">
+        <span class="geo-sugg-ic geo-sugg-ic-gps">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
+        </span>
+        <span class="geo-sugg-txt">
+          <strong>Usar mi ubicación GPS actual</strong>
+          <small>Detecta el punto exacto de tu dispositivo en tiempo real</small>
+        </span>
+      </button>
+    `;
+
+    const sectionTitle = q.length < 2
+      ? `<div class="geo-sugg-section">${origin ? `Zonas cercanas a ${esc(currentItem.city)} y frecuentes en RD` : 'Zonas frecuentes en República Dominicana'}</div>`
+      : (isLoading
+          ? `<div class="geo-sugg-section">Buscando calles y lugares para "${esc(q)}" en RD…</div>`
+          : `<div class="geo-sugg-section">${geoSuggestions.length ? 'Lugares y direcciones en República Dominicana' : 'Sin coincidencias exactas — toca el mapa abajo'}</div>`);
+
+    const itemsHtml = geoSuggestions.map((r, idx) => {
+      const primary = r.primary || (r.label ? r.label.split(',')[0] : '');
+      const secondary = r.secondary || (r.label && r.label.includes(',') ? r.label.split(',').slice(1).join(',').trim() : 'República Dominicana');
+      const distBadge = Number.isFinite(r.approxKm) ? `<span class="geo-sugg-dist">~${r.approxKm} km</span>` : '';
+      const activeCls = idx === geoActiveIdx ? ' active' : '';
+      return `
+        <button type="button" class="geo-sugg-item${activeCls}" role="option" aria-selected="${idx === geoActiveIdx ? 'true' : 'false'}"
+          onmousedown="event.preventDefault(); window.GM_DETAIL.pickGeoSuggestion(${idx})"
+          onclick="window.GM_DETAIL.pickGeoSuggestion(${idx})">
+          <span class="geo-sugg-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          </span>
+          <span class="geo-sugg-txt">
+            <strong>${highlightMatch(primary, q)}</strong>
+            <small>${esc(secondary)}</small>
+          </span>
+          ${distBadge}
+        </button>
+      `;
+    }).join('');
+
+    const footerHtml = `
+      <div class="geo-sugg-foot">
+        <span>🗺️ También puedes tocar o arrastrar el pin naranja en el mapa</span>
+      </div>
+    `;
+
+    listBox.innerHTML = gpsActionHtml + sectionTitle + itemsHtml + footerHtml;
+    listBox.classList.add('open');
+  }
+
+  function syncClearAddrBtn() {
+    const inp = document.getElementById('qAddr');
+    const clr = document.getElementById('qAddrClearBtn');
+    if (clr && inp) {
+      clr.style.display = inp.value.trim().length > 0 ? 'inline-flex' : 'none';
+    }
+  }
+
+  function onWorksiteFocus() {
+    bindGeoOutsideClose();
+    if (!window.GM_GEO) return;
+    const inp = document.getElementById('qAddr');
+    const q = inp ? inp.value.trim() : '';
+    const origin = currentItem ? window.GM_GEO.getEquipmentOrigin(currentItem) : null;
+    syncClearAddrBtn();
+
+    if (q.length < 2) {
+      const nearby = window.GM_GEO.searchLocalPlaces('', origin);
+      renderGeoSuggestions(nearby, { query: '', loading: false });
+    } else {
+      onWorksiteInput();
+    }
+  }
+
+  function onWorksiteInput() {
+    bindGeoOutsideClose();
+    const inp = document.getElementById('qAddr');
     if (!inp || !window.GM_GEO) return;
     const q = inp.value.trim();
-    if (q.length < 3) {
-      toast('Escribe sector, calle o ciudad para ubicar en el mapa');
+    const origin = currentItem ? window.GM_GEO.getEquipmentOrigin(currentItem) : null;
+    syncClearAddrBtn();
+    geoActiveIdx = -1;
+
+    if (geoSearchTimer) clearTimeout(geoSearchTimer);
+    if (geoAbortCtrl) {
+      try { geoAbortCtrl.abort(); } catch (_) {}
+      geoAbortCtrl = null;
+    }
+
+    if (q.length < 2) {
+      const nearby = window.GM_GEO.searchLocalPlaces('', origin);
+      renderGeoSuggestions(nearby, { query: '', loading: false });
+      return;
+    }
+
+    // 1) Coordenadas directas o link pegado de Google Maps (respuesta inmediata)
+    const direct = window.GM_GEO.parseCoordinatesOrGoogleMapsUrl ? window.GM_GEO.parseCoordinatesOrGoogleMapsUrl(q) : null;
+    if (direct) {
+      if (origin) direct.approxKm = Math.max(1, Math.round(window.GM_GEO.haversineKm(origin, direct) * 1.25));
+      renderGeoSuggestions([direct], { query: q, loading: false });
+      return;
+    }
+
+    // 2) Sugerencias locales instantáneas (0ms) mientras se consulta el geocodificador en vivo
+    const instant = window.GM_GEO.searchLocalPlaces ? window.GM_GEO.searchLocalPlaces(q, origin) : [];
+    renderGeoSuggestions(instant, { query: q, loading: true });
+
+    // 3) Consulta en vivo (Photon + Nominatim RD) con debounce 260ms
+    geoSearchTimer = setTimeout(async () => {
+      const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      geoAbortCtrl = ctrl;
+      try {
+        const liveResults = await window.GM_GEO.searchAddress(q, {
+          origin,
+          signal: ctrl ? ctrl.signal : undefined
+        });
+        // Verificar que el texto no haya cambiado mientras llegaba la respuesta
+        const curInp = document.getElementById('qAddr');
+        if (!curInp || curInp.value.trim() !== q) return;
+        renderGeoSuggestions(liveResults, { query: q, loading: false });
+      } catch (_) {}
+    }, 260);
+  }
+
+  function onWorksiteKeydown(ev) {
+    const listBox = document.getElementById('qAddrSuggestions');
+    const isOpen = Boolean(listBox && listBox.classList.contains('open'));
+    if (ev.key === 'ArrowDown') {
+      ev.preventDefault();
+      if (!isOpen) { onWorksiteFocus(); return; }
+      if (geoSuggestions.length > 0) {
+        geoActiveIdx = (geoActiveIdx + 1) % geoSuggestions.length;
+        const inp = document.getElementById('qAddr');
+        renderGeoSuggestions(geoSuggestions, { query: inp ? inp.value.trim() : '', loading: false });
+      }
+    } else if (ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      if (isOpen && geoSuggestions.length > 0) {
+        geoActiveIdx = (geoActiveIdx - 1 + geoSuggestions.length) % geoSuggestions.length;
+        const inp = document.getElementById('qAddr');
+        renderGeoSuggestions(geoSuggestions, { query: inp ? inp.value.trim() : '', loading: false });
+      }
+    } else if (ev.key === 'Escape') {
+      closeGeoSuggestions();
+    } else if (ev.key === 'Enter') {
+      ev.preventDefault();
+      if (isOpen && geoSuggestions.length > 0) {
+        pickGeoSuggestion(geoActiveIdx >= 0 ? geoActiveIdx : 0);
+      } else {
+        searchWorksiteAddr();
+      }
+    }
+  }
+
+  function clearWorksiteAddr() {
+    const inp = document.getElementById('qAddr');
+    if (inp) {
+      inp.value = '';
+      inp.focus();
+    }
+    syncClearAddrBtn();
+    onWorksiteFocus();
+  }
+
+  async function searchWorksiteAddr() {
+    const inp = document.getElementById('qAddr');
+    if (!inp || !window.GM_GEO) return;
+    const q = inp.value.trim();
+    const origin = currentItem ? window.GM_GEO.getEquipmentOrigin(currentItem) : null;
+    if (q.length < 2) {
+      onWorksiteFocus();
       inp.focus();
       return;
     }
@@ -663,38 +871,48 @@
       card.className = 'geo-status-card loading';
       card.textContent = `🔍 Buscando "${q}" en República Dominicana…`;
     }
-    const results = await window.GM_GEO.searchAddress(q);
-    geoSuggestions = results;
+    const results = await window.GM_GEO.searchAddress(q, { origin });
     if (!results.length) {
-      if (listBox) listBox.innerHTML = '';
+      renderGeoSuggestions([], { query: q, loading: false });
       updateGeoUI();
       toast('No se encontró esa dirección. Toca directamente el punto en el mapa.');
       return;
     }
     if (results.length === 1) {
+      geoSuggestions = results;
       pickGeoSuggestion(0);
       return;
     }
-    if (listBox) {
-      listBox.innerHTML = results.map((r, idx) => `
-        <button type="button" class="dgii-sugg-item" onclick="window.GM_DETAIL.pickGeoSuggestion(${idx})">
-          <strong>📍 ${esc(r.label)}</strong>
-          <span>${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}</span>
-        </button>
-      `).join('');
-    }
+    renderGeoSuggestions(results, { query: q, loading: false });
     updateGeoUI();
   }
 
   function pickGeoSuggestion(idx) {
     const item = geoSuggestions[idx];
-    const listBox = document.getElementById('qAddrSuggestions');
-    if (listBox) listBox.innerHTML = '';
-    if (!item || !geoPicker) return;
+    closeGeoSuggestions();
+    if (!item) return;
+    const inp = document.getElementById('qAddr');
+    if (inp && item.label) {
+      inp.value = item.label;
+      syncClearAddrBtn();
+    }
+    if (!geoPicker) return;
     geoPicker.setWorksite(item.lat, item.lng, { addressLabel: item.label, shouldReverse: false });
   }
 
+  function toggleWorksiteMapLayer() {
+    if (!geoPicker || !geoPicker.setTileLayer) return;
+    const cur = geoPicker.getTileLayer ? geoPicker.getTileLayer() : 'streets';
+    const next = cur === 'satellite' ? 'streets' : 'satellite';
+    geoPicker.setTileLayer(next);
+    const btn = document.getElementById('geoLayerToggleBtn');
+    if (btn) {
+      btn.textContent = next === 'satellite' ? '🗺️ Calles' : '🛰️ Satélite';
+    }
+  }
+
   function useMyLocation() {
+    closeGeoSuggestions();
     if (!navigator.geolocation) {
       toast('Tu navegador no soporta geolocalización GPS');
       return;
@@ -1181,7 +1399,7 @@
   function renderContractModalBody() {
     if (!activeContractRecord || !BILL) return;
     const b = activeContractRecord;
-    const logoSrc = BASE + 'logo.png';
+    const logoSrc = BASE + 'logo.png?v=20261122-3';
     const isGov = (b.ncfType === 'E45');
 
     let docHtml = '';
@@ -1555,22 +1773,26 @@
                     </div>
                   </div>
 
-                  <!-- MAPA GEORREFERENCIADO Y DIRECCIÓN DE OBRA -->
+                  <!-- MAPA GEORREFERENCIADO Y DIRECCIÓN DE OBRA (ESTILO GOOGLE MAPS) -->
                   <div class="f-field full">
-                    <label>Dirección de Obra en RD <small class="req-tag">Mapa y Distancia</small></label>
-                    <div class="geo-input-row">
-                      <div class="f-box">
-                        <input type="text" id="qAddr" placeholder="Sector, calle o proyecto (ej. Verón, Punta Cana)" enterkeyhint="search" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.GM_DETAIL.searchWorksiteAddr();}" required>
+                    <label for="qAddr">Dirección de Obra en RD <small class="req-tag">Mapa y Distancia</small></label>
+                    <div class="geo-search-wrap" id="geoSearchWrap">
+                      <div class="geo-input-row">
+                        <div class="f-box geo-input-box">
+                          <svg class="geo-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                          <input type="text" id="qAddr" autocomplete="off" spellcheck="false" placeholder="Busca sector, calle, proyecto o link de Maps..." enterkeyhint="search" onfocus="window.GM_DETAIL.onWorksiteFocus()" oninput="window.GM_DETAIL.onWorksiteInput()" onkeydown="window.GM_DETAIL.onWorksiteKeydown(event)" required>
+                          <button type="button" id="qAddrClearBtn" class="geo-clear-btn" style="display:none;" onclick="window.GM_DETAIL.clearWorksiteAddr()" aria-label="Limpiar dirección">&times;</button>
+                        </div>
+                        <button type="button" class="geo-btn geo-btn-gps" onclick="window.GM_DETAIL.useMyLocation()" title="Usar mi ubicación GPS actual">📍 GPS</button>
                       </div>
-                      <button type="button" class="geo-btn" onclick="window.GM_DETAIL.searchWorksiteAddr()" title="Buscar en mapa">🔍 Buscar</button>
-                      <button type="button" class="geo-btn geo-btn-gps" onclick="window.GM_DETAIL.useMyLocation()" title="Usar mi ubicación GPS">📍 GPS</button>
+                      <div id="qAddrSuggestions" class="geo-sugg-dropdown" role="listbox" aria-label="Sugerencias de dirección en República Dominicana"></div>
                     </div>
-                    <div id="qAddrSuggestions" class="dgii-sugg-list"></div>
                     <div class="geo-map-wrap">
                       <div id="worksiteMap" class="geo-map-canvas" aria-label="Mapa de ubicación de obra"></div>
+                      <button type="button" id="geoLayerToggleBtn" class="geo-layer-toggle" onclick="window.GM_DETAIL.toggleWorksiteMapLayer()" title="Cambiar entre calles y vista satelital">🛰️ Satélite</button>
                       <div class="geo-map-legend">
                         <span><i class="geo-pin-dot" style="background:#0D223A;"></i> Base (${esc(it.city)})</span>
-                        <span><i class="geo-pin-dot" style="background:#B85A27;"></i> Obra (toca o arrastra)</span>
+                        <span><i class="geo-pin-dot" style="background:#B85A27;"></i> Obra (toca o arrastra pin)</span>
                       </div>
                     </div>
                     <div id="qGeoStatus" class="geo-status-card"></div>
@@ -1865,6 +2087,12 @@
     calNextMonth,
     calPickDate,
     calClear,
+    onWorksiteFocus,
+    onWorksiteInput,
+    onWorksiteKeydown,
+    clearWorksiteAddr,
+    closeGeoSuggestions,
+    toggleWorksiteMapLayer,
     searchWorksiteAddr,
     pickGeoSuggestion,
     useMyLocation,
