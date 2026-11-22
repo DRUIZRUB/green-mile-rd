@@ -70,8 +70,11 @@ deploy_all() {
     log_info "Usando cuenta de servicio local ($sa_file) para autenticación Firebase..."
   fi
 
-  log_info "Desplegando Cloud Functions v2 (inyectando variables desde functions/.env), Reglas Firestore y Hosting al proyecto $FIREBASE_PROJECT..."
-  (cd "$ROOT_DIR" && npx --yes firebase-tools deploy --only functions,firestore:rules,hosting --project "$FIREBASE_PROJECT" --non-interactive)
+  log_info "Publicando firestore.rules en producción vía Firebase Admin SDK..."
+  node "$ROOT_DIR/scripts/deploy-firestore-rules.mjs"
+
+  log_info "Desplegando Cloud Functions v2 (inyectando variables desde functions/.env) y Hosting al proyecto $FIREBASE_PROJECT..."
+  (cd "$ROOT_DIR" && npx --yes firebase-tools deploy --only functions,hosting --project "$FIREBASE_PROJECT" --non-interactive)
 
   echo ""
   log_ok "Despliegue completado. Verifica el estado en vivo en:"

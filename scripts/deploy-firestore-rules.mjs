@@ -16,12 +16,11 @@ const req = createRequire(path.join(FUNCTIONS_DIR, 'package.json'));
 const admin = req('firebase-admin');
 
 function findServiceAccountPath() {
+  const saEnv = process.env.GM_LOCAL_SERVICE_ACCOUNT_PATH || process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
   const candidates = [
     process.env.GOOGLE_APPLICATION_CREDENTIALS,
-    process.env.FIREBASE_SERVICE_ACCOUNT_PATH
-      ? (path.isAbsolute(process.env.FIREBASE_SERVICE_ACCOUNT_PATH)
-          ? process.env.FIREBASE_SERVICE_ACCOUNT_PATH
-          : path.resolve(FUNCTIONS_DIR, process.env.FIREBASE_SERVICE_ACCOUNT_PATH))
+    saEnv
+      ? (path.isAbsolute(saEnv) ? saEnv : path.resolve(FUNCTIONS_DIR, saEnv))
       : null,
     DEFAULT_SA
   ].filter(Boolean);
