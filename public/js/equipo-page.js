@@ -164,9 +164,181 @@
       <div class="r-row"><span>${GM.fmtRD(b.unit)} × ${b.qty} ${b.label}</span><span>${GM.fmtRD(b.base)}</span></div>
       ${b.disc > 0 ? `<div class="r-row" style="color:var(--success); font-weight:700;"><span>Descuento Pro (-10%)</span><span>- ${GM.fmtRD(b.disc)}</span></div>` : ''}
       ${b.trans > 0 ? `<div class="r-row"><span>Traslado Lowboy</span><span>${GM.fmtRD(b.trans)}</span></div>` : ''}
-      ${b.ncf ? `<div class="r-row"><span>ITBIS 18% (B01)</span><span>${GM.fmtRD(b.itbis)}</span></div>` : ''}
+      ${b.ncf ? `<div class="r-row"><span>ITBIS 18% (e-NCF)</span><span>${GM.fmtRD(b.itbis)}</span></div>` : ''}
       <div class="r-total"><span>Total a Pagar</span><span>${GM.fmtRD(b.total)}</span></div>
     `;
+  }
+
+  /* =========================================================
+     CALENDARIO DE DISPONIBILIDAD ESTILO AIRBNB
+     ========================================================= */
+  const calState = {
+    viewYear: new Date().getFullYear(),
+    viewMonth: new Date().getMonth(),
+    start: '',
+    end: ''
+  };
+
+  function toISO(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function parseISO(iso) {
+    const [y, m, d] = iso.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function fmtShortDate(iso) {
+    if (!iso) return '—';
+    const d = parseISO(iso);
+    return d.toLocaleDateString('es-DO', { day: 'numeric', month: 'short' });
+  }
+
+  function getBookedDateSet() {
+    const set = new Set();
+    if (!currentItem) return set;
+    const eqBookings = (state.bookings || []).filter(b =>
+      String(b.equipmentId) === String(currentItem.id) || b.title === currentItem.title
+    );
+    eqBookings.forEach(b => {
+      if (!b.startDate) return;
+      const s = parseISO(b.startDate);
+      const days = b.endDate
+        ? Math.max(1, Math.round((parseISO(b.endDate) - s) / 86400000) + 1)
+        : Math.max(1, Number(b.qty) || 1);
+      for (let i = 0; i < days; i++) {
+        const cur = new Date(s);
+        cur.setDate(s.getDate() + i);
+        set.add(toISO(cur));
+      }
+    });
+    if (currentItem.busy && set.size === 0) {
+      const today = new Date();
+      for (let i = 0; i < 3; i++) {
+        const cur = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+        set.add(toISO(cur));
+      }
+    }
+    return set;
+  }
+
+  function hasBookedInRange(startISO, endISO, bookedSet) {
+    const s = parseISO(startISO);
+    const e = parseISO(endISO);
+    for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+      if (bookedSet.has(toISO(d))) return true;
+    }
+    return false;
+  }
+
+  function renderCalendar() {
+    const grid = document.getElementById('calDays');
+    const titleEl = document.getElementById('calTitle');
+    const sumEl = document.getElementById('calSummaryText');
+    if (!grid || !titleEl) return;
+
+    const bookedSet = getBookedDateSet();
+    const todayISO = toISO(new Date());
+    const first = new Date(calState.viewYear, calState.viewMonth, 1);
+    const lastDay = new Date(calState.viewYear, calState.viewMonth + 1, 0).getDate();
+    const startWeekday = first.getDay();
+
+    titleEl.textContent = first.toLocaleDateString('es-DO', { month: 'long', year: 'numeric' });
+
+    let html = '';
+    for (let i = 0; i < startWeekday; i++) {
+      html += `<div></div>`;
+    }
+    for (let day = 1; day <= lastDay; day++) {
+      const iso = toISO(new Date(calState.viewYear, calState.viewMonth, day));
+      const isPast = iso < todayISO;
+      const isBooked = bookedSet.has(iso);
+      const isToday = iso === todayISO;
+      const isStart = calState.start && iso === calState.start;
+      const isEnd = calState.end && iso === calState.end;
+      const inRange = calState.start && calState.end && iso > calState.start && iso < calState.end;
+
+      const cls = ['cal-day'];
+      if (isToday) cls.push('today');
+      if (isPast) cls.push('past');
+      else if (isBooked) cls.push('booked');
+      if (inRange) cls.push('in-range');
+      if (isStart) cls.push('start');
+      if (isEnd) cls.push('end');
+
+      const disabled = isPast || isBooked;
+      const tip = isBooked ? 'Ocupado / En obra' : (isPast ? 'Fecha pasada' : `Seleccionar ${iso}`);
+      html += `<button type="button" class="${cls.join(' ')}" title="${tip}" ${disabled ? 'disabled' : `onclick="window.GM_DETAIL.calPickDate('${iso}')"`}>${day}</button>`;
+    }
+    grid.innerHTML = html;
+
+    if (sumEl) {
+      if (calState.start && calState.end) {
+        const diff = Math.round((parseISO(calState.end) - parseISO(calState.start)) / 86400000) + 1;
+        sumEl.innerHTML = `<strong>${fmtShortDate(calState.start)} → ${fmtShortDate(calState.end)}</strong> · ${diff} ${diff === 1 ? 'día' : 'días'}`;
+      } else if (calState.start) {
+        sumEl.innerHTML = `Inicio: <strong>${fmtShortDate(calState.start)}</strong> · Elige fecha fin`;
+      } else {
+        sumEl.textContent = 'Selecciona fecha de inicio y fin en obra';
+      }
+    }
+  }
+
+  function calPickDate(iso) {
+    const bookedSet = getBookedDateSet();
+    if (bookedSet.has(iso)) return;
+    const modeEl = document.getElementById('qMode');
+    const mode = modeEl ? modeEl.value : 'day';
+
+    if (mode === 'hour') {
+      calState.start = iso;
+      calState.end = iso;
+    } else if (!calState.start || (calState.start && calState.end && calState.start !== calState.end) || iso < calState.start) {
+      calState.start = iso;
+      calState.end = iso;
+    } else {
+      if (hasBookedInRange(calState.start, iso, bookedSet)) {
+        toast('Ese rango incluye días ya reservados en obra');
+        return;
+      }
+      calState.end = iso;
+    }
+
+    const startInput = document.getElementById('qStart');
+    const qtyInput = document.getElementById('qQty');
+    if (startInput) startInput.value = calState.start;
+
+    if (mode === 'day' && qtyInput && calState.start && calState.end) {
+      const days = Math.round((parseISO(calState.end) - parseISO(calState.start)) / 86400000) + 1;
+      qtyInput.value = days;
+    } else if (mode === 'week' && qtyInput && calState.start && calState.end) {
+      const days = Math.round((parseISO(calState.end) - parseISO(calState.start)) / 86400000) + 1;
+      qtyInput.value = Math.max(1, Math.ceil(days / 6));
+    }
+
+    renderCalendar();
+    calcReceipt();
+  }
+
+  function calPrevMonth() {
+    calState.viewMonth--;
+    if (calState.viewMonth < 0) { calState.viewMonth = 11; calState.viewYear--; }
+    renderCalendar();
+  }
+
+  function calNextMonth() {
+    calState.viewMonth++;
+    if (calState.viewMonth > 11) { calState.viewMonth = 0; calState.viewYear++; }
+    renderCalendar();
+  }
+
+  function calClear() {
+    calState.start = '';
+    calState.end = '';
+    renderCalendar();
   }
 
   function setupSig() {
@@ -206,6 +378,10 @@
 
   function confirmRent(e) {
     e.preventDefault();
+    if (!calState.start) {
+      toast('Selecciona las fechas de alquiler en el calendario');
+      return;
+    }
     if (!sigSigned) {
       toast('Dibuja tu firma en pantalla para continuar');
       return;
@@ -214,6 +390,7 @@
     const sig = document.getElementById('sigCanvas').toDataURL('image/png');
     const rec = {
       id: Date.now(),
+      equipmentId: currentItem.id,
       title: currentItem.title,
       city: currentItem.city,
       owner: currentItem.owner,
@@ -222,7 +399,8 @@
       renter: document.getElementById('qRenter').value.trim(),
       renterRnc: document.getElementById('qRnc').value.trim(),
       address: document.getElementById('qAddr').value.trim(),
-      startDate: document.getElementById('qStart').value,
+      startDate: calState.start,
+      endDate: calState.end || calState.start,
       qty: b.qty,
       unitLabel: b.label,
       netSubtotal: b.net,
@@ -249,12 +427,18 @@
     const specAvail = document.getElementById('specAvail');
     if (specAvail) specAvail.textContent = 'Reservado / En Obra';
 
+    calState.start = '';
+    calState.end = '';
+    renderCalendar();
     openContract(rec);
-    toast('¡Contrato emitido y firmado!');
+    toast('¡Contrato emitido y fechas reservadas!');
   }
 
   function openContract(b) {
     const logoSrc = BASE + 'logo.png';
+    const rangeLabel = b.endDate && b.endDate !== b.startDate
+      ? `del ${esc(b.startDate)} al ${esc(b.endDate)}`
+      : `desde ${esc(b.startDate)}`;
     document.getElementById('contractBody').innerHTML = `
       <div style="border:1.5px solid var(--border); border-radius:14px; padding:20px; background:#fff;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--navy); padding-bottom:12px; margin-bottom:14px; gap:10px;">
@@ -266,8 +450,8 @@
         </div>
         <div style="font-size:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
           <div style="background:var(--bg); padding:10px; border-radius:10px;">
-            <strong style="color:var(--navy); display:block;">ARRENDADOR</strong>
-            ${esc(b.owner)}<br>RNC: ${esc(b.ownerRnc)}<br>Tel: +1 ${esc(b.ownerPhone)}
+            <strong style="color:var(--navy); display:block;">GESTOR / FACTURADOR</strong>
+            Green Mile Construction RD<br>Facturación e-NCF (Hi Estratos)<br>Cobro y Garantía Centralizada
           </div>
           <div style="background:var(--bg); padding:10px; border-radius:10px;">
             <strong style="color:var(--navy); display:block;">CONTRATISTA</strong>
@@ -275,10 +459,10 @@
           </div>
         </div>
         <p style="font-size:13px; margin-bottom:6px;"><strong>Equipo:</strong> ${esc(b.title)} (${esc(b.city)})</p>
-        <p style="font-size:13px; margin-bottom:12px;"><strong>Plazo:</strong> ${b.qty} ${esc(b.unitLabel)} desde ${esc(b.startDate)}</p>
+        <p style="font-size:13px; margin-bottom:12px;"><strong>Plazo:</strong> ${b.qty} ${esc(b.unitLabel)} (${rangeLabel})</p>
         <div style="background:var(--navy-soft); padding:12px; border-radius:10px; font-size:13px; margin-bottom:14px;">
           <div style="display:flex; justify-content:space-between;"><span>Subtotal Neto:</span><span>${GM.fmtRD(b.netSubtotal)}</span></div>
-          ${b.ncf ? `<div style="display:flex; justify-content:space-between;"><span>ITBIS 18% (NCF B01):</span><span>${GM.fmtRD(b.itbis)}</span></div>` : ''}
+          ${b.ncf ? `<div style="display:flex; justify-content:space-between;"><span>ITBIS 18% (e-NCF · Hi Estratos):</span><span>${GM.fmtRD(b.itbis)}</span></div>` : ''}
           <div style="display:flex; justify-content:space-between; font-weight:800; color:var(--navy); border-top:1px solid #CBD5E1; margin-top:6px; padding-top:6px;">
             <span>Total Acordado:</span><span>${GM.fmtRD(b.total)}</span>
           </div>
@@ -501,11 +685,30 @@
                     <label>Cantidad</label>
                     <div class="f-box"><input type="number" id="qQty" value="3" min="1" oninput="window.GM_DETAIL.calcReceipt()" required></div>
                   </div>
-                  <div class="f-field">
-                    <label>Inicio en Obra</label>
-                    <div class="f-box"><input type="date" id="qStart" value="${today}" min="${today}" required></div>
+                  <div class="f-field full">
+                    <label>Calendario de Disponibilidad (Inicio → Fin)</label>
+                    <input type="hidden" id="qStart" value="${today}">
+                    <div class="cal-box">
+                      <div class="cal-head">
+                        <button type="button" class="cal-nav-btn" onclick="window.GM_DETAIL.calPrevMonth()" aria-label="Mes anterior">‹</button>
+                        <span class="cal-title" id="calTitle"></span>
+                        <button type="button" class="cal-nav-btn" onclick="window.GM_DETAIL.calNextMonth()" aria-label="Mes siguiente">›</button>
+                      </div>
+                      <div class="cal-weekdays">
+                        <span>Do</span><span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span>
+                      </div>
+                      <div class="cal-days" id="calDays"></div>
+                      <div class="cal-summary">
+                        <span id="calSummaryText">Selecciona fecha de inicio y fin en obra</span>
+                        <button type="button" style="border:none; background:none; color:var(--orange); font-weight:700; font-size:11.5px; cursor:pointer;" onclick="window.GM_DETAIL.calClear()">Limpiar</button>
+                      </div>
+                      <div class="cal-legend">
+                        <span><i class="cal-dot" style="background:var(--orange);"></i> Seleccionado</span>
+                        <span><i class="cal-dot" style="background:#CBD5E1;"></i> Ocupado / En obra</span>
+                      </div>
+                    </div>
                   </div>
-                  <div class="f-field">
+                  <div class="f-field full">
                     <label>Traslado Lowboy</label>
                     <div class="f-box">
                       <select id="qTrans" onchange="window.GM_DETAIL.calcReceipt()">
@@ -530,7 +733,7 @@
                   <div class="f-field full">
                     <label class="switch-row">
                       <div>
-                        <strong>Comprobante Crédito Fiscal (NCF B01)</strong>
+                        <strong>Comprobante Crédito Fiscal (e-NCF · Hi Estratos)</strong>
                         <span>Agrega ITBIS 18% desglosado</span>
                       </div>
                       <input type="checkbox" id="qNcf" checked style="display:none;" onchange="window.GM_DETAIL.calcReceipt()">
@@ -548,7 +751,7 @@
                 </div>
 
                 <div class="receipt" id="qReceipt"></div>
-                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:14px; padding:13px;">Firmar y Generar Contrato PDF</button>
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:14px; padding:13px;">Firmar y Reservar Fechas</button>
               </form>
             </div>
           </div>
@@ -572,6 +775,7 @@
     `;
 
     updateFavoriteButtons();
+    renderCalendar();
     setupSig();
     calcReceipt();
   }
@@ -585,7 +789,11 @@
     activatePro,
     calcReceipt,
     clearSig,
-    confirmRent
+    confirmRent,
+    calPrevMonth,
+    calNextMonth,
+    calPickDate,
+    calClear
   };
 
   async function initPage() {
