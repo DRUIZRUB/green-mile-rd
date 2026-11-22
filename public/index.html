@@ -6,8 +6,19 @@
   <meta name="theme-color" content="#0D223A" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Green Mile App — Maquinaria en República Dominicana</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+  <title>Green Mile Construction RD — Maquinaria en República Dominicana</title>
   <meta name="description" content="App móvil y plataforma web para alquilar maquinaria pesada, publicar licitaciones de obra y firmar contratos digitales con NCF en República Dominicana." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Green Mile Construction RD" />
+  <meta property="og:title" content="Green Mile Construction RD — Alquiler de Maquinaria Pesada" />
+  <meta property="og:description" content="Plataforma profesional para alquilar maquinaria pesada en toda la República Dominicana con validación DGII, mapa de distancia, contrato digital y e-NCF." />
+  <meta property="og:image" content="https://green-mile-rd.web.app/img/og/green-mile-og.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
       --navy: #0D223A;
@@ -37,7 +48,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.45;
@@ -71,10 +82,11 @@
 
     /* Top App Bar */
     header.app-header {
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(13, 34, 58, 0.055);
       position: sticky;
       top: 0;
       z-index: 45;
@@ -82,8 +94,8 @@
     .nav-wrap {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 0 18px;
-      height: 72px;
+      padding: 0 20px;
+      height: 94px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -92,57 +104,37 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
       cursor: pointer;
       user-select: none;
+      flex-shrink: 0;
+      transition: transform 0.18s ease;
+    }
+    .brand:hover {
+      transform: scale(1.03);
     }
     .brand img {
-      height: 52px;
-      width: auto;
-      max-width: 170px;
-      object-fit: contain;
-      display: block;
-    }
-    .brand-meta strong {
-      display: block;
-      font-size: 16px;
-      font-weight: 800;
-      letter-spacing: 0.4px;
-      color: var(--navy);
-      line-height: 1.1;
-    }
-    .brand-meta span {
-      display: inline-block;
-      font-size: 10px;
-      font-weight: 800;
-      color: #fff;
-      background: var(--orange);
-      padding: 2px 8px;
-      border-radius: 99px;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-      margin-top: 4px;
-    }
-    .hero-logo-card {
-      background: #FFFFFF;
-      border-radius: 18px;
-      padding: 10px 16px;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
-      border: 2px solid rgba(184, 90, 39, 0.55);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .hero-logo-card img {
       height: 76px;
       width: auto;
+      max-width: 220px;
       object-fit: contain;
       display: block;
     }
     @media (max-width: 640px) {
-      .brand-meta { display: none; }
-      .hero-logo-card img { height: 60px; }
+      .nav-wrap {
+        height: 80px;
+        padding: 0 14px;
+        gap: 8px;
+      }
+      .brand img {
+        height: 62px;
+      }
+      .top-actions {
+        gap: 6px;
+      }
+      .top-actions .btn {
+        padding: 9px 11px !important;
+        font-size: 12px !important;
+      }
     }
 
     /* Desktop Tabs (Hidden in Mobile / App Frame) */
@@ -2692,7 +2684,7 @@
               <strong style="font-size:16px; color:var(--navy);">GREEN MILE CONSTRUCTION RD</strong>
               <div style="font-size:11px; font-weight:800; color:var(--orange);">CONTRATO #GM-${String(b.id).slice(-6)}</div>
             </div>
-            <img src="${LOGO_URI}" style="height:40px;" alt="Logo">
+            <img src="${LOGO_URI}" style="height:62px; width:auto; object-fit:contain;" alt="Green Mile Construction RD">
           </div>
           <div style="font-size:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
             <div style="background:var(--bg); padding:10px; border-radius:10px;">
