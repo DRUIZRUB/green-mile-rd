@@ -11,7 +11,7 @@ const forge = require('node-forge');
 const { SignedXml } = require('xml-crypto');
 const { DOMParser } = require('@xmldom/xmldom');
 
-const { getPublicHealthStatus } = require('../src/config');
+const { getPublicHealthStatus, isOriginAllowed } = require('../src/config');
 const { chargeCard, verifyWebhookSignature } = require('../src/payments');
 const { buildEcfXml, signXmlWithP12, buildDgiiQrUrl } = require('../src/dgii/ecf-xml');
 
@@ -37,11 +37,16 @@ function createTestP12(password) {
 }
 
 async function run() {
-  console.log('1. Verificando diagnóstico /api/health...');
+  console.log('1. Verificando diagnóstico /api/health y lista blanca CORS...');
   const health = getPublicHealthStatus();
   assert.strictEqual(health.ok, true);
   assert.strictEqual(health.payment.activeMode, 'sandbox');
   assert.strictEqual(health.dgii.activeMode, 'sandbox');
+  assert.strictEqual(health.security.corsRestricted, true);
+  assert.strictEqual(isOriginAllowed('https://green-mile-rd.web.app'), true);
+  assert.strictEqual(isOriginAllowed('capacitor://localhost'), true);
+  assert.strictEqual(isOriginAllowed('http://localhost:5000'), true);
+  assert.strictEqual(isOriginAllowed('https://evil.example.com'), false);
 
   console.log('2. Verificando pasarela de tarjetas (validación Luhn + aprobación + declinación 0002)...');
   const okPay = await chargeCard({
@@ -149,14 +154,35 @@ async function run() {
   assert(qrUrl.startsWith('https://ecf.dgii.gov.do/testecf/ConsultaTimbre?'));
   assert(qrUrl.includes('CodigoSeguridad=AB%2B12%2F'), 'Special characters in CodigoSeguridad must be URL-encoded');
 
-  // Webhook HMAC verification
-  process.env.PAYMENT_WEBHOOK_SECRET = 'test_webhook_secret_123';
+  console.log('4. Verificando seguridad de webhooks (fail-closed sin secreto, HMAC estándar y Stripe-Signature)...');
+  delete process.env.PAYMENT_WEBHOOK_SECRET;
+  delete process.env.STRIPE_WEBHOOK_SECRET;
   const rawBody = JSON.stringify({ CustomOrderId: 'GM-12345', IsoCode: '00' });
+  const noSecretCheck = verifyWebhookSignature(rawBody, 'anything');
+  assert.strictEqual(noSecretCheck.verified, false);
+  assert.strictEqual(noSecretCheck.reason, 'NO_SECRET_CONFIGURED');
+
+  // HMAC estándar (pasarelas locales)
+  process.env.PAYMENT_WEBHOOK_SECRET = 'test_webhook_secret_123';
   const validSig = crypto.createHmac('sha256', 'test_webhook_secret_123').update(rawBody).digest('hex');
   assert.strictEqual(verifyWebhookSignature(rawBody, validSig).verified, true);
+  assert.strictEqual(verifyWebhookSignature(rawBody, `sha256=${validSig}`).verified, true);
   assert.strictEqual(verifyWebhookSignature(rawBody, 'bad_sig').verified, false);
 
-  console.log('✅ ALL CLOUD FUNCTIONS BACKEND TESTS PASSED (Payments + Real PKCS#12 XMLDSig e-CF + QR + Webhooks)!');
+  // Firma oficial Stripe (t=<ts>,v1=<hex> + ventana anti-replay)
+  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_stripe_secret';
+  const nowSec = 1795377600;
+  const stripePayload = JSON.stringify({ type: 'payment_intent.succeeded', data: { object: { metadata: { orderId: '998877' } } } });
+  const stripeSig = crypto.createHmac('sha256', 'whsec_test_stripe_secret').update(`${nowSec}.${stripePayload}`).digest('hex');
+  const stripeHdr = `t=${nowSec},v1=${stripeSig}`;
+  assert.strictEqual(verifyWebhookSignature(stripePayload, stripeHdr, { isStripe: true, nowSec }).verified, true);
+  assert.strictEqual(
+    verifyWebhookSignature(stripePayload, stripeHdr, { isStripe: true, nowSec: nowSec + 600 }).reason,
+    'STRIPE_TIMESTAMP_OUT_OF_TOLERANCE'
+  );
+  assert.strictEqual(verifyWebhookSignature(stripePayload, `t=${nowSec},v1=deadbeef`, { isStripe: true, nowSec }).verified, false);
+
+  console.log('✅ ALL CLOUD FUNCTIONS BACKEND TESTS PASSED (CORS + Payments + Real PKCS#12 XMLDSig e-CF + QR + HMAC/Stripe Webhooks)!');
 }
 
 run().catch((err) => {

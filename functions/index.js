@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
-const { getConfig, getPublicHealthStatus } = require('./src/config');
+const { getConfig, getPublicHealthStatus, isOriginAllowed } = require('./src/config');
 const { chargeCard, voidCardTransaction, verifyWebhookSignature } = require('./src/payments');
 const { issueEcfForBooking, queryDgiiTrackStatus } = require('./src/dgii/ecf-service');
 const { notifyInvoiceIssued, notifyOwnerSettlement } = require('./src/notifications');
@@ -29,11 +29,18 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 function setCors(req, res) {
-  const origin = req.headers.origin || '*';
-  res.set('Access-Control-Allow-Origin', origin);
+  const cfg = getConfig();
+  const origin = req.headers.origin;
   res.set('Vary', 'Origin');
-  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Pin, X-Webhook-Signature');
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('Cache-Control', 'no-store');
+  if (origin && isOriginAllowed(origin, cfg.allowedOrigins)) {
+    res.set('Access-Control-Allow-Origin', origin);
+    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Pin, X-Webhook-Signature');
+    return true;
+  }
+  return !origin;
 }
 
 function sendJson(res, status, data) {
@@ -67,9 +74,9 @@ exports.api = onRequest(
     cors: false
   },
   async (req, res) => {
-    setCors(req, res);
+    const originOk = setCors(req, res);
     if (req.method === 'OPTIONS') {
-      res.status(204).send('');
+      res.status(originOk ? 204 : 403).send('');
       return;
     }
 
@@ -353,13 +360,20 @@ exports.api = onRequest(
         return sendJson(res, 200, { ok: true, notifications: notifyRes });
       }
 
-      /* 9. WEBHOOK DE CONCILIACIÓN ASÍNCRONA DE PASARELAS */
+      /* 9. WEBHOOK DE CONCILIACIÓN ASÍNCRONA DE PASARELAS (FAIL-CLOSED) */
       if (method === 'POST' && rawPath === '/webhooks/payment') {
+        const isStripe = Boolean(req.headers['stripe-signature'] && !req.headers['x-webhook-signature']);
         const sigHeader = req.headers['x-webhook-signature'] || req.headers['stripe-signature'] || '';
         const rawBody = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body || {});
-        const sigCheck = verifyWebhookSignature(rawBody, sigHeader);
-        if (!sigCheck.verified && sigCheck.reason !== 'NO_SECRET_CONFIGURED') {
-          return sendJson(res, 401, { ok: false, error: 'Firma de webhook inválida.' });
+        const sigCheck = verifyWebhookSignature(rawBody, sigHeader, { isStripe });
+        if (sigCheck.reason === 'NO_SECRET_CONFIGURED') {
+          return sendJson(res, 503, {
+            ok: false,
+            error: 'Webhook deshabilitado: configura PAYMENT_WEBHOOK_SECRET o STRIPE_WEBHOOK_SECRET en el servidor.'
+          });
+        }
+        if (!sigCheck.verified) {
+          return sendJson(res, 401, { ok: false, error: 'Firma de webhook inválida.', reason: sigCheck.reason });
         }
 
         const evt = req.body || {};

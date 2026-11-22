@@ -1425,7 +1425,7 @@
       encfIssuedAt: '',
       exemptionCode,
       paymentMethod: selectedPaymentMethod,
-      paymentStatus: isCardPaid ? 'paid' : 'pending',
+      paymentStatus: 'pending',
       cardInfo,
       transferBank: selectedPaymentMethod === 'transfer' ? (document.getElementById('qTransferBank')?.value || '') : '',
       transferRef: selectedPaymentMethod === 'transfer' ? (document.getElementById('qTransferRef')?.value || '').trim() : '',
@@ -1443,7 +1443,7 @@
         compliancePack: true,
         conduceStamped: false,
         encfFiled: false,
-        treasuryPaid: isCardPaid,
+        treasuryPaid: false,
         isrLetterReceived: false
       } : {},
       stage: initialStage,
@@ -1452,51 +1452,46 @@
 
     let serverPersisted = false;
     if (isCardPaid) {
-      let usedServer = false;
-      if (window.GM_API && window.GM_API.chargeCardAndIssueEcf) {
-        const apiRes = await window.GM_API.chargeCardAndIssueEcf({
-          booking: rec,
-          card: rawCardForApi,
-          clientEmail: (govData && govData.entityEmail) || null
-        });
-        // Limpiar datos sensibles de tarjeta en memoria inmediatamente
-        rawCardForApi = null;
-
-        if (!apiRes.fallbackLocal) {
-          usedServer = true;
-          if (!apiRes.approved) {
-            if (submitBtn) {
-              submitBtn.disabled = false;
-              updateSubmitButtonLabel();
-            }
-            toast(apiRes.error || 'Pago declinado por la entidad bancaria. Verifica tu tarjeta.');
-            return;
-          }
-          rec = Object.assign({}, rec, apiRes.booking || {});
-          if (selectedNcfType === 'E45') {
-            rec.govChecklist = Object.assign({}, rec.govChecklist, {
-              encfFiled: Boolean(rec.encfNumber),
-              treasuryPaid: true
-            });
-          }
-          serverPersisted = true;
-        }
-      }
-
-      if (!usedServer) {
-        await new Promise(r => setTimeout(r, 450));
-        const issued = BILL.issueNextEncf(selectedNcfType);
-        rec.encfNumber = issued.encf;
-        rec.encfSecurityCode = issued.securityCode;
-        rec.encfExpires = issued.expires;
-        rec.encfIssuedAt = issued.issuedAt;
-        if (selectedNcfType === 'E45') {
-          rec.govChecklist = Object.assign({}, rec.govChecklist, {
-            encfFiled: true,
-            treasuryPaid: true
+      let apiRes = { fallbackLocal: true, reason: 'Servicio de pagos no inicializado.' };
+      try {
+        if (window.GM_API && window.GM_API.chargeCardAndIssueEcf) {
+          apiRes = await window.GM_API.chargeCardAndIssueEcf({
+            booking: rec,
+            card: rawCardForApi,
+            clientEmail: (govData && govData.entityEmail) || null
           });
         }
+      } finally {
+        // Limpiar datos sensibles de tarjeta en memoria inmediatamente
+        rawCardForApi = null;
       }
+
+      if (apiRes.fallbackLocal) {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          updateSubmitButtonLabel();
+        }
+        toast('No pudimos conectar con el servidor de pagos para autorizar tu tarjeta. Reintenta en unos segundos o selecciona Transferencia Bancaria.');
+        return;
+      }
+
+      if (!apiRes.approved) {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          updateSubmitButtonLabel();
+        }
+        toast(apiRes.error || 'Pago declinado por la entidad bancaria. Verifica tu tarjeta.');
+        return;
+      }
+
+      rec = Object.assign({}, rec, apiRes.booking || {}, { paymentStatus: 'paid' });
+      if (selectedNcfType === 'E45') {
+        rec.govChecklist = Object.assign({}, rec.govChecklist, {
+          encfFiled: Boolean(rec.encfNumber),
+          treasuryPaid: true
+        });
+      }
+      serverPersisted = true;
 
       // Nunca dejar PAN o CVV escritos en los inputs DOM tras aprobar el pago
       const cNumEl = document.getElementById('cNumber');

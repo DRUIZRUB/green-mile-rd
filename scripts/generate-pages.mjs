@@ -23,7 +23,7 @@ function escAttr(str) {
     .replace(/"/g, '&quot;');
 }
 
-const ASSET_VER = '20261122-7';
+const ASSET_VER = '20261122-8';
 
 function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, ogImageUrl }) {
   const logoSrc = `${basePrefix}logo.png?v=${ASSET_VER}`;
@@ -207,4 +207,45 @@ fs.writeFileSync(
   'utf8'
 );
 
-console.log(`✓ Generated ${GM.DEFAULT_EQUIPMENT.length} static listing pages in public/equipo/ + public/equipo.html`);
+// 3. Generate SEO sitemap.xml (public pages, 44 equipment listings, and catalog parts)
+const sitemapUrls = [
+  { loc: BASE_PUBLIC_URL, changefreq: 'daily', priority: '1.0' },
+  { loc: `${BASE_PUBLIC_URL}acerca-de.html`, changefreq: 'monthly', priority: '0.7' },
+  { loc: `${BASE_PUBLIC_URL}terminos.html`, changefreq: 'monthly', priority: '0.5' },
+  { loc: `${BASE_PUBLIC_URL}privacidad.html`, changefreq: 'monthly', priority: '0.5' }
+];
+
+for (const item of GM.DEFAULT_EQUIPMENT) {
+  const slug = GM.getStaticSlug(item);
+  sitemapUrls.push({
+    loc: `${BASE_PUBLIC_URL}equipo/${slug}.html`,
+    changefreq: 'weekly',
+    priority: '0.8'
+  });
+}
+
+for (const part of (GM.DEFAULT_PARTS || [])) {
+  sitemapUrls.push({
+    loc: `${BASE_PUBLIC_URL}producto.html?kind=part&id=${encodeURIComponent(part.id)}`,
+    changefreq: 'weekly',
+    priority: '0.7'
+  });
+}
+
+const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${sitemapUrls
+  .map(
+    (u) => `  <url>
+    <loc>${escAttr(u.loc)}</loc>
+    <changefreq>${u.changefreq}</changefreq>
+    <priority>${u.priority}</priority>
+  </url>`
+  )
+  .join('\n')}
+</urlset>
+`;
+
+fs.writeFileSync(path.join(PUBLIC_DIR, 'sitemap.xml'), sitemapXml, 'utf8');
+
+console.log(`✓ Generated ${GM.DEFAULT_EQUIPMENT.length} static listing pages in public/equipo/ + public/equipo.html + public/sitemap.xml (${sitemapUrls.length} URLs)`);

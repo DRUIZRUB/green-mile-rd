@@ -6,26 +6,27 @@
   <meta name="theme-color" content="#0D223A" />
   <title>Centro Administrativo, Facturación e-CF y Estado — Green Mile RD</title>
   <meta name="description" content="Back-office administrativo de Green Mile Construction RD: facturación electrónica e-CF (31, 32, 45 Gubernamental, 44), conciliación de tarjetas, liquidaciones a propietarios y reportes DGII 607/606." />
-  <link rel="icon" type="image/png" href="logo.png?v=20261122-4" />
-  <link rel="stylesheet" href="css/admin.css?v=20261122-4" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/png" href="logo.png?v=20261122-8" />
+  <link rel="stylesheet" href="css/admin.css?v=20261122-8" />
 </head>
 <body>
 
   <!-- PANTALLA DE ACCESO ADMINISTRATIVO -->
   <div id="adminGate" class="admin-gate">
     <div class="gate-card">
-      <img src="logo.png?v=20261122-4" width="84" height="68" alt="Green Mile Construction RD" />
+      <img src="logo.png?v=20261122-8" width="84" height="68" alt="Green Mile Construction RD" />
       <h1>Centro Administrativo Green Mile RD</h1>
       <p>Facturación e-CF (DGII), Pagos con Tarjeta, Gestión Gubernamental (E45) y Liquidaciones</p>
       <div class="gate-hint">
-        🔐 Acceso de Administración y Tesorería<br>
-        PIN inicial configurado: <strong>2026</strong> (modificable en Configuración)
+        🔐 Acceso exclusivo para Administración y Tesorería<br>
+        Ingresa tu PIN administrativo autorizado
       </div>
       <form onsubmit="window.GM_ADMIN.submitPin(event)">
         <div class="f-field full" style="text-align:left; margin-bottom:14px;">
           <label for="adminPinInput">PIN de Acceso Administrativo</label>
           <div class="f-box">
-            <input type="password" id="adminPinInput" inputmode="numeric" placeholder="Ingresa el PIN (2026)" required autofocus />
+            <input type="password" id="adminPinInput" inputmode="numeric" autocomplete="off" placeholder="Ingresa el PIN administrativo" required autofocus />
           </div>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%; min-height:46px; font-size:14.5px;">Entrar al Centro Administrativo →</button>
@@ -40,7 +41,7 @@
   <div id="adminApp" class="admin-shell" style="display:none;">
     <aside class="admin-sidebar">
       <a class="sb-brand" href="index.html">
-        <img src="logo.png?v=20261122-4" width="48" height="39" alt="Green Mile RD" />
+        <img src="logo.png?v=20261122-8" width="48" height="39" alt="Green Mile RD" />
         <div class="sb-brand-meta">
           <strong>GREEN MILE RD</strong>
           <span>Administración &amp; Fiscal</span>
@@ -277,11 +278,11 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
-  <script src="js/catalog-data.js"></script>
-  <script src="js/firebase-config.js"></script>
-  <script src="js/dgii-validator.js"></script>
-  <script src="js/billing-engine.js?v=20261122-4"></script>
-  <script src="js/api-client.js?v=20261122-4"></script>
-  <script src="js/admin-app.js?v=20261122-4"></script>
+  <script src="js/catalog-data.js?v=20261122-8"></script>
+  <script src="js/firebase-config.js?v=20261122-8"></script>
+  <script src="js/dgii-validator.js?v=20261122-8"></script>
+  <script src="js/billing-engine.js?v=20261122-8"></script>
+  <script src="js/api-client.js?v=20261122-8"></script>
+  <script src="js/admin-app.js?v=20261122-8"></script>
 </body>
 </html>

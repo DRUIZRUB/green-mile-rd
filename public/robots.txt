@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /tracking.html
+Disallow: /contrato.html
+Disallow: /api/
+
+Sitemap: https://green-mile-rd.web.app/sitemap.xml
