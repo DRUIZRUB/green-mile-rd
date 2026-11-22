@@ -1717,14 +1717,25 @@
     }
 
     function flipBusy(id) {
-      const it = equipment.find(x => x.id === id);
-      if (it) { it.busy = !it.busy; syncCounters(); renderProfile(); toast('Estado actualizado'); }
+      const it = equipment.find(x => String(x.id) === String(id));
+      if (it) {
+        it.busy = !it.busy;
+        syncCounters();
+        renderProfile();
+        if (window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
+          window.GM_FIREBASE.updateEquipmentStatus(it.id, it.busy).catch(() => {});
+        }
+        toast('Estado sincronizado en tiempo real');
+      }
     }
 
     function removeEq(id) {
-      equipment = equipment.filter(x => x.id !== id);
+      equipment = equipment.filter(x => String(x.id) !== String(id));
       syncCounters();
       renderProfile();
+      if (window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
+        window.GM_FIREBASE.deleteEquipment(id).catch(() => {});
+      }
       toast('Equipo eliminado');
     }
 
@@ -1752,9 +1763,19 @@
       }
     }
 
-    function onPhotoPicked(e) {
+    async function onPhotoPicked(e) {
       const f = e.target.files[0];
       if (!f) return;
+      if (window.GM_FIREBASE && window.GM_FIREBASE.compressImageFile) {
+        const compressed = await window.GM_FIREBASE.compressImageFile(f);
+        if (compressed) {
+          photoData = compressed;
+          const img = document.getElementById('camPreview');
+          img.src = photoData;
+          img.style.display = 'block';
+          return;
+        }
+      }
       const r = new FileReader();
       r.onload = ev => {
         photoData = ev.target.result;
@@ -1848,11 +1869,11 @@
       e.target.reset();
       closeSheet('reqSheet');
       switchTab('requests');
-      toast('Solicitud publicada en Obras RD');
+      toast('☁️ Solicitud publicada y sincronizada en Obras RD');
     }
 
     function openContract(id) {
-      const b = bookings.find(x => x.id === id);
+      const b = bookings.find(x => String(x.id) === String(id));
       if (!b) return;
       document.getElementById('contractBody').innerHTML = `
         <div style="border:1.5px solid var(--border); border-radius:14px; padding:20px; background:#fff;">
@@ -1937,6 +1958,29 @@
 
     syncCounters();
     applyUrlParams();
+
+    /* Connect real-time Cloud Firestore listeners */
+    if (window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
+      window.GM_FIREBASE.subscribeEquipment((cloudList) => {
+        equipment = cloudList;
+        syncCounters();
+        renderCurrentTab();
+      }, DEFAULT_EQUIPMENT);
+
+      window.GM_FIREBASE.subscribeRequests((cloudReqs) => {
+        requests = cloudReqs;
+        syncCounters();
+        renderCurrentTab();
+      }, DEFAULT_REQUESTS);
+
+      if (window.GM_FIREBASE.subscribeBookings) {
+        window.GM_FIREBASE.subscribeBookings((cloudBookings) => {
+          bookings = cloudBookings;
+          syncCounters();
+          renderCurrentTab();
+        });
+      }
+    }
   </script>
 </body>
 </html>

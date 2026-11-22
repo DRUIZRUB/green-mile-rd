@@ -587,5 +587,40 @@
     confirmRent
   };
 
-  renderPage();
+  async function initPage() {
+    renderPage();
+
+    const params = new URLSearchParams(window.location.search);
+    const rawId = CFG.equipmentId != null ? String(CFG.equipmentId) : params.get('id');
+
+    if (rawId && window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
+      if (!currentItem) {
+        const cloudDoc = await window.GM_FIREBASE.getEquipmentById(rawId);
+        if (cloudDoc) {
+          state.equipment = [cloudDoc, ...state.equipment.filter(x => String(x.id) !== String(cloudDoc.id))];
+          GM.saveState(state);
+          renderPage();
+        }
+      }
+      if (window.GM_FIREBASE.subscribeEquipmentById) {
+        window.GM_FIREBASE.subscribeEquipmentById(rawId, (liveDoc) => {
+          const wasMissing = !currentItem;
+          state.equipment = [liveDoc, ...state.equipment.filter(x => String(x.id) !== String(liveDoc.id))];
+          GM.saveState(state);
+          if (wasMissing) {
+            renderPage();
+          } else {
+            currentItem.busy = liveDoc.busy;
+            const pill = document.getElementById('availPill');
+            if (pill) {
+              pill.classList.toggle('busy', Boolean(liveDoc.busy));
+              pill.textContent = liveDoc.busy ? 'En Obra' : 'Disponible Hoy';
+            }
+          }
+        });
+      }
+    }
+  }
+
+  initPage();
 })();
