@@ -23,12 +23,14 @@ function escAttr(str) {
     .replace(/"/g, '&quot;');
 }
 
+const ASSET_VER = '20261122-3';
+
 function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, ogImageUrl }) {
-  const logoSrc = `${basePrefix}logo.png`;
+  const logoSrc = `${basePrefix}logo.png?v=${ASSET_VER}`;
   const homeHref = `${basePrefix}index.html`;
-  const cssHref = `${basePrefix}css/equipo.css`;
-  const dataJs = `${basePrefix}js/catalog-data.js`;
-  const pageJs = `${basePrefix}js/equipo-page.js`;
+  const cssHref = `${basePrefix}css/equipo.css?v=${ASSET_VER}`;
+  const dataJs = `${basePrefix}js/catalog-data.js?v=${ASSET_VER}`;
+  const pageJs = `${basePrefix}js/equipo-page.js?v=${ASSET_VER}`;
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -72,8 +74,8 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
           <span class="back-label">Catálogo</span>
         </a>
       </div>
-      <a class="brand-logo-link" href="${homeHref}" aria-label="Green Mile Construction RD — Catálogo">
-        <img src="${logoSrc}" alt="Green Mile Construction RD" />
+      <a class="brand-logo-link brand-mini" href="${homeHref}" aria-label="Green Mile Construction RD — Catálogo">
+        <img src="${logoSrc}" width="97" height="78" alt="Green Mile Construction RD" />
       </a>
       <div class="header-actions">
         <button type="button" class="btn btn-ghost btn-fav" id="headerFavBtn" onclick="window.GM_DETAIL && window.GM_DETAIL.toggleFavorite()" aria-label="Guardar equipo en favoritos">
@@ -97,7 +99,7 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
   <footer class="detail-footer">
     <div class="detail-footer-inner">
       <a class="footer-brand" href="${homeHref}" aria-label="Green Mile Construction RD">
-        <img src="${logoSrc}" alt="Green Mile Construction RD" />
+        <img src="${logoSrc}" width="67" height="54" alt="Green Mile Construction RD" />
       </a>
       <nav class="detail-footer-links" aria-label="Enlaces institucionales">
         <a href="${homeHref}">Catálogo RD</a>
@@ -157,13 +159,13 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="${dataJs}"></script>
-  <script src="${basePrefix}js/firebase-config.js"></script>
-  <script src="${basePrefix}js/native-bridge.js"></script>
-  <script src="${basePrefix}js/dgii-validator.js"></script>
-  <script src="${basePrefix}js/billing-engine.js"></script>
-  <script src="${basePrefix}js/api-client.js"></script>
-  <script src="${basePrefix}js/geo-map.js"></script>
-  <script src="${basePrefix}js/reviews.js"></script>
+  <script src="${basePrefix}js/firebase-config.js?v=${ASSET_VER}"></script>
+  <script src="${basePrefix}js/native-bridge.js?v=${ASSET_VER}"></script>
+  <script src="${basePrefix}js/dgii-validator.js?v=${ASSET_VER}"></script>
+  <script src="${basePrefix}js/billing-engine.js?v=${ASSET_VER}"></script>
+  <script src="${basePrefix}js/api-client.js?v=${ASSET_VER}"></script>
+  <script src="${basePrefix}js/geo-map.js?v=${ASSET_VER}"></script>
+  <script src="${basePrefix}js/reviews.js?v=${ASSET_VER}"></script>
   <script src="${pageJs}"></script>
 </body>
 </html>
