@@ -71,7 +71,7 @@ deploy_all() {
   fi
 
   log_info "Desplegando Cloud Functions v2 (inyectando variables desde functions/.env), Reglas Firestore y Hosting al proyecto $FIREBASE_PROJECT..."
-  (cd "$ROOT_DIR" && npx --yes firebase-tools deploy --only functions,firestore:rules,hosting --project "$FIREBASE_PROJECT")
+  (cd "$ROOT_DIR" && npx --yes firebase-tools deploy --only functions,firestore:rules,hosting --project "$FIREBASE_PROJECT" --non-interactive)
 
   echo ""
   log_ok "Despliegue completado. Verifica el estado en vivo en:"
