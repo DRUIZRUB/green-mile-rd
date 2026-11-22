@@ -689,49 +689,122 @@
       display: flex;
       justify-content: space-between;
     }
-    .f-field label small { font-weight: 500; color: var(--text-muted); }
+    .f-field { position: relative; min-width: 0; }
+    .f-field label small { font-weight: 600; color: var(--orange); }
     .f-box {
       display: flex;
       align-items: center;
-      background: #F8FAFC;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
+      background: #FFFFFF;
+      border: 1.5px solid #CBD5E1;
+      border-radius: 13px;
+      min-height: 48px;
       transition: all 0.15s;
     }
     .f-box:focus-within {
       background: #fff;
-      border-color: var(--navy);
-      box-shadow: 0 0 0 3px rgba(13, 34, 58, 0.08);
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3.5px rgba(184, 90, 39, 0.14);
     }
     .f-prefix {
-      padding-left: 12px;
-      font-size: 13px;
+      padding: 0 12px;
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      font-size: 13.5px;
       font-weight: 800;
-      color: var(--steel);
+      color: var(--navy);
+      background: var(--navy-soft);
+      border-right: 1px solid var(--border);
+      border-radius: 11px 0 0 11px;
     }
     .f-box input, .f-box select, .f-box textarea {
       width: 100%;
       border: none;
       outline: none;
       background: transparent;
-      padding: 11px 12px;
-      font-size: 14px;
+      padding: 12px 13px;
+      font-size: 16px; /* Prevents iOS Safari zoom on focus */
       color: var(--text);
       font-family: inherit;
     }
-    .f-box textarea { min-height: 74px; resize: vertical; }
+    .f-box textarea { min-height: 82px; resize: vertical; }
+
+    /* DGII Live Verification Badge & Autocomplete Dropdown */
+    .dgii-badge {
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.4;
+      border: 1.5px solid var(--border);
+      background: #F8FAFC;
+      color: var(--text);
+    }
+    .dgii-badge.ok { background: #ECFDF5; border-color: #6EE7B7; color: #065F46; }
+    .dgii-badge.warn { background: #FFFBEB; border-color: #FCD34D; color: #92400E; }
+    .dgii-badge.err { background: #FEF2F2; border-color: #FCA5A5; color: #991B1B; }
+    .dgii-badge.info, .dgii-badge.loading { background: #EFF6FF; border-color: #BFDBFE; color: #1E40AF; }
+    .dgii-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 3px; font-weight: 700; }
+    .dgii-pill { font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .dgii-pill.ok { background: #059669; color: #fff; }
+    .dgii-pill.err { background: #DC2626; color: #fff; }
+    .dgii-title { font-size: 12.5px; font-weight: 800; color: var(--navy); }
+    .dgii-note { font-size: 11.5px; margin-top: 2px; }
+    .dgii-use-btn {
+      margin-top: 7px;
+      border: 1px solid #D97706;
+      background: #FFFFFF;
+      color: #92400E;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 6px 11px;
+      border-radius: 9px;
+      cursor: pointer;
+    }
+    .dgii-sugg-list {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #FFFFFF;
+      border: 1.5px solid var(--navy);
+      border-radius: 13px;
+      box-shadow: 0 14px 32px rgba(13, 34, 58, 0.18);
+      z-index: 90;
+      max-height: 220px;
+      overflow-y: auto;
+      display: none;
+    }
+    .dgii-sugg-item {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      text-align: left;
+      padding: 10px 13px;
+      cursor: pointer;
+      display: block;
+      font-family: inherit;
+    }
+    .dgii-sugg-item:last-child { border-bottom: none; }
+    .dgii-sugg-item:hover, .dgii-sugg-item:active { background: var(--orange-soft); }
+    .dgii-sugg-item strong { display: block; font-size: 12.5px; font-weight: 800; color: var(--navy); }
+    .dgii-sugg-item span { display: block; font-size: 11px; color: var(--text-muted); margin-top: 1px; }
 
     .cat-grid-tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .c-tile {
-      padding: 11px 10px;
+      padding: 12px 10px;
       border: 1.5px solid var(--border);
       border-radius: 12px;
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 800;
       color: var(--navy);
       text-align: center;
       cursor: pointer;
       background: var(--surface);
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .c-tile.selected { border-color: var(--orange); background: var(--orange-soft); }
 
@@ -740,17 +813,17 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 12px 14px;
-      border-radius: 12px;
+      padding: 13px 15px;
+      border-radius: 14px;
       border: 1.5px solid var(--border);
       background: #F8FAFC;
       cursor: pointer;
     }
-    .switch-row strong { display: block; font-size: 13px; color: var(--navy); }
-    .switch-row span { font-size: 11px; color: var(--text-muted); }
+    .switch-row strong { display: block; font-size: 13.5px; color: var(--navy); }
+    .switch-row span { font-size: 11.5px; color: var(--text-muted); }
     .sw-knob {
-      width: 42px;
-      height: 24px;
+      width: 46px;
+      height: 26px;
       background: #CBD5E1;
       border-radius: 99px;
       position: relative;
@@ -762,14 +835,14 @@
       position: absolute;
       top: 3px;
       left: 3px;
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
       background: #fff;
       transition: transform 0.2s;
     }
     input:checked + .sw-knob { background: var(--orange); }
-    input:checked + .sw-knob::after { transform: translateX(18px); }
+    input:checked + .sw-knob::after { transform: translateX(20px); }
 
     /* Camera / Gallery Upload Card */
     .cam-drop {
@@ -783,7 +856,7 @@
     }
     .cam-preview {
       width: 100%;
-      height: 160px;
+      height: 165px;
       object-fit: cover;
       border-radius: 10px;
       margin-bottom: 8px;
@@ -800,7 +873,7 @@
     }
     canvas#sigCanvas {
       width: 100%;
-      height: 105px;
+      height: 115px;
       background: #F8FAFC;
       border-radius: 8px;
       touch-action: none;
@@ -847,7 +920,8 @@
       box-shadow: var(--shadow-lg);
       display: none;
       z-index: 300;
-      white-space: nowrap;
+      max-width: 92vw;
+      text-align: center;
     }
 
     /* Responsive Rules & Mobile Frame Overrides */
@@ -856,7 +930,13 @@
       nav.bottom-nav { display: grid; }
       .search-box-app { grid-template-columns: 1fr; }
       .s-city { border-left: none; border-top: 1px solid var(--border); }
-      .f-grid { grid-template-columns: 1fr; }
+      .s-input input, .s-input select { font-size: 16px; }
+      .f-grid { grid-template-columns: 1fr; gap: 13px; }
+      .sheet { max-height: 94vh; max-height: 94dvh; border-radius: 24px 24px 0 0; }
+      .sheet-head { padding: 11px 16px 13px; }
+      .sheet-body { padding: 16px 16px 22px; -webkit-overflow-scrolling: touch; }
+      .sheet-foot { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
+      .sheet-foot .btn { min-height: 46px; }
     }
     body.mobile-frame-mode .desktop-tabs,
     body.mobile-frame-mode .hide-in-sim { display: none !important; }
@@ -1253,19 +1333,21 @@
             </div>
 
             <div class="f-grid">
-              <div class="f-field">
-                <label>Propietario / Empresa <small>Obligatorio</small></label>
-                <div class="f-box"><input type="text" id="pubOwner" placeholder="Equipos Ozama SRL"></div>
+              <div class="f-field full">
+                <label>RNC (9 dígitos) o Cédula <small>Validación DGII</small></label>
+                <div class="f-box"><input type="text" id="pubRnc" inputmode="numeric" placeholder="Ej. 1-01-01992-1" required></div>
               </div>
-              <div class="f-field">
-                <label>RNC o Cédula <small>Obligatorio</small></label>
-                <div class="f-box"><input type="text" id="pubRnc" placeholder="1-31-00000-1"></div>
+              <div class="f-field full">
+                <label>Propietario / Razón Social DGII <small>Obligatorio</small></label>
+                <div class="f-box"><input type="text" id="pubOwner" placeholder="Escribe empresa o autocompleta por RNC" autocomplete="off" required></div>
+                <div id="pubDgiiSuggestions" class="dgii-sugg-list"></div>
+                <div id="pubDgiiStatus" class="dgii-badge" style="display:none;"></div>
               </div>
               <div class="f-field full">
                 <label>WhatsApp en RD (confidencial · uso interno) <small>Obligatorio</small></label>
                 <div class="f-box">
-                  <span class="f-prefix">+1</span>
-                  <input type="tel" id="pubPhone" placeholder="809-555-0199">
+                  <span class="f-prefix">🇩🇴 +1</span>
+                  <input type="tel" id="pubPhone" inputmode="tel" placeholder="809-555-0199" required>
                 </div>
               </div>
               <div class="f-field full">
@@ -1455,6 +1537,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="js/catalog-data.js"></script>
   <script src="js/firebase-config.js"></script>
+  <script src="js/dgii-validator.js"></script>
   <script>
     const GM = window.GM_CATALOG;
     const LOGO_URI = document.getElementById('brandLogo').src;
@@ -1941,11 +2024,30 @@
       if (bodyEl) bodyEl.scrollTop = 0;
     }
 
-    function submitPublish(e) {
+    const pubDgiiController = (window.GM_DGII && window.GM_DGII.attachPair)
+      ? window.GM_DGII.attachPair({
+          rncInputId: 'pubRnc',
+          nameInputId: 'pubOwner',
+          statusBoxId: 'pubDgiiStatus',
+          suggestionsBoxId: 'pubDgiiSuggestions'
+        })
+      : null;
+
+    async function submitPublish(e) {
       e.preventDefault();
       if (!validateWizardStep(1)) { wizStep = 1; updateWiz(); return; }
       if (!validateWizardStep(2)) { wizStep = 2; updateWiz(); return; }
       if (!validateWizardStep(3)) { wizStep = 3; updateWiz(); return; }
+
+      if (pubDgiiController) {
+        const dgiiRes = await pubDgiiController.validateBeforeSubmit({ requireActiveForNcf: false });
+        if (!dgiiRes.valid) {
+          wizStep = 3;
+          updateWiz();
+          toast(dgiiRes.error);
+          return;
+        }
+      }
 
       const owner = document.getElementById('pubOwner').value.trim();
       const phone = document.getElementById('pubPhone').value.trim();

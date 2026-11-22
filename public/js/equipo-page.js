@@ -376,14 +376,37 @@
     }
   }
 
-  function confirmRent(e) {
+  let dgiiController = null;
+
+  function stepQty(delta) {
+    const inp = document.getElementById('qQty');
+    if (!inp) return;
+    const next = Math.max(1, (Number(inp.value) || 1) + delta);
+    inp.value = next;
+    calcReceipt();
+  }
+
+  async function confirmRent(e) {
     e.preventDefault();
     if (!calState.start) {
       toast('Selecciona las fechas de alquiler en el calendario');
+      document.getElementById('calDays')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
+
+    const ncfChecked = Boolean(document.getElementById('qNcf')?.checked);
+    if (dgiiController) {
+      const check = await dgiiController.validateBeforeSubmit({ requireActiveForNcf: ncfChecked });
+      if (!check.valid) {
+        toast(check.error);
+        document.getElementById('qRnc')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+
     if (!sigSigned) {
       toast('Dibuja tu firma en pantalla para continuar');
+      document.getElementById('sigCanvas')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     const b = currentBreakdown();
@@ -398,6 +421,7 @@
       ownerPhone: currentItem.phone,
       renter: document.getElementById('qRenter').value.trim(),
       renterRnc: document.getElementById('qRnc').value.trim(),
+      dgiiVerified: true,
       address: document.getElementById('qAddr').value.trim(),
       startDate: calState.start,
       endDate: calState.end || calState.start,
@@ -431,7 +455,7 @@
     calState.end = '';
     renderCalendar();
     openContract(rec);
-    toast('¡Contrato emitido y fechas reservadas!');
+    toast('✓ RNC validado en DGII y contrato firmado');
   }
 
   function openContract(b) {
@@ -669,21 +693,25 @@
             </div>
 
             <div class="panel-pad">
-              <form onsubmit="window.GM_DETAIL.confirmRent(event)">
+              <form onsubmit="window.GM_DETAIL.confirmRent(event)" autocomplete="off">
                 <div class="f-grid">
-                  <div class="f-field">
-                    <label>Modalidad</label>
+                  <div class="f-field span-full-sidebar">
+                    <label>Modalidad de Alquiler</label>
                     <div class="f-box">
                       <select id="qMode" onchange="window.GM_DETAIL.calcReceipt()">
-                        <option value="day">Por Días (${GM.fmtRD(it.priceDay)})</option>
-                        <option value="hour">Por Horas (${GM.fmtRD(it.priceHour)})</option>
-                        <option value="week">Por Semanas (${GM.fmtRD(it.priceWeek)})</option>
+                        <option value="day">Por Días (${GM.fmtRD(it.priceDay)} / día)</option>
+                        <option value="hour">Por Horas (${GM.fmtRD(it.priceHour)} / hora)</option>
+                        <option value="week">Por Semanas (${GM.fmtRD(it.priceWeek)} / sem.)</option>
                       </select>
                     </div>
                   </div>
-                  <div class="f-field">
-                    <label>Cantidad</label>
-                    <div class="f-box"><input type="number" id="qQty" value="3" min="1" oninput="window.GM_DETAIL.calcReceipt()" required></div>
+                  <div class="f-field span-full-sidebar">
+                    <label>Cantidad (días / horas / semanas)</label>
+                    <div class="qty-stepper">
+                      <button type="button" class="qty-btn" onclick="window.GM_DETAIL.stepQty(-1)" aria-label="Menos">−</button>
+                      <input type="number" id="qQty" inputmode="numeric" value="3" min="1" oninput="window.GM_DETAIL.calcReceipt()" required>
+                      <button type="button" class="qty-btn" onclick="window.GM_DETAIL.stepQty(1)" aria-label="Más">+</button>
+                    </div>
                   </div>
                   <div class="f-field full">
                     <label>Calendario de Disponibilidad (Inicio → Fin)</label>
@@ -709,32 +737,34 @@
                     </div>
                   </div>
                   <div class="f-field full">
-                    <label>Traslado Lowboy</label>
+                    <label>Traslado Cama Baja (Lowboy)</label>
                     <div class="f-box">
                       <select id="qTrans" onchange="window.GM_DETAIL.calcReceipt()">
-                        <option value="yes">${it.transportCost > 0 ? 'Con traslado (' + GM.fmtRD(it.transportCost) + ')' : 'Traslado incluido (RD$ 0)'}</option>
-                        <option value="no">Retiro en patio</option>
+                        <option value="yes">${it.transportCost > 0 ? 'Con traslado a obra (' + GM.fmtRD(it.transportCost) + ')' : 'Traslado incluido (RD$ 0)'}</option>
+                        <option value="no">Retiro directo en patio (RD$ 0)</option>
                       </select>
                     </div>
                   </div>
-                  <div class="f-field">
-                    <label>Contratista / Empresa</label>
-                    <div class="f-box"><input type="text" id="qRenter" placeholder="Constructora Cibao SRL" required></div>
+                  <div class="f-field full">
+                    <label>RNC (9 dígitos) o Cédula <small class="req-tag">Validación DGII</small></label>
+                    <div class="f-box"><input type="text" id="qRnc" inputmode="numeric" placeholder="Ej. 1-01-01992-1" enterkeyhint="next" required></div>
                   </div>
-                  <div class="f-field">
-                    <label>RNC / Cédula</label>
-                    <div class="f-box"><input type="text" id="qRnc" placeholder="1-30-12345-6" required></div>
+                  <div class="f-field full">
+                    <label>Contratista / Razón Social DGII <small class="req-tag">Búsqueda en vivo</small></label>
+                    <div class="f-box"><input type="text" id="qRenter" placeholder="Escribe empresa o autocompleta por RNC" enterkeyhint="next" required></div>
+                    <div id="qDgiiSuggestions" class="dgii-sugg-list"></div>
+                    <div id="qDgiiStatus" class="dgii-badge" style="display:none;"></div>
                   </div>
                   <div class="f-field full">
                     <label>Dirección de Obra en RD</label>
-                    <div class="f-box"><input type="text" id="qAddr" placeholder="Sector, calle o referencia del proyecto" required></div>
+                    <div class="f-box"><input type="text" id="qAddr" placeholder="Sector, calle o referencia del proyecto" enterkeyhint="done" required></div>
                   </div>
 
                   <div class="f-field full">
                     <label class="switch-row">
                       <div>
                         <strong>Comprobante Crédito Fiscal (e-NCF · e-CF 31)</strong>
-                        <span>Agrega ITBIS 18% desglosado</span>
+                        <span>Desglosa ITBIS 18% con RNC activo en DGII</span>
                       </div>
                       <input type="checkbox" id="qNcf" checked style="display:none;" onchange="window.GM_DETAIL.calcReceipt()">
                       <div class="sw-knob"></div>
@@ -742,16 +772,16 @@
                   </div>
 
                   <div class="f-field full">
-                    <label>Firma Táctil del Contratista <small style="color:var(--orange); cursor:pointer;" onclick="window.GM_DETAIL.clearSig()">Limpiar</small></label>
+                    <label>Firma Táctil del Contratista <small style="color:var(--orange); cursor:pointer; font-weight:800;" onclick="window.GM_DETAIL.clearSig()">Limpiar firma</small></label>
                     <div class="sig-pad">
-                      <canvas id="sigCanvas" width="520" height="100"></canvas>
+                      <canvas id="sigCanvas" width="520" height="118"></canvas>
                       <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Firma aquí con el dedo o cursor</div>
                     </div>
                   </div>
                 </div>
 
                 <div class="receipt" id="qReceipt"></div>
-                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:14px; padding:13px;">Firmar y Reservar Fechas</button>
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:14px; min-height:50px; font-size:15px;">Firmar y Reservar Fechas</button>
               </form>
             </div>
           </div>
@@ -778,6 +808,15 @@
     renderCalendar();
     setupSig();
     calcReceipt();
+
+    if (window.GM_DGII && window.GM_DGII.attachPair) {
+      dgiiController = window.GM_DGII.attachPair({
+        rncInputId: 'qRnc',
+        nameInputId: 'qRenter',
+        statusBoxId: 'qDgiiStatus',
+        suggestionsBoxId: 'qDgiiSuggestions'
+      });
+    }
   }
 
   window.GM_DETAIL = {
@@ -788,6 +827,7 @@
     closeSheet,
     activatePro,
     calcReceipt,
+    stepQty,
     clearSig,
     confirmRent,
     calPrevMonth,

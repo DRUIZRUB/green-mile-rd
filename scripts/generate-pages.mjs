@@ -131,6 +131,7 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="${dataJs}"></script>
   <script src="${basePrefix}js/firebase-config.js"></script>
+  <script src="${basePrefix}js/dgii-validator.js"></script>
   <script src="${pageJs}"></script>
 </body>
 </html>
