@@ -24,6 +24,38 @@ service cloud.firestore {
       allow delete: if true;
     }
 
+    match /proposals/{proposalId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.requestId != null
+                            && request.resource.data.equipmentTitle is string
+                            && request.resource.data.priceDay is number;
+      allow delete: if true;
+    }
+
+    match /parts/{partId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.title is string
+                            && request.resource.data.category is string
+                            && request.resource.data.price is number;
+      allow delete: if true;
+    }
+
+    match /sales/{saleId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.title is string
+                            && request.resource.data.city is string
+                            && request.resource.data.salePrice is number;
+      allow delete: if true;
+    }
+
+    match /orders/{orderId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.itemTitle is string
+                            && request.resource.data.buyerName is string
+                            && request.resource.data.total is number;
+      allow delete: if false;
+    }
+
     match /bookings/{bookingId} {
       allow read: if true;
       allow create: if request.resource.data.title is string

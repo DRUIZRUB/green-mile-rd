@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0D223A" />
+  <link rel="icon" type="image/png" href="./logo.png?v=20261122-5" />
+  <title>Contrato Digital y Factura e-CF | Green Mile Construction RD</title>
+  <meta name="description" content="Detalle del contrato digital firmado, factura electrónica e-CF y expediente de alquiler gestionado por Green Mile Construction RD." />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --navy: #0D223A;
+      --navy-hover: #173456;
+      --navy-soft: #EEF3F8;
+      --orange: #B85A27;
+      --orange-hover: #9B471A;
+      --orange-soft: #FEF4EE;
+      --bg: #F3F6FA;
+      --surface: #FFFFFF;
+      --text: #0F172A;
+      --text-muted: #55657B;
+      --border: #E2E8F0;
+      --success: #059669;
+      --shadow-sm: 0 2px 10px rgba(13, 34, 58, 0.05);
+      --shadow-md: 0 12px 32px rgba(13, 34, 58, 0.08);
+      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    a { color: inherit; }
+
+    /* Institutional Header */
+    .doc-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 0 rgba(13, 34, 58, 0.04);
+    }
+    .doc-header-inner {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 10px 20px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+    }
+    .doc-header-left {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .back-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--navy);
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .back-pill:hover {
+      background: var(--navy-soft);
+      border-color: #CBD5E1;
+    }
+    .back-pill svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .brand-center {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+    .brand-center img {
+      height: 70px;
+      width: auto;
+      display: block;
+      object-fit: contain;
+    }
+
+    .doc-header-right {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.12s, background 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary {
+      background: var(--orange);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(184, 90, 39, 0.24);
+    }
+    .btn-primary:hover { background: var(--orange-hover); }
+    .btn-navy {
+      background: var(--navy);
+      color: #fff;
+    }
+    .btn-navy:hover { background: var(--navy-hover); }
+    .btn-ghost {
+      background: var(--surface);
+      color: var(--navy);
+      border: 1.5px solid var(--border);
+    }
+    .btn-ghost:hover {
+      background: var(--navy-soft);
+      border-color: #CBD5E1;
+    }
+
+    /* Main Container */
+    .doc-main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px 20px 56px;
+    }
+
+    .created-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: #ECFDF5;
+      border: 1.5px solid #A7F3D0;
+      color: #065F46;
+      border-radius: 16px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      font-size: 13.5px;
+      font-weight: 700;
+    }
+
+    /* Summary Card */
+    .doc-summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px 22px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 18px;
+    }
+    .doc-summary-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .doc-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .doc-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+    .doc-title {
+      font-size: 21px;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.25;
+      margin-bottom: 4px;
+    }
+    .doc-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .doc-total-box {
+      text-align: right;
+      background: var(--navy-soft);
+      border: 1px solid #DCE5F0;
+      border-radius: 14px;
+      padding: 10px 16px;
+      min-width: 175px;
+    }
+    .doc-total-box small {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+    .doc-total-box strong {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    /* Segmented Document Tabs */
+    .doc-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      background: var(--bg);
+      padding: 5px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+    .doc-tabs.three-cols {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .doc-tab {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      padding: 11px 14px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .doc-tab:hover { color: var(--navy); }
+    .doc-tab.active {
+      background: var(--surface);
+      color: var(--navy);
+      box-shadow: 0 2px 8px rgba(13, 34, 58, 0.09);
+    }
+
+    /* Full-Width Printable Paper Sheet */
+    .doc-paper-stage {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 32px;
+      box-shadow: var(--shadow-md);
+      overflow-x: auto;
+    }
+
+    /* Dispatch & Action Footer Card */
+    .doc-actions-card {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .doc-toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 18px;
+    }
+    .doc-toolbar-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    /* Loading / Empty / Error Card */
+    .state-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 44px 24px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .state-card h2 {
+      font-size: 20px;
+      color: var(--navy);
+      margin-bottom: 8px;
+    }
+    .state-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      max-width: 480px;
+      margin: 0 auto 20px;
+      line-height: 1.5;
+    }
+
+    /* Institutional Footer */
+    .doc-footer {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      margin-top: 32px;
+    }
+    .doc-footer-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 18px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .doc-footer-links {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .doc-footer-links a {
+      color: var(--navy);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .doc-footer-links a:hover { color: var(--orange); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 84px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--navy);
+      color: #fff;
+      padding: 11px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      z-index: 120;
+      display: none;
+      box-shadow: 0 10px 26px rgba(13, 34, 58, 0.25);
+    }
+
+    @media (max-width: 720px) {
+      .doc-header-inner { padding: 8px 14px; }
+      .brand-center img { height: 56px; }
+      .back-pill .back-text { display: none; }
+      .btn-print-hdr .print-label { display: none; }
+      .doc-main { padding: 16px 12px 44px; }
+      .doc-summary-card { padding: 16px; }
+      .doc-total-box { width: 100%; text-align: left; }
+      .doc-paper-stage { padding: 16px 14px; border-radius: 16px; }
+      .doc-tabs, .doc-tabs.three-cols { grid-template-columns: 1fr; }
+      .doc-toolbar { padding: 14px; }
+      .doc-toolbar-group { width: 100%; }
+      .doc-toolbar-group .btn { flex: 1; }
+    }
+
+    @media print {
+      @page { margin: 12mm; }
+      html, body { background: #fff !important; }
+      .no-print, .doc-header, .doc-footer, .toast { display: none !important; }
+      .doc-main { max-width: 100%; padding: 0; margin: 0; }
+      .doc-paper-stage {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="doc-header no-print">
+    <div class="doc-header-inner">
+      <div class="doc-header-left">
+        <a class="back-pill" id="backPanelLink" href="./index.html?tab=profile" aria-label="Volver">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+          <span class="back-text" id="backLinkLabel">Mi Panel</span>
+        </a>
+      </div>
+
+      <a class="brand-center" href="./index.html" aria-label="Green Mile Construction RD">
+        <img src="./logo.png?v=20261122-5" width="87" height="70" alt="Green Mile Construction RD" />
+      </a>
+
+      <div class="doc-header-right">
+        <button type="button" class="btn btn-navy btn-print-hdr" onclick="window.print()" aria-label="Imprimir o Guardar PDF">
+          🖨️ <span class="print-label">Imprimir / PDF</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="doc-main" id="contractPageRoot">
+    <div class="state-card">
+      <h2>Cargando expediente digital…</h2>
+      <p>Recuperando contrato firmado y comprobante fiscal electrónico (e-CF) desde Green Mile RD.</p>
+    </div>
+  </main>
+
+  <footer class="doc-footer no-print">
+    <div class="doc-footer-inner">
+      <span>© 2026 Green Mile Construction RD • Contratos Digitales y Facturación e-CF</span>
+      <div class="doc-footer-links">
+        <a href="./index.html">Catálogo RD</a>
+        <a href="./terminos.html">Términos y Condiciones</a>
+        <a href="./privacidad.html">Seguridad y Privacidad</a>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="./js/catalog-data.js?v=20261122-5"></script>
+  <script src="./js/firebase-config.js?v=20261122-5"></script>
+  <script src="./js/billing-engine.js?v=20261122-5"></script>
+  <script src="./js/contrato-page.js?v=20261122-5"></script>
+</body>
+</html>

@@ -23,7 +23,7 @@ function escAttr(str) {
     .replace(/"/g, '&quot;');
 }
 
-const ASSET_VER = '20261122-4';
+const ASSET_VER = '20261122-5';
 
 function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, ogImageUrl }) {
   const logoSrc = `${basePrefix}logo.png?v=${ASSET_VER}`;
@@ -111,20 +111,6 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
       <div class="detail-footer-copy">© 2026 Green Mile Construction RD · Alquiler Gestionado con e-NCF</div>
     </div>
   </footer>
-
-  <!-- CONTRATO PDF IMPRIMIBLE -->
-  <div class="sheet-backdrop" id="contractModal" onclick="if(event.target===this)window.GM_DETAIL.closeSheet('contractModal')">
-    <div class="sheet">
-      <div class="sheet-head no-print">
-        <div>
-          <h3>Contrato Digital y Factura e-CF</h3>
-          <p>Listo para guardar en PDF, imprimir o radicar</p>
-        </div>
-        <button type="button" class="close-x" onclick="window.GM_DETAIL.closeSheet('contractModal')">&times;</button>
-      </div>
-      <div class="sheet-body" id="contractBody"></div>
-    </div>
-  </div>
 
   <!-- GREEN MILE PRO -->
   <div class="sheet-backdrop" id="proSheet" onclick="if(event.target===this)window.GM_DETAIL.closeSheet('proSheet')">

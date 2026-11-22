@@ -1000,9 +1000,164 @@
       text-align: center;
     }
 
+    /* Auth-based UI visibility */
+    body:not(.is-authed) .auth-only { display: none !important; }
+    body.is-authed .guest-only { display: none !important; }
+    body:not(.is-authed) nav.bottom-nav { grid-template-columns: repeat(4, 1fr); }
+
+    /* Top Header Hamburger Button & Slide-Out Options Drawer */
+    .menu-icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--navy);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s, transform 0.12s;
+    }
+    .menu-icon-btn:hover { background: var(--navy-soft); border-color: #CBD5E1; }
+    .menu-icon-btn:active { transform: scale(0.96); }
+    .menu-icon-btn svg { width: 20px; height: 20px; }
+
+    .app-drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 110;
+      background: rgba(13, 34, 58, 0.52);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .app-drawer-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .app-drawer {
+      width: min(330px, 88vw);
+      height: 100%;
+      background: var(--surface);
+      box-shadow: -12px 0 36px rgba(13, 34, 58, 0.22);
+      transform: translateX(100%);
+      transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .app-drawer-backdrop.open .app-drawer {
+      transform: translateX(0);
+    }
+    .drawer-head {
+      padding: 16px 18px;
+      background: linear-gradient(135deg, #0D223A 0%, #173456 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .drawer-head-title {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+    .drawer-head-sub {
+      font-size: 11.5px;
+      color: #CBD5E1;
+      margin-top: 2px;
+    }
+    .drawer-close {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 14px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .drawer-account-box {
+      background: var(--navy-soft);
+      border: 1px solid #DCE5F0;
+      border-radius: 14px;
+      padding: 13px 14px;
+      margin-bottom: 8px;
+    }
+    .drawer-section-label {
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      padding: 8px 8px 4px;
+    }
+    .drawer-item {
+      width: 100%;
+      border: none;
+      background: transparent;
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--navy);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.14s, color 0.14s;
+    }
+    .drawer-item:hover { background: var(--navy-soft); }
+    .drawer-item-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .drawer-pill {
+      font-size: 11px;
+      font-weight: 800;
+      background: var(--navy-soft);
+      color: var(--navy);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .drawer-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 6px 6px;
+    }
+    .drawer-foot {
+      padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    }
+
     /* Responsive Rules & Mobile Frame Overrides */
     @media (max-width: 820px) {
-      .desktop-tabs, .hide-mobile { display: none !important; }
+      .desktop-tabs, .hide-mobile, .desktop-publish-btn { display: none !important; }
       nav.bottom-nav { display: grid; }
       .search-box-app { grid-template-columns: 1fr; }
       .s-city { border-left: none; border-top: 1px solid var(--border); }
@@ -1013,21 +1168,17 @@
       .sheet-body { padding: 16px 16px 22px; -webkit-overflow-scrolling: touch; }
       .sheet-foot { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
       .sheet-foot .btn { min-height: 46px; }
+      .top-actions { gap: 8px; }
+      #ownerHeaderBtn { padding: 8px 11px !important; font-size: 12px !important; }
     }
     body.mobile-frame-mode .desktop-tabs,
-    body.mobile-frame-mode .hide-in-sim { display: none !important; }
+    body.mobile-frame-mode .hide-in-sim,
+    body.mobile-frame-mode .desktop-publish-btn { display: none !important; }
     body.mobile-frame-mode .search-box-app { grid-template-columns: 1fr; }
     body.mobile-frame-mode .s-city { border-left: none; border-top: 1px solid var(--border); }
     body.mobile-frame-mode .f-grid { grid-template-columns: 1fr; }
     body.mobile-frame-mode .feed-grid { grid-template-columns: 1fr; }
 
-    /* Print Contract Cleanly */
-    @media print {
-      body * { visibility: hidden; }
-      #contractModal, #contractModal * { visibility: visible; }
-      #contractModal { position: absolute; inset: 0; background: #fff; padding: 0; }
-      .no-print { display: none !important; }
-    }
     .gm-map-pin-wrap { background: transparent; border: none; }
     .gm-map-pin {
       width: 28px; height: 28px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
@@ -1045,6 +1196,124 @@
     .permit-chip.selected {
       background: var(--orange-soft); border-color: var(--orange); color: var(--orange-hover);
     }
+
+    /* Marketplace Mode Bar (Alquiler / Venta Maquinaria / Piezas y Repuestos) */
+    .market-mode-wrap {
+      max-width: 1180px;
+      margin: 14px auto 0;
+      padding: 0 16px;
+    }
+    .market-mode-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 5px;
+      box-shadow: var(--shadow-sm);
+    }
+    .m-mode-btn {
+      border: none;
+      background: transparent;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all 0.16s ease;
+    }
+    .m-mode-btn:hover { color: var(--navy); background: var(--navy-soft); }
+    .m-mode-btn.active {
+      background: var(--navy);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(13, 34, 58, 0.18);
+    }
+    .m-mode-badge {
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: var(--navy-soft);
+      color: var(--navy);
+    }
+    .m-mode-btn.active .m-mode-badge {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+    }
+    .cond-pills {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .cond-pill {
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--navy);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.14s;
+    }
+    .cond-pill.active {
+      background: var(--orange);
+      border-color: var(--orange);
+      color: #fff;
+    }
+    .pill-cond-new {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: #059669;
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 4px 9px;
+      border-radius: 999px;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+    }
+    .pill-cond-used {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: #D97706;
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 4px 9px;
+      border-radius: 999px;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+    }
+    .pill-sale-tag {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(13, 34, 58, 0.9);
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 4px 9px;
+      border-radius: 999px;
+    }
+    @media (max-width: 640px) {
+      .market-mode-wrap { padding: 0 12px; margin-top: 10px; }
+      .m-mode-btn { padding: 9px 6px; font-size: 11.5px; gap: 4px; flex-direction: column; line-height: 1.15; }
+      .m-mode-badge { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -1054,22 +1323,25 @@
     <header class="app-header">
       <div class="nav-wrap">
         <div class="brand" onclick="switchTab('catalog')">
-          <img id="brandLogo" alt="Green Mile Construction RD" src="logo.png?v=20261122-3" width="94" height="76" />
+          <img id="brandLogo" alt="Green Mile Construction RD" src="logo.png?v=20261122-5" width="94" height="76" />
         </div>
 
         <div class="desktop-tabs">
           <button class="d-tab active" id="dTabCatalog" onclick="switchTab('catalog')">Explorar <span class="badge" id="dCountEq">0</span></button>
           <button class="d-tab" id="dTabRequests" onclick="switchTab('requests')">Obras RD <span class="badge" id="dCountReq">0</span></button>
-          <button class="d-tab" id="dTabSaved" onclick="switchTab('saved')">Guardados <span class="badge" id="dCountSaved">0</span></button>
-          <button class="d-tab" id="dTabProfile" onclick="switchTab('profile')">Mi Panel <span class="badge" id="dCountBk">0</span></button>
-          <a class="d-tab" href="./tracking.html" style="text-decoration:none;">🚚 Tracking</a>
+          <button class="d-tab auth-only" id="dTabSaved" onclick="switchTab('saved')">Guardados <span class="badge" id="dCountSaved">0</span></button>
+          <button class="d-tab auth-only" id="dTabProfile" onclick="switchTab('profile')">Mi Panel <span class="badge" id="dCountBk">0</span></button>
+          <a class="d-tab auth-only" id="dTabTracking" href="./tracking.html" style="text-decoration:none;">🚚 Tracking</a>
         </div>
 
         <div class="top-actions">
           <button class="btn btn-ghost" id="ownerHeaderBtn" onclick="openOwnerAccountModal()" style="padding:9px 13px; font-size:12.5px;">
-            👤 Cuenta Propietario
+            👤 Iniciar Sesión
           </button>
-          <button class="btn btn-primary" onclick="openPublishSheet()">+ Publicar</button>
+          <button class="btn btn-primary desktop-publish-btn" onclick="openActionChooser()">+ Publicar</button>
+          <button type="button" class="menu-icon-btn" id="menuDrawerBtn" onclick="openMenuDrawer()" aria-label="Abrir menú de opciones" title="Menú de opciones">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+          </button>
         </div>
       </div>
     </header>
@@ -1080,22 +1352,14 @@
         <div class="greeting-row">
           <div>
             <h1>Maquinaria pesada al instante</h1>
-            <p>República Dominicana • Alquiler directo con NCF, tracking GPS y firma digital</p>
-          </div>
-          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
-            <a class="btn btn-ghost" href="./tracking.html" style="padding:7px 12px; font-size:11px; background:rgba(184,90,39,0.92); color:#fff; border-color:rgba(255,255,255,0.22); text-decoration:none;">
-              🚚 Tracking GPS
-            </a>
-            <button class="btn btn-ghost" id="proBadgeBtn" style="padding:7px 12px; font-size:11px; background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.22);" onclick="openSheet('proSheet')">
-              ⭐ Pro
-            </button>
+            <p>República Dominicana • Alquiler y venta de maquinaria y piezas (nuevas y usadas) con e-NCF, tracking GPS y firma digital</p>
           </div>
         </div>
 
         <div class="search-box-app">
           <div class="s-input">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" id="searchInput" placeholder="Buscar retroexcavadora, grúa, rodillo..." oninput="renderCurrentTab()">
+            <input type="text" id="searchInput" placeholder="Buscar retroexcavadora, grúa, bomba hidráulica, filtro CAT..." oninput="renderCurrentTab()">
           </div>
           <div class="s-input s-city">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -1124,9 +1388,28 @@
     </section>
 
     <!-- =========================================================
-         TAB 1: EXPLORAR CATÁLOGO
+         TAB 1: EXPLORAR CATÁLOGO (ALQUILER • VENTAS • PIEZAS)
          ========================================================= -->
     <div id="tabViewCatalog">
+      <!-- 3-Way Marketplace Switcher -->
+      <div class="market-mode-wrap">
+        <div class="market-mode-bar" id="marketModeBar" role="tablist" aria-label="Modalidad del catálogo">
+          <button type="button" class="m-mode-btn active" id="modeBtnRent" onclick="switchMarketMode('rent')">
+            <span>🚜 Alquiler</span>
+            <span class="m-mode-badge" id="mCountRent">0</span>
+          </button>
+          <button type="button" class="m-mode-btn" id="modeBtnSale" onclick="switchMarketMode('sale')">
+            <span>🏷️ Venta Equipos</span>
+            <span class="m-mode-badge" id="mCountSale">0</span>
+          </button>
+          <button type="button" class="m-mode-btn" id="modeBtnParts" onclick="switchMarketMode('parts')">
+            <span>⚙️ Piezas y Repuestos</span>
+            <span class="m-mode-badge" id="mCountParts">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Equipment Categories (Alquiler & Venta Equipos) -->
       <div class="cat-scroller" id="catChips">
         <button class="app-chip active" data-cat="Todos">Todos</button>
         <button class="app-chip" data-cat="Movimiento de Tierra">Movimiento Tierra</button>
@@ -1137,16 +1420,40 @@
         <button class="app-chip" data-cat="Transporte Pesado">Camiones / Volteo</button>
       </div>
 
+      <!-- Parts Categories (Piezas y Repuestos) -->
+      <div class="cat-scroller" id="partCatChips" style="display:none;">
+        <button class="app-chip active" data-pcat="Todos">Todas las Piezas</button>
+        <button class="app-chip" data-pcat="Hidráulica y Bombas">Hidráulica y Bombas</button>
+        <button class="app-chip" data-pcat="Motor y Filtros">Motor y Filtros</button>
+        <button class="app-chip" data-pcat="Rodaje y Orugas">Rodaje y Orugas</button>
+        <button class="app-chip" data-pcat="Implementos y Cucharones">Implementos / Cucharones</button>
+        <button class="app-chip" data-pcat="Neumáticos y Aros">Neumáticos y Aros</button>
+        <button class="app-chip" data-pcat="Eléctrico y Sensores">Eléctrico y Sensores</button>
+        <button class="app-chip" data-pcat="Transmisión y Frenos">Transmisión y Frenos</button>
+        <button class="app-chip" data-pcat="Cabina y Cristales">Cabina y Cristales</button>
+      </div>
+
       <div class="sub-filters">
-        <div class="sub-toggles">
+        <div class="sub-toggles" id="rentSubToggles">
           <label class="mini-toggle"><input type="checkbox" id="fOp" onchange="renderCatalog()"> Con Operador</label>
           <label class="mini-toggle"><input type="checkbox" id="fAvail" onchange="renderCatalog()"> Disponible Hoy</label>
         </div>
-        <select class="mini-toggle" id="fSort" onchange="renderCatalog()" style="outline:none;">
-          <option value="recent">Recientes</option>
-          <option value="asc">Menor RD$</option>
-          <option value="desc">Mayor RD$</option>
-        </select>
+
+        <div class="cond-pills" id="marketCondPills" style="display:none;">
+          <button type="button" class="cond-pill active" data-cond="all" onclick="setMarketCondition('all')">Todas</button>
+          <button type="button" class="cond-pill" data-cond="nueva" onclick="setMarketCondition('nueva')">✨ Nuevas</button>
+          <button type="button" class="cond-pill" data-cond="usada" onclick="setMarketCondition('usada')">🔧 Usadas</button>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary" id="btnQuickSellPart" style="display:none; padding:6px 12px; font-size:11.5px;" onclick="openPublishPartSheet()">+ Vender Pieza</button>
+          <button type="button" class="btn btn-primary" id="btnQuickSellMachine" style="display:none; padding:6px 12px; font-size:11.5px;" onclick="openPublishSheet('sale')">+ Vender Equipo</button>
+          <select class="mini-toggle" id="fSort" onchange="renderCatalog()" style="outline:none;">
+            <option value="recent">Recientes</option>
+            <option value="asc">Menor RD$</option>
+            <option value="desc">Mayor RD$</option>
+          </select>
+        </div>
       </div>
 
       <div class="view-section">
@@ -1162,7 +1469,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:10px;">
           <div>
             <h2 style="font-size:18px; color:var(--navy);">Obras Buscando Equipo</h2>
-            <p style="font-size:12px; color:var(--text-muted);">Postula tu equipo vía Green Mile RD • Cobro garantizado y e-NCF</p>
+            <p style="font-size:12px; color:var(--text-muted);">Postula tu equipo directamente en la app • Cobro garantizado y e-NCF</p>
           </div>
           <button class="btn btn-primary" style="padding:9px 14px; font-size:12px;" onclick="openSheet('reqSheet')">+ Pedir Máquina</button>
         </div>
@@ -1171,7 +1478,7 @@
     </div>
 
     <!-- =========================================================
-         TAB 3: FAVORITOS / GUARDADOS
+         TAB 3: FAVORITOS / GUARDADOS (SOLO AUTENTICADOS)
          ========================================================= -->
     <div id="tabViewSaved" style="display:none;">
       <div class="view-section" style="padding-top:16px;">
@@ -1182,59 +1489,88 @@
     </div>
 
     <!-- =========================================================
-         TAB 4: MI PERFIL / FLOTA / CONTRATOS
+         TAB 4: MI PERFIL / FLOTA / CONTRATOS (SOLO AUTENTICADOS)
          ========================================================= -->
     <div id="tabViewProfile" style="display:none;">
       <div class="view-section" style="padding-top:16px;">
-        <!-- Owner Account Card -->
-        <div id="profileOwnerCard" style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;"></div>
+        <!-- Guest Auth Gate (visible only when unauthenticated) -->
+        <div id="profileGuestGate" style="display:none;"></div>
 
-        <!-- KPI Summary Cards -->
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:18px;">
-          <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center;">
-            <strong style="font-size:18px; color:var(--navy); display:block;" id="kpiFleet">0</strong>
-            <span style="font-size:11px; color:var(--text-muted);">Mi Flota</span>
-          </div>
-          <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center;">
-            <strong style="font-size:18px; color:var(--navy); display:block;" id="kpiContracts">0</strong>
-            <span style="font-size:11px; color:var(--text-muted);">Contratos</span>
-          </div>
-          <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center;">
-            <strong style="font-size:15px; color:var(--orange); display:block;" id="kpiVol">RD$ 0</strong>
-            <span style="font-size:11px; color:var(--text-muted);">Facturado</span>
-          </div>
-        </div>
+        <!-- Private Authenticated Panel Content -->
+        <div id="profilePrivateContent">
+          <!-- Owner Account Card -->
+          <div id="profileOwnerCard" style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;"></div>
 
-        <!-- Live GPS Tracking Banner Card -->
-        <div style="background:linear-gradient(135deg, #0D223A 0%, #163558 100%); color:#fff; border-radius:16px; padding:16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-          <div>
-            <strong style="font-size:15px; display:block;">🚚 Rastreo GPS en Vivo (Tipo Uber)</strong>
-            <span style="font-size:12px; color:#CBD5E1;">Sigue el recorrido del operador en el mapa con ETA real, ruta por carretera y vista satélite.</span>
-          </div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <a class="btn btn-primary" href="./tracking.html" style="padding:8px 13px; font-size:12px; text-decoration:none;">🗺️ Ver Mapa en Vivo</a>
-            <a class="btn btn-ghost" href="./tracking.html?role=operator" style="padding:8px 13px; font-size:12px; background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.22); text-decoration:none;">🚚 Consola Operador</a>
-            <button class="btn btn-ghost" id="btnInstallPwa" onclick="handleInstallPwa()" style="display:none; padding:8px 13px; font-size:12px; background:#059669; color:#fff; border-color:transparent;">📲 Instalar App</button>
-          </div>
-        </div>
-
-        <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
-            <strong style="font-size:15px; color:var(--navy);">Contratos, Facturas e-CF y Despachos</strong>
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <a class="btn btn-navy" style="padding:5px 10px; font-size:11px; text-decoration:none;" href="admin.html">⚙️ Centro Administrativo</a>
-              <button class="btn btn-ghost" style="padding:5px 10px; font-size:11px;" onclick="exportBackup()">Respaldo JSON</button>
+          <!-- KPI Summary Cards -->
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:18px;">
+            <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center;">
+              <strong style="font-size:18px; color:var(--navy); display:block;" id="kpiFleet">0</strong>
+              <span style="font-size:11px; color:var(--text-muted);">Mi Inventario</span>
+            </div>
+            <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center;">
+              <strong style="font-size:18px; color:var(--navy); display:block;" id="kpiContracts">0</strong>
+              <span style="font-size:11px; color:var(--text-muted);">Contratos</span>
+            </div>
+            <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center;">
+              <strong style="font-size:15px; color:var(--orange); display:block;" id="kpiVol">RD$ 0</strong>
+              <span style="font-size:11px; color:var(--text-muted);">Facturado</span>
             </div>
           </div>
-          <div id="profileContracts"></div>
-        </div>
 
-        <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <strong style="font-size:15px; color:var(--navy);">Mis Máquinas Publicadas</strong>
-            <button class="btn btn-primary" style="padding:6px 12px; font-size:11px;" onclick="openPublishSheet()">+ Publicar Equipo</button>
+          <!-- Live GPS Tracking Banner Card -->
+          <div style="background:linear-gradient(135deg, #0D223A 0%, #163558 100%); color:#fff; border-radius:16px; padding:16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <div>
+              <strong style="font-size:15px; display:block;">🚚 Rastreo GPS en Vivo (Tipo Uber)</strong>
+              <span style="font-size:12px; color:#CBD5E1;">Sigue el recorrido del operador en el mapa con ETA real, ruta por carretera y vista satélite.</span>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <a class="btn btn-primary" href="./tracking.html" style="padding:8px 13px; font-size:12px; text-decoration:none;">🗺️ Ver Mapa en Vivo</a>
+              <button class="btn btn-ghost" id="btnInstallPwa" onclick="handleInstallPwa()" style="display:none; padding:8px 13px; font-size:12px; background:#059669; color:#fff; border-color:transparent;">📲 Instalar App</button>
+            </div>
           </div>
-          <div id="profileFleet"></div>
+
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+              <strong style="font-size:15px; color:var(--navy);">Contratos, Facturas e-CF y Despachos</strong>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <a class="btn btn-navy" style="padding:5px 10px; font-size:11px; text-decoration:none;" href="admin.html">⚙️ Centro Administrativo</a>
+                <button class="btn btn-ghost" style="padding:5px 10px; font-size:11px;" onclick="exportBackup()">Respaldo JSON</button>
+              </div>
+            </div>
+            <div id="profileContracts"></div>
+          </div>
+
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+              <strong style="font-size:15px; color:var(--navy);">📋 Mis Postulaciones a Obras RD</strong>
+              <button class="btn btn-ghost" style="padding:6px 12px; font-size:11px;" onclick="switchTab('requests')">Explorar Obras RD →</button>
+            </div>
+            <div id="profileBids"></div>
+          </div>
+
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+              <strong style="font-size:15px; color:var(--navy);">🛒 Órdenes de Compra (Equipos y Piezas)</strong>
+              <button class="btn btn-ghost" style="padding:6px 12px; font-size:11px;" onclick="switchTab('catalog'); switchMarketMode('parts');">Ver Catálogo de Piezas →</button>
+            </div>
+            <div id="profileOrders"></div>
+          </div>
+
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+              <strong style="font-size:15px; color:var(--navy);">⚙️ Mis Piezas y Repuestos en Venta</strong>
+              <button class="btn btn-primary" style="padding:6px 12px; font-size:11px;" onclick="openPublishPartSheet()">+ Publicar Pieza</button>
+            </div>
+            <div id="profileParts"></div>
+          </div>
+
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+              <strong style="font-size:15px; color:var(--navy);">🚜 Mis Máquinas Publicadas (Alquiler / Venta)</strong>
+              <button class="btn btn-primary" style="padding:6px 12px; font-size:11px;" onclick="openPublishSheet()">+ Publicar Equipo</button>
+            </div>
+            <div id="profileFleet"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1260,14 +1596,19 @@
         <span class="b-fab-label">Publicar</span>
       </div>
 
-      <button class="b-item" id="bNavSaved" onclick="switchTab('saved')">
+      <button class="b-item auth-only" id="bNavSaved" onclick="switchTab('saved')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
         <span>Guardados</span>
       </button>
 
-      <button class="b-item" id="bNavProfile" onclick="switchTab('profile')">
+      <button class="b-item auth-only" id="bNavProfile" onclick="switchTab('profile')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         <span>Mi Panel</span>
+      </button>
+
+      <button class="b-item guest-only" id="bNavLogin" onclick="openOwnerAccountModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Entrar</span>
       </button>
     </nav>
 
@@ -1277,36 +1618,60 @@
         <a href="acerca-de.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Acerca de</a>
         <a href="terminos.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Términos y Condiciones</a>
         <a href="privacidad.html" style="color:var(--navy); font-weight:600; text-decoration:none;">Seguridad y Privacidad</a>
-        <a href="admin.html" style="color:var(--orange); font-weight:700; text-decoration:none;">⚙️ Administración</a>
+        <a class="auth-only" href="admin.html" style="color:var(--orange); font-weight:700; text-decoration:none;">⚙️ Administración</a>
       </div>
     </footer>
+  </div>
+
+  <!-- =========================================================
+       SLIDE-OUT OPTIONS MENU DRAWER (☰)
+       ========================================================= -->
+  <div class="app-drawer-backdrop" id="appMenuDrawer" onclick="if(event.target===this)closeMenuDrawer()" aria-hidden="true">
+    <aside class="app-drawer" role="dialog" aria-label="Menú de opciones">
+      <div class="drawer-head">
+        <div>
+          <div class="drawer-head-title">Menú de Opciones</div>
+          <div class="drawer-head-sub">Green Mile Construction RD</div>
+        </div>
+        <button type="button" class="drawer-close" onclick="closeMenuDrawer()" aria-label="Cerrar menú">&times;</button>
+      </div>
+      <div class="drawer-body" id="appMenuDrawerBody"></div>
+      <div class="drawer-foot" id="appMenuDrawerFoot"></div>
+    </aside>
   </div>
 
   <!-- =========================================================
        QUICK ACTION CHOOSER SHEET (+ BUTTON IN APP)
        ========================================================= -->
   <div class="sheet-backdrop" id="chooserSheet" onclick="if(event.target===this)closeSheet('chooserSheet')">
-    <div class="sheet" style="max-width:440px;">
+    <div class="sheet" style="max-width:460px;">
       <div class="sheet-handle"></div>
       <div class="sheet-head">
         <div>
           <h3>¿Qué deseas publicar hoy?</h3>
-          <p>Elige una acción rápida en Green Mile RD</p>
+          <p>Alquiler, venta de maquinaria o repuestos en Green Mile RD</p>
         </div>
         <button class="close-x" onclick="closeSheet('chooserSheet')">&times;</button>
       </div>
       <div class="sheet-body" style="display:flex; flex-direction:column; gap:12px;">
-        <button class="switch-row" style="text-align:left; width:100%;" onclick="closeSheet('chooserSheet'); openPublishSheet();">
+        <button class="switch-row" style="text-align:left; width:100%;" onclick="closeSheet('chooserSheet'); openPublishSheet('rent');">
           <div>
-            <strong>🚜 Soy propietario: Publicar Equipo</strong>
-            <span>Requiere cuenta verificada • Sube hasta 5 fotos reales</span>
+            <strong>🚜 Publicar Maquinaria (Alquiler o Venta)</strong>
+            <span>Alquila tu flota o véndela (nueva o usada) • Hasta 5 fotos reales</span>
           </div>
           <span style="font-weight:800; color:var(--orange);">→</span>
+        </button>
+        <button class="switch-row" style="text-align:left; width:100%;" onclick="closeSheet('chooserSheet'); openPublishPartSheet();">
+          <div>
+            <strong>⚙️ Vender Piezas y Repuestos (Nuevas o Usadas)</strong>
+            <span>Publica bombas, filtros, orugas, martillos, gomas OTR y más</span>
+          </div>
+          <span style="font-weight:800; color:#059669;">→</span>
         </button>
         <button class="switch-row" style="text-align:left; width:100%;" onclick="closeSheet('chooserSheet'); openSheet('reqSheet');">
           <div>
             <strong>👷 Soy contratista: Pedir Máquina para Obra</strong>
-            <span>Publica lo que buscas y recibe propuestas verificadas</span>
+            <span>Publica lo que buscas en Obras RD y recibe propuestas verificadas</span>
           </div>
           <span style="font-weight:800; color:var(--navy);">→</span>
         </button>
@@ -1315,15 +1680,15 @@
   </div>
 
   <!-- =========================================================
-       BOTTOM SHEET 0: CUENTA PREVIA DE PROPIETARIO (REGISTRO / LOGIN)
+       BOTTOM SHEET 0: CUENTA VERIFICADA GREEN MILE RD (REGISTRO / LOGIN)
        ========================================================= -->
   <div class="sheet-backdrop" id="ownerAuthSheet" onclick="if(event.target===this)closeSheet('ownerAuthSheet')">
     <div class="sheet" style="max-width:520px;">
       <div class="sheet-handle"></div>
       <div class="sheet-head">
         <div>
-          <h3>Cuenta de Propietario</h3>
-          <p>Regístrate o inicia sesión antes de publicar maquinaria</p>
+          <h3>Mi Cuenta Green Mile RD</h3>
+          <p>Inicia sesión o regístrate para acceder a Mi Panel, Guardados, Tracking GPS y publicar equipos o piezas</p>
         </div>
         <button type="button" class="close-x" onclick="closeSheet('ownerAuthSheet')">&times;</button>
       </div>
@@ -1352,7 +1717,7 @@
           </div>
           <button type="submit" class="btn btn-navy" style="width:100%; margin-top:16px; min-height:48px; font-size:15px;">Entrar a mi Cuenta</button>
           <p style="text-align:center; font-size:12px; color:var(--text-muted); margin-top:12px;">
-            ¿Aún no tienes cuenta de propietario?
+            ¿Aún no tienes cuenta en Green Mile RD?
             <a href="#" onclick="event.preventDefault(); switchOwnerAuthMode('register');" style="color:var(--orange); font-weight:800;">Regístrate gratis aquí</a>
           </p>
         </form>
@@ -1430,15 +1795,15 @@
   </div>
 
   <!-- =========================================================
-       BOTTOM SHEET 1: PUBLICAR EQUIPO (3-STEP APP WIZARD)
+       BOTTOM SHEET 1: PUBLICAR EQUIPO (ALQUILER O VENTA - 3 PASOS)
        ========================================================= -->
   <div class="sheet-backdrop" id="publishSheet">
     <div class="sheet">
       <div class="sheet-handle"></div>
       <div class="sheet-head">
         <div>
-          <h3>Publicar Equipo en Green Mile</h3>
-          <p>Sube tu maquinaria en 3 pasos • Cobro garantizado</p>
+          <h3>Publicar Maquinaria en Green Mile</h3>
+          <p>Alquiler o venta (nueva / usada) • Cobro garantizado y e-NCF</p>
         </div>
         <button type="button" class="close-x" onclick="closeSheet('publishSheet')">&times;</button>
       </div>
@@ -1447,12 +1812,34 @@
         <div class="sheet-body" id="publishSheetBody">
           <div class="stepper">
             <div class="s-pill active" id="ws1" style="cursor:pointer;" onclick="goToWizardStep(1)">1. Equipo</div>
-            <div class="s-pill" id="ws2" style="cursor:pointer;" onclick="goToWizardStep(2)">2. Tarifas RD$</div>
+            <div class="s-pill" id="ws2" style="cursor:pointer;" onclick="goToWizardStep(2)">2. Precios RD$</div>
             <div class="s-pill" id="ws3" style="cursor:pointer;" onclick="goToWizardStep(3)">3. Fotos y Confirmar</div>
           </div>
 
           <!-- Step 1 -->
           <div id="pStep1">
+            <div class="f-grid" style="margin-bottom:14px;">
+              <div class="f-field">
+                <label for="pubListingType">Modalidad <small>* Obligatorio</small></label>
+                <div class="f-box">
+                  <select id="pubListingType" onchange="onPubListingTypeChange()">
+                    <option value="rent">🚜 Solo Alquiler</option>
+                    <option value="sale">🏷️ Solo Venta</option>
+                    <option value="both">🚜 + 🏷️ Alquiler y Venta</option>
+                  </select>
+                </div>
+              </div>
+              <div class="f-field">
+                <label for="pubCondition">Condición <small>* Obligatorio</small></label>
+                <div class="f-box">
+                  <select id="pubCondition">
+                    <option value="usada">🔧 Usada (Operativa)</option>
+                    <option value="nueva">✨ Nueva (0 Horas)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <div class="f-field full" style="margin-bottom:14px;">
               <label>Categoría <small>* Obligatorio</small></label>
               <div class="cat-grid-tiles" id="pubCatTiles">
@@ -1481,9 +1868,13 @@
                 <label>Año</label>
                 <div class="f-box"><input type="number" id="pubYear" placeholder="2022" min="1970" max="2027"></div>
               </div>
+              <div class="f-field full" id="pubHoursWrap">
+                <label for="pubHoursUsed">Horas de Uso / Kilometraje <small>Recomendado para ventas</small></label>
+                <div class="f-box"><input type="text" id="pubHoursUsed" placeholder="Ej. 2,400 hrs • 0 hrs si es nueva"></div>
+              </div>
               <div class="f-field full">
-                <label>Detalles y aditamentos incluidos</label>
-                <div class="f-box"><textarea id="pubDesc" placeholder="Ej. Incluye martillo hidráulico, seguro al día..."></textarea></div>
+                <label>Detalles, garantía y aditamentos incluidos</label>
+                <div class="f-box"><textarea id="pubDesc" placeholder="Ej. Incluye martillo hidráulico, matrícula al día, seguro vigente..."></textarea></div>
               </div>
             </div>
           </div>
@@ -1491,28 +1882,35 @@
           <!-- Step 2 -->
           <div id="pStep2" style="display:none;">
             <div class="f-grid">
-              <div class="f-field">
+              <div class="f-field full" id="pubSalePriceWrap" style="display:none;">
+                <label for="pubSalePrice">Precio de Venta (RD$) <small style="color:var(--orange); font-weight:700;">* Obligatorio para Venta</small></label>
+                <div class="f-box">
+                  <span class="f-prefix">RD$</span>
+                  <input type="number" id="pubSalePrice" placeholder="4250000" min="50000" step="10000">
+                </div>
+              </div>
+              <div class="f-field" id="pubRentDayWrap">
                 <label>Tarifa por Día <small>* Obligatorio</small></label>
                 <div class="f-box">
                   <span class="f-prefix">RD$</span>
                   <input type="number" id="pubPriceDay" placeholder="16500" min="500" oninput="suggestRates()">
                 </div>
               </div>
-              <div class="f-field">
+              <div class="f-field" id="pubRentHourWrap">
                 <label>Tarifa por Hora <small>Opcional</small></label>
                 <div class="f-box">
                   <span class="f-prefix">RD$</span>
                   <input type="number" id="pubPriceHour" placeholder="2400" min="0">
                 </div>
               </div>
-              <div class="f-field">
+              <div class="f-field" id="pubRentWeekWrap">
                 <label>Tarifa por Semana <small>Opcional</small></label>
                 <div class="f-box">
                   <span class="f-prefix">RD$</span>
                   <input type="number" id="pubPriceWeek" placeholder="90000" min="0">
                 </div>
               </div>
-              <div class="f-field">
+              <div class="f-field" id="pubRentTransWrap">
                 <label>Traslado Lowboy (Ida)</label>
                 <div class="f-box">
                   <span class="f-prefix">RD$</span>
@@ -1707,19 +2105,288 @@
   </div>
 
   <!-- =========================================================
-       BOTTOM SHEET 3: CONTRATO PDF IMPRIMIBLE
+       BOTTOM SHEET 2B: POSTULAR MI EQUIPO A OBRA (100% EN LA APP)
        ========================================================= -->
-  <div class="sheet-backdrop" id="contractModal">
-    <div class="sheet">
-      <div class="sheet-handle no-print"></div>
-      <div class="sheet-head no-print">
+  <div class="sheet-backdrop" id="bidSheet">
+    <div class="sheet" style="max-width:560px;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
         <div>
-          <h3>Contrato Digital Firmado</h3>
-          <p>Listo para guardar en PDF o compartir</p>
+          <h3>Postular mi Equipo a Obra</h3>
+          <p>Propuesta formal gestionada por Green Mile RD • Cobro garantizado y e-NCF</p>
         </div>
-        <button class="close-x" onclick="closeSheet('contractModal')">&times;</button>
+        <button type="button" class="close-x" onclick="closeSheet('bidSheet')">&times;</button>
       </div>
-      <div class="sheet-body" id="contractBody"></div>
+      <form id="bidForm" onsubmit="submitBid(event)" style="display:flex; flex-direction:column; overflow:hidden; flex:1;">
+        <div class="sheet-body">
+          <div id="bidReqSummary" style="background:var(--navy-soft); border:1.5px solid #DCE5F0; border-left:4px solid var(--orange); border-radius:14px; padding:13px 14px; margin-bottom:14px;"></div>
+
+          <div class="f-grid">
+            <div class="f-field full">
+              <label for="bidEquipSelect">Equipo que deseas postular <small style="color:var(--orange); font-weight:700;">Obligatorio</small></label>
+              <div class="f-box">
+                <select id="bidEquipSelect" onchange="onBidEquipChange()" required></select>
+              </div>
+            </div>
+
+            <div class="f-field full" id="bidCustomEquipWrap" style="display:none;">
+              <label for="bidCustomEquip">Describe tu equipo (Marca, modelo, capacidad y año)</label>
+              <div class="f-box">
+                <input type="text" id="bidCustomEquip" placeholder="Ej. Rodillo Vibratorio CAT CS54B 11 Ton, año 2022">
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="bidPriceDay">Tu Tarifa por Día (RD$) <small style="color:var(--orange); font-weight:700;">Obligatorio</small></label>
+              <div class="f-box">
+                <span class="f-prefix">RD$</span>
+                <input type="number" id="bidPriceDay" min="500" step="100" placeholder="19000" oninput="updateBidPayoutPreview()" required>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="bidAvail">Disponibilidad de Entrega</label>
+              <div class="f-box">
+                <select id="bidAvail">
+                  <option value="Inmediata (Hoy / Mañana)">⚡ Inmediata (Hoy / Mañana)</option>
+                  <option value="En 24 - 48 horas">📅 En 24 - 48 horas</option>
+                  <option value="Según fecha de inicio de obra">🗓️ Según fecha de inicio de obra</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="bidTransportMode">Traslado Lowboy</label>
+              <div class="f-box">
+                <select id="bidTransportMode" onchange="onBidTransportChange()">
+                  <option value="included">Incluido en la tarifa</option>
+                  <option value="extra">Costo adicional (RD$)</option>
+                  <option value="client">A coordinar con Green Mile</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="f-field" id="bidTransportCostWrap" style="display:none;">
+              <label for="bidTransportCost">Costo Traslado (RD$)</label>
+              <div class="f-box">
+                <span class="f-prefix">RD$</span>
+                <input type="number" id="bidTransportCost" min="0" step="500" placeholder="8500" oninput="updateBidPayoutPreview()">
+              </div>
+            </div>
+
+            <div class="f-field full">
+              <div id="bidPayoutBox" class="receipt" style="margin-top:0;"></div>
+            </div>
+
+            <div class="f-field full">
+              <label class="switch-row">
+                <div>
+                  <strong>Incluye Operador Certificado y Seguro RC al día</strong>
+                  <span>Respaldo requerido por contratistas formales en RD</span>
+                </div>
+                <input type="checkbox" id="bidOp" checked style="display:none;">
+                <div class="sw-knob"></div>
+              </label>
+            </div>
+
+            <div class="f-field full" id="bidOwnerAuthBox"></div>
+
+            <div class="f-field full">
+              <label for="bidNotes">Condiciones y detalles de tu propuesta</label>
+              <div class="f-box">
+                <textarea id="bidNotes" rows="2" placeholder="Ej. Equipo recién mantenido en Santiago, listo para entrar con operador certificado..."></textarea>
+              </div>
+            </div>
+
+            <div class="f-field full">
+              <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-muted);">
+                <input type="checkbox" id="bidTerms" checked required style="margin-top:3px; accent-color:var(--orange);">
+                <span>Acepto que toda negociación, cobro al contratista, emisión de <strong>e-NCF</strong> y liquidación se gestione exclusivamente dentro de <strong>Green Mile RD</strong>.</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="sheet-foot" style="gap:8px;">
+          <button type="button" class="btn btn-ghost" onclick="closeSheet('bidSheet')">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="flex:1;">Enviar Postulación en la App</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       BOTTOM SHEET 3A: PUBLICAR PIEZA / REPUESTO (PROPIETARIOS)
+       ========================================================= -->
+  <div class="sheet-backdrop" id="publishPartSheet" onclick="if(event.target===this)closeSheet('publishPartSheet')">
+    <div class="sheet" style="max-width:580px;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <div>
+          <h3>Publicar Pieza o Repuesto en Venta</h3>
+          <p>Nuevas o usadas • Venta directa gestionada con e-NCF en Green Mile RD</p>
+        </div>
+        <button type="button" class="close-x" onclick="closeSheet('publishPartSheet')">&times;</button>
+      </div>
+      <form id="publishPartForm" onsubmit="submitPublishPart(event)" style="display:flex; flex-direction:column; overflow:hidden; flex:1;">
+        <div class="sheet-body">
+          <div id="pubPartOwnerSummary" style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:12px; padding:10px 12px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; gap:8px;"></div>
+
+          <div class="f-grid">
+            <div class="f-field">
+              <label for="partCat">Categoría de Pieza <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <select id="partCat" required>
+                  <option value="Hidráulica y Bombas">Hidráulica y Bombas</option>
+                  <option value="Motor y Filtros">Motor y Filtros</option>
+                  <option value="Rodaje y Orugas">Rodaje y Orugas</option>
+                  <option value="Implementos y Cucharones">Implementos y Cucharones</option>
+                  <option value="Neumáticos y Aros">Neumáticos y Aros</option>
+                  <option value="Eléctrico y Sensores">Eléctrico y Sensores</option>
+                  <option value="Transmisión y Frenos">Transmisión y Frenos</option>
+                  <option value="Cabina y Cristales">Cabina y Cristales</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="partCondition">Condición <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <select id="partCondition" required>
+                  <option value="nueva">✨ Nueva (Sellada / OEM)</option>
+                  <option value="usada">🔧 Usada (Operativa / Revisada)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="f-field full">
+              <label for="partTitle">Nombre de la Pieza / Repuesto <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <input type="text" id="partTitle" placeholder="Ej. Bomba Hidráulica Rexroth A10VO para CAT 416F2" required>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="partNumber">Número de Parte / OEM</label>
+              <div class="f-box">
+                <input type="text" id="partNumber" placeholder="Ej. CAT 235-4110">
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="partBrand">Marca</label>
+              <div class="f-box">
+                <input type="text" id="partBrand" placeholder="Ej. CAT / Komatsu / Rexroth">
+              </div>
+            </div>
+
+            <div class="f-field full">
+              <label for="partCompatible">Equipos / Modelos Compatibles <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <input type="text" id="partCompatible" placeholder="Ej. Retroexcavadoras CAT 416E, 416F2, 420E" required>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="partPrice">Precio de Venta (RD$) <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <span class="f-prefix">RD$</span>
+                <input type="number" id="partPrice" min="100" step="50" placeholder="24500" required>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="partStock">Unidades Disponibles</label>
+              <div class="f-box">
+                <input type="number" id="partStock" min="1" max="999" value="1" required>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="partCity">Provincia / Ubicación</label>
+              <div class="f-box">
+                <select id="partCity">
+                  <option value="Santo Domingo">Santo Domingo / DN</option>
+                  <option value="Santiago">Santiago</option>
+                  <option value="Punta Cana">Punta Cana / Bávaro</option>
+                  <option value="La Romana">La Romana</option>
+                  <option value="San Cristóbal">San Cristóbal</option>
+                  <option value="Puerto Plata">Puerto Plata</option>
+                  <option value="La Vega">La Vega</option>
+                  <option value="Baní">Baní</option>
+                  <option value="San Pedro de Macorís">San Pedro de Macorís</option>
+                  <option value="Higüey">Higüey</option>
+                  <option value="San Francisco de Macorís">San Francisco de Macorís</option>
+                  <option value="Bonao">Bonao</option>
+                  <option value="Barahona">Barahona</option>
+                  <option value="Samaná">Samaná</option>
+                  <option value="Azua">Azua</option>
+                  <option value="Moca">Moca</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="partWarranty">Garantía / Estado</label>
+              <div class="f-box">
+                <input type="text" id="partWarranty" placeholder="Ej. 6 meses / Probada en banco">
+              </div>
+            </div>
+
+            <div class="f-field full">
+              <label for="partDesc">Descripción técnica</label>
+              <div class="f-box">
+                <textarea id="partDesc" rows="2" placeholder="Detalles técnicos, compatibilidad, disponibilidad de entrega o envío..."></textarea>
+              </div>
+            </div>
+
+            <div class="f-field full">
+              <label>Fotos de la Pieza <small>(Opcional, hasta 5 fotos reales • si no subes se usa portada de categoría)</small></label>
+              <label class="cam-drop" id="partCamDrop" style="padding:14px;">
+                <input type="file" id="partPhotoInput" accept="image/*" multiple style="display:none;" onchange="onPartPhotoPicked(event)">
+                <div id="partCamText">
+                  <strong style="color:var(--navy); display:block; font-size:13.5px;">📷 Subir fotos reales de la pieza (0/5)</strong>
+                  <span style="font-size:11.5px; color:var(--text-muted);">Toca aquí para tomar foto o elegir de tu galería</span>
+                </div>
+              </label>
+              <div class="photos-grid" id="partPhotosGrid" style="margin-top:8px;"></div>
+            </div>
+
+            <div class="f-field full">
+              <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-muted);">
+                <input type="checkbox" id="partTerms" checked required style="margin-top:3px; accent-color:var(--orange);">
+                <span>Confirmo que esta pieza está disponible para entrega/envío en RD y acepto facturación e intermediación mediante <strong>Green Mile RD</strong>.</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="sheet-foot" style="gap:8px;">
+          <button type="button" class="btn btn-ghost" onclick="closeSheet('publishPartSheet')">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="flex:1;">Publicar Pieza en el Catálogo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       BOTTOM SHEET 3B: DETALLE Y ORDEN DE COMPRA (VENTAS Y PIEZAS)
+       ========================================================= -->
+  <div class="sheet-backdrop" id="marketBuySheet" onclick="if(event.target===this)closeSheet('marketBuySheet')">
+    <div class="sheet" style="max-width:600px;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <div>
+          <h3 id="buySheetTitle">Detalle y Compra Segura</h3>
+          <p id="buySheetSub">Compra gestionada en Green Mile RD • e-NCF y garantía de entrega</p>
+        </div>
+        <button type="button" class="close-x" onclick="closeSheet('marketBuySheet')">&times;</button>
+      </div>
+      <form id="marketBuyForm" onsubmit="submitMarketBuyOrder(event)" style="display:flex; flex-direction:column; overflow:hidden; flex:1;">
+        <div class="sheet-body" id="marketBuyBody"></div>
+        <div class="sheet-foot" style="gap:8px;">
+          <button type="button" class="btn btn-ghost" onclick="closeSheet('marketBuySheet')">Cerrar</button>
+          <button type="submit" class="btn btn-primary" id="marketBuySubmitBtn" style="flex:1;">Confirmar Orden de Compra</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1796,18 +2463,21 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
-  <script src="js/catalog-data.js"></script>
-  <script src="js/firebase-config.js"></script>
-  <script src="js/native-bridge.js"></script>
-  <script src="js/dgii-validator.js"></script>
-  <script src="js/billing-engine.js?v=20261122-4"></script>
-  <script src="js/geo-map.js?v=20261122-4"></script>
-  <script src="js/reviews.js"></script>
+  <script src="js/catalog-data.js?v=20261122-5"></script>
+  <script src="js/firebase-config.js?v=20261122-5"></script>
+  <script src="js/native-bridge.js?v=20261122-5"></script>
+  <script src="js/dgii-validator.js?v=20261122-5"></script>
+  <script src="js/billing-engine.js?v=20261122-5"></script>
+  <script src="js/geo-map.js?v=20261122-5"></script>
+  <script src="js/reviews.js?v=20261122-5"></script>
   <script>
     const GM = window.GM_CATALOG;
     const LOGO_URI = document.getElementById('brandLogo').src;
-    const DEFAULT_EQUIPMENT = GM.DEFAULT_EQUIPMENT;
-    const DEFAULT_REQUESTS = GM.DEFAULT_REQUESTS;
+    const DEFAULT_EQUIPMENT = GM.DEFAULT_EQUIPMENT || [];
+    const DEFAULT_REQUESTS = GM.DEFAULT_REQUESTS || [];
+    const DEFAULT_PARTS = GM.DEFAULT_PARTS || [];
+    const DEFAULT_SALE_MACHINES = GM.DEFAULT_SALE_MACHINES || [];
+    const PARTS_CATEGORIES = GM.PARTS_CATEGORIES || [];
 
     const initialState = GM.loadState();
     let equipment = initialState.equipment;
@@ -1815,10 +2485,90 @@
     let bookings = initialState.bookings;
     let savedIds = initialState.savedIds;
     let isPro = initialState.isPro;
+    let proposals = (window.GM_FIREBASE && window.GM_FIREBASE.getLocalProposals)
+      ? window.GM_FIREBASE.getLocalProposals()
+      : [];
+    let partsCatalog = (window.GM_FIREBASE && window.GM_FIREBASE.getLocalParts)
+      ? window.GM_FIREBASE.getLocalParts(DEFAULT_PARTS)
+      : DEFAULT_PARTS.slice();
+    let salesCatalog = (window.GM_FIREBASE && window.GM_FIREBASE.getLocalSales)
+      ? window.GM_FIREBASE.getLocalSales(DEFAULT_SALE_MACHINES)
+      : DEFAULT_SALE_MACHINES.slice();
+    let orders = (window.GM_FIREBASE && window.GM_FIREBASE.getLocalOrders)
+      ? window.GM_FIREBASE.getLocalOrders()
+      : [];
+
+    let activeBidReqId = null;
+    let activeBuyContext = null;
     let allCloudReviews = {};
     let allTrackingMap = {};
     let pubPatioPicker = null;
     let pubPatioLatLng = null;
+
+    let activeTab = 'catalog';
+    let activeMarketMode = 'rent'; // 'rent' | 'sale' | 'parts'
+    let activeCat = 'Todos';
+    let activePartCat = 'Todos';
+    let activeMarketCond = 'all'; // 'all' | 'nueva' | 'usada'
+    let wizStep = 1;
+
+    let currentOwner = (window.GM_FIREBASE && window.GM_FIREBASE.getCurrentOwner)
+      ? window.GM_FIREBASE.getCurrentOwner()
+      : null;
+    let pendingAuthAction = null; // { type: 'publish' | 'publishPart' | 'tab' | 'tracking' | 'save', payload: any }
+    let photoList = [];
+    let partPhotoList = [];
+
+    const fmtRD = GM.fmtRD;
+    const cleanWA = GM.cleanWA;
+    const defaultCover = GM.defaultCover;
+
+    function escHtml(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function digitsOnly(v) {
+      return String(v || '').replace(/\D/g, '');
+    }
+
+    function getPartCategoryCover(cat) {
+      const found = PARTS_CATEGORIES.find(c => c.id === cat);
+      return found ? found.img : 'img/parts/part_hydraulics.jpg';
+    }
+
+    function getCombinedSaleMachines() {
+      const fromEq = equipment.filter(e => e.listingType === 'sale' || e.listingType === 'both');
+      const byId = new Map();
+      salesCatalog.forEach(s => byId.set(String(s.id), s));
+      fromEq.forEach(e => byId.set(String(e.id), e));
+      return Array.from(byId.values()).sort((a, b) => Number(b.id) - Number(a.id));
+    }
+
+    function getRentEquipmentList() {
+      return equipment.filter(e => !e.listingType || e.listingType === 'rent' || e.listingType === 'both');
+    }
+
+    function getMyFleet() {
+      if (!currentOwner) return [];
+      const myRnc = digitsOnly(currentOwner.rncDigits || currentOwner.rncFormatted);
+      const eqMine = equipment.filter(e => String(e.ownerId || '') === String(currentOwner.id) || (myRnc && digitsOnly(e.rnc) === myRnc));
+      const saleMine = salesCatalog.filter(s => String(s.ownerId || '') === String(currentOwner.id) || (myRnc && digitsOnly(s.rnc) === myRnc));
+      const map = new Map();
+      eqMine.forEach(e => map.set(String(e.id), e));
+      saleMine.forEach(s => { if (!map.has(String(s.id))) map.set(String(s.id), s); });
+      return Array.from(map.values()).sort((a, b) => Number(b.id) - Number(a.id));
+    }
+
+    function getMyParts() {
+      if (!currentOwner) return [];
+      const myRnc = digitsOnly(currentOwner.rncDigits || currentOwner.rncFormatted);
+      return partsCatalog.filter(p => String(p.ownerId || '') === String(currentOwner.id) || (myRnc && digitsOnly(p.rnc) === myRnc));
+    }
 
     function syncInstallPwaButton() {
       const btn = document.getElementById('btnInstallPwa');
@@ -1833,14 +2583,6 @@
       if (accepted) toast('📲 Green Mile RD instalada en tu dispositivo');
     }
 
-    let activeTab = 'catalog';
-    let activeCat = 'Todos';
-    let wizStep = 1;
-
-    const fmtRD = GM.fmtRD;
-    const cleanWA = GM.cleanWA;
-    const defaultCover = GM.defaultCover;
-
     function toast(msg) {
       const el = document.getElementById('toast');
       el.textContent = msg;
@@ -1849,35 +2591,198 @@
       toast._t = setTimeout(() => { el.style.display = 'none'; }, 2800);
     }
 
-    function openSheet(id) { document.getElementById(id).classList.add('open'); }
-    function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
+    function openSheet(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('open');
+    }
+    function closeSheet(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('open');
+    }
     function openActionChooser() { openSheet('chooserSheet'); }
 
+    /* =========================================================
+       SLIDE-OUT OPTIONS MENU DRAWER (☰)
+       ========================================================= */
+    function renderMenuDrawer() {
+      const body = document.getElementById('appMenuDrawerBody');
+      const foot = document.getElementById('appMenuDrawerFoot');
+      if (!body || !foot) return;
+
+      const rentCount = getRentEquipmentList().length;
+      const saleCount = getCombinedSaleMachines().length;
+      const partsCount = partsCatalog.length;
+
+      const accountHtml = currentOwner
+        ? `
+          <div class="drawer-account-box" style="background:#ECFDF5; border-color:#A7F3D0;">
+            <span style="font-size:10px; font-weight:800; color:#059669; text-transform:uppercase;">✓ Cuenta Verificada DGII</span>
+            <strong style="display:block; font-size:14.5px; color:#065F46; margin-top:3px;">${escHtml(currentOwner.name)}</strong>
+            <span style="font-size:11.5px; color:#047857;">RNC/Cédula: ${escHtml(currentOwner.rncFormatted || '')}</span>
+          </div>
+        `
+        : `
+          <div class="drawer-account-box">
+            <strong style="display:block; font-size:14px; color:var(--navy); margin-bottom:4px;">Accede a tu cuenta</strong>
+            <span style="display:block; font-size:11.5px; color:var(--text-muted); margin-bottom:10px; line-height:1.4;">Inicia sesión para habilitar Guardados, Mi Panel, Tracking GPS y publicar maquinaria o piezas.</span>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <button type="button" class="btn btn-navy" style="padding:8px 10px; font-size:12px;" onclick="closeMenuDrawer(); switchOwnerAuthMode('login'); openSheet('ownerAuthSheet');">Iniciar Sesión</button>
+              <button type="button" class="btn btn-primary" style="padding:8px 10px; font-size:12px;" onclick="closeMenuDrawer(); switchOwnerAuthMode('register'); openSheet('ownerAuthSheet');">Crear Cuenta</button>
+            </div>
+          </div>
+        `;
+
+      const authedNavHtml = currentOwner
+        ? `
+          <div class="drawer-divider"></div>
+          <div class="drawer-section-label">Mi Cuenta</div>
+          <button type="button" class="drawer-item" onclick="closeMenuDrawer(); switchTab('profile');">
+            <span class="drawer-item-left">📄 Mi Panel y Contratos</span>
+            <span class="drawer-pill">${bookings.length}</span>
+          </button>
+          <button type="button" class="drawer-item" onclick="closeMenuDrawer(); switchTab('saved');">
+            <span class="drawer-item-left">♡ Equipos Guardados</span>
+            <span class="drawer-pill">${savedIds.length}</span>
+          </button>
+          <a class="drawer-item" href="./tracking.html" onclick="closeMenuDrawer()">
+            <span class="drawer-item-left">🚚 Tracking GPS en Vivo</span>
+            <span style="color:var(--orange); font-size:12px;">→</span>
+          </a>
+          <button type="button" class="drawer-item" onclick="closeMenuDrawer(); openSheet('proSheet');">
+            <span class="drawer-item-left">⭐ Plan Green Mile Pro</span>
+            <span class="drawer-pill" style="${isPro ? 'background:#ECFDF5; color:#059669;' : ''}">${isPro ? 'Activo' : '-10%'}</span>
+          </button>
+          <a class="drawer-item" href="./admin.html" onclick="closeMenuDrawer()">
+            <span class="drawer-item-left">⚙️ Centro Administrativo</span>
+            <span style="color:var(--text-muted); font-size:12px;">→</span>
+          </a>
+        `
+        : '';
+
+      body.innerHTML = `
+        ${accountHtml}
+
+        <div class="drawer-section-label">Marketplace RD</div>
+        <button type="button" class="drawer-item" onclick="closeMenuDrawer(); switchTab('catalog'); switchMarketMode('rent');">
+          <span class="drawer-item-left">🚜 Alquiler de Maquinaria</span>
+          <span class="drawer-pill">${rentCount}</span>
+        </button>
+        <button type="button" class="drawer-item" onclick="closeMenuDrawer(); switchTab('catalog'); switchMarketMode('sale');">
+          <span class="drawer-item-left">🏷️ Venta de Equipos (Nuevos / Usados)</span>
+          <span class="drawer-pill">${saleCount}</span>
+        </button>
+        <button type="button" class="drawer-item" onclick="closeMenuDrawer(); switchTab('catalog'); switchMarketMode('parts');">
+          <span class="drawer-item-left">⚙️ Catálogo de Piezas y Repuestos</span>
+          <span class="drawer-pill">${partsCount}</span>
+        </button>
+        <button type="button" class="drawer-item" onclick="closeMenuDrawer(); switchTab('requests');">
+          <span class="drawer-item-left">👷 Obras RD (Se Busca)</span>
+          <span class="drawer-pill">${requests.length}</span>
+        </button>
+
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-label">Publicar</div>
+        <button type="button" class="drawer-item" onclick="closeMenuDrawer(); openPublishSheet('rent');">
+          <span class="drawer-item-left">➕ Publicar Equipo (Alquiler / Venta)</span>
+          <span style="color:var(--orange);">→</span>
+        </button>
+        <button type="button" class="drawer-item" onclick="closeMenuDrawer(); openPublishPartSheet();">
+          <span class="drawer-item-left">⚙️ Vender Piezas / Repuestos</span>
+          <span style="color:#059669;">→</span>
+        </button>
+        <button type="button" class="drawer-item" onclick="closeMenuDrawer(); openSheet('reqSheet');">
+          <span class="drawer-item-left">📋 Pedir Máquina para Obra</span>
+          <span style="color:var(--navy);">→</span>
+        </button>
+
+        ${authedNavHtml}
+
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-label">Institucional</div>
+        <a class="drawer-item" href="acerca-de.html" onclick="closeMenuDrawer()"><span class="drawer-item-left">🏢 Acerca de Green Mile RD</span></a>
+        <a class="drawer-item" href="terminos.html" onclick="closeMenuDrawer()"><span class="drawer-item-left">📜 Términos y Condiciones</span></a>
+        <a class="drawer-item" href="privacidad.html" onclick="closeMenuDrawer()"><span class="drawer-item-left">🔒 Seguridad y Privacidad</span></a>
+      `;
+
+      foot.innerHTML = currentOwner
+        ? `<button type="button" class="btn btn-ghost" style="width:100%; color:#DC2626; border-color:#FECACA; background:#FEF2F2;" onclick="closeMenuDrawer(); handleLogoutOwner();">Cerrar Sesión</button>`
+        : `<div style="text-align:center; font-size:11.5px; color:var(--text-muted);">Green Mile Construction RD • Alquiler, Ventas y Repuestos con e-NCF</div>`;
+    }
+
+    function openMenuDrawer() {
+      renderMenuDrawer();
+      const drawer = document.getElementById('appMenuDrawer');
+      if (drawer) {
+        drawer.classList.add('open');
+        drawer.setAttribute('aria-hidden', 'false');
+      }
+    }
+
+    function closeMenuDrawer() {
+      const drawer = document.getElementById('appMenuDrawer');
+      if (drawer) {
+        drawer.classList.remove('open');
+        drawer.setAttribute('aria-hidden', 'true');
+      }
+    }
+
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') closeMenuDrawer();
+    });
+
+    /* =========================================================
+       COUNTERS & NAVIGATION
+       ========================================================= */
     function syncCounters() {
       GM.saveState({ equipment, requests, bookings, savedIds, isPro });
 
-      document.getElementById('dCountEq').textContent = equipment.length;
-      document.getElementById('dCountReq').textContent = requests.length;
-      document.getElementById('dCountSaved').textContent = savedIds.length;
-      document.getElementById('dCountBk').textContent = bookings.length;
+      const rentCount = getRentEquipmentList().length;
+      const saleCount = getCombinedSaleMachines().length;
+      const partsCount = partsCatalog.length;
 
-      document.getElementById('kpiFleet').textContent = equipment.length;
-      document.getElementById('kpiContracts').textContent = bookings.length;
-      const vol = bookings.reduce((s, b) => s + (b.total || 0), 0);
-      document.getElementById('kpiVol').textContent = fmtRD(vol);
+      const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      setTxt('dCountEq', rentCount + saleCount + partsCount);
+      setTxt('dCountReq', requests.length);
+      setTxt('mCountRent', rentCount);
+      setTxt('mCountSale', saleCount);
+      setTxt('mCountParts', partsCount);
+
+      if (currentOwner) {
+        const myInventoryCount = getMyFleet().length + getMyParts().length;
+        setTxt('dCountSaved', savedIds.length);
+        setTxt('dCountBk', bookings.length);
+        setTxt('kpiFleet', myInventoryCount);
+        setTxt('kpiContracts', bookings.length);
+        const vol = bookings.reduce((s, b) => s + (b.total || 0), 0);
+        setTxt('kpiVol', fmtRD(vol));
+      } else {
+        setTxt('dCountSaved', 0);
+        setTxt('dCountBk', 0);
+        setTxt('kpiFleet', 0);
+        setTxt('kpiContracts', 0);
+        setTxt('kpiVol', fmtRD(0));
+      }
 
       const proBtn = document.getElementById('proBadgeBtn');
-      if (isPro) {
+      if (proBtn && isPro) {
         proBtn.textContent = '⭐ Pro (-10%)';
         proBtn.style.background = 'var(--orange)';
       }
+    }
+
+    function promptLoginFor(action, message) {
+      pendingAuthAction = action;
+      switchOwnerAuthMode('login');
+      openSheet('ownerAuthSheet');
+      if (message) toast(message);
     }
 
     function switchTab(tab) {
       activeTab = tab;
       ['Catalog', 'Requests', 'Saved', 'Profile'].forEach(name => {
         const key = name.toLowerCase();
-        document.getElementById('tabView' + name).style.display = (key === tab) ? 'block' : 'none';
+        const viewEl = document.getElementById('tabView' + name);
+        if (viewEl) viewEl.style.display = (key === tab) ? 'block' : 'none';
         const dBtn = document.getElementById('dTab' + name);
         if (dBtn) dBtn.classList.toggle('active', key === tab);
         const bBtn = document.getElementById('bNav' + name);
@@ -1893,6 +2798,48 @@
       if (activeTab === 'profile') renderProfile();
     }
 
+    /* =========================================================
+       MARKETPLACE MODES (ALQUILER • VENTA EQUIPOS • PIEZAS)
+       ========================================================= */
+    function switchMarketMode(mode) {
+      if (!['rent', 'sale', 'parts'].includes(mode)) mode = 'rent';
+      activeMarketMode = mode;
+
+      const mapBtn = { rent: 'modeBtnRent', sale: 'modeBtnSale', parts: 'modeBtnParts' };
+      Object.keys(mapBtn).forEach(k => {
+        const btn = document.getElementById(mapBtn[k]);
+        if (btn) btn.classList.toggle('active', k === mode);
+      });
+
+      const isParts = mode === 'parts';
+      const isRent = mode === 'rent';
+      const isSale = mode === 'sale';
+
+      const catChips = document.getElementById('catChips');
+      const partCatChips = document.getElementById('partCatChips');
+      const rentSub = document.getElementById('rentSubToggles');
+      const condPills = document.getElementById('marketCondPills');
+      const quickPartBtn = document.getElementById('btnQuickSellPart');
+      const quickMachBtn = document.getElementById('btnQuickSellMachine');
+
+      if (catChips) catChips.style.display = isParts ? 'none' : 'flex';
+      if (partCatChips) partCatChips.style.display = isParts ? 'flex' : 'none';
+      if (rentSub) rentSub.style.display = isRent ? 'flex' : 'none';
+      if (condPills) condPills.style.display = isRent ? 'none' : 'inline-flex';
+      if (quickPartBtn) quickPartBtn.style.display = isParts ? 'inline-flex' : 'none';
+      if (quickMachBtn) quickMachBtn.style.display = isSale ? 'inline-flex' : 'none';
+
+      renderCatalog();
+    }
+
+    function setMarketCondition(cond) {
+      activeMarketCond = cond;
+      document.querySelectorAll('#marketCondPills .cond-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.cond === cond);
+      });
+      renderCatalog();
+    }
+
     document.querySelectorAll('#catChips .app-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         document.querySelectorAll('#catChips .app-chip').forEach(c => c.classList.remove('active'));
@@ -1902,9 +2849,22 @@
       });
     });
 
+    document.querySelectorAll('#partCatChips .app-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#partCatChips .app-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        activePartCat = chip.dataset.pcat;
+        renderCatalog();
+      });
+    });
+
     function toggleSave(evt, id) {
       evt.stopPropagation();
       evt.preventDefault();
+      if (!currentOwner) {
+        promptLoginFor({ type: 'save', payload: id }, 'Inicia sesión para guardar equipos en favoritos');
+        return;
+      }
       if (savedIds.includes(id)) {
         savedIds = savedIds.filter(x => x !== id);
         toast('Eliminado de guardados');
@@ -1949,14 +2909,14 @@
     }
 
     function cardHTML(item) {
-      const isSaved = savedIds.includes(item.id);
+      const isSaved = Boolean(currentOwner) && savedIds.includes(item.id);
       const url = GM.getEquipmentPath(item, '');
       const photoCount = Array.isArray(item.images) ? item.images.length : 0;
       return `
         <article class="eq-card" onclick="openDetail(${item.id})">
           <div class="eq-media">
-            <img src="${item.img || defaultCover(item.category)}" alt="${item.title}" loading="lazy" onerror="this.onerror=null;this.src=defaultCover('${item.category.replace(/'/g, "\\'")}')">
-            <span class="pill-city">${item.city}${photoCount > 1 ? ` • 📷 ${photoCount}` : ''}</span>
+            <img src="${item.img || defaultCover(item.category)}" alt="${escHtml(item.title)}" loading="lazy" onerror="this.onerror=null;this.src=defaultCover('${String(item.category || '').replace(/'/g, "\\'")}')">
+            <span class="pill-city">${escHtml(item.city)}${photoCount > 1 ? ` • 📷 ${photoCount}` : ''}</span>
             <div class="card-top-actions">
               <button type="button" class="share-btn" onclick="shareCard(event, ${item.id})" aria-label="Compartir anuncio" title="Compartir enlace del anuncio">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
@@ -1969,8 +2929,8 @@
             ${item.operator ? '<span class="pill-op">Con Operador</span>' : ''}
           </div>
           <div class="eq-body">
-            <div class="eq-cat">${item.category}${item.power ? ' • ' + item.power : ''}</div>
-            <div class="eq-title"><a href="${url}" onclick="event.stopPropagation()">${item.title}</a></div>
+            <div class="eq-cat">${escHtml(item.category)}${item.power ? ' • ' + escHtml(item.power) : ''}</div>
+            <div class="eq-title"><a href="${url}" onclick="event.stopPropagation()">${escHtml(item.title)}</a></div>
             <div class="eq-owner">
               <span style="display:inline-flex; align-items:center; gap:4px; font-weight:700; color:#92400E;">
                 ${(() => {
@@ -1980,11 +2940,66 @@
                     : '<span style="color:#F59E0B;">★</span> Nuevo';
                 })()}
               </span>
-              <span>${item.year || ''} • Verificado</span>
+              <span>${escHtml(item.year || '')} • Verificado</span>
             </div>
             <div class="eq-foot">
               <div class="eq-price">${fmtRD(item.priceDay)} <small>/ día</small></div>
               <a class="btn btn-navy" href="${url}" onclick="event.stopPropagation()" style="padding:8px 14px; font-size:12px;">Ver / Rentar</a>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function saleCardHTML(item) {
+      const isNew = String(item.condition || 'usada').toLowerCase() === 'nueva';
+      const photoCount = Array.isArray(item.images) ? item.images.length : 0;
+      return `
+        <article class="eq-card" onclick="openMarketBuySheet('sale', '${escHtml(item.id)}')">
+          <div class="eq-media">
+            <img src="${item.img || defaultCover(item.category)}" alt="${escHtml(item.title)}" loading="lazy" onerror="this.onerror=null;this.src=defaultCover('${String(item.category || '').replace(/'/g, "\\'")}')">
+            <span class="pill-city">${escHtml(item.city)}${photoCount > 1 ? ` • 📷 ${photoCount}` : ''}</span>
+            <span class="${isNew ? 'pill-cond-new' : 'pill-cond-used'}">${isNew ? '✨ Nueva' : '🔧 Usada'}</span>
+            <span class="pill-sale-tag">EN VENTA</span>
+          </div>
+          <div class="eq-body">
+            <div class="eq-cat">${escHtml(item.category)}${item.hoursUsed ? ' • ' + escHtml(item.hoursUsed) : ''}</div>
+            <div class="eq-title" style="color:var(--navy);">${escHtml(item.title)}</div>
+            <div class="eq-owner">
+              <span style="font-weight:700; color:#065F46;">✓ ${escHtml(item.owner || 'Propietario Verificado')}</span>
+              <span>${escHtml(item.year || '')}</span>
+            </div>
+            <div class="eq-foot">
+              <div class="eq-price">${fmtRD(item.salePrice || 0)} <small>venta</small></div>
+              <button type="button" class="btn btn-primary" onclick="event.stopPropagation(); openMarketBuySheet('sale', '${escHtml(item.id)}')" style="padding:8px 13px; font-size:12px;">Ver / Comprar</button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function partCardHTML(part) {
+      const isNew = String(part.condition || 'nueva').toLowerCase() === 'nueva';
+      const cover = part.img || getPartCategoryCover(part.category);
+      const stockNum = Number(part.stock) || 1;
+      return `
+        <article class="eq-card" onclick="openMarketBuySheet('part', '${escHtml(part.id)}')">
+          <div class="eq-media">
+            <img src="${cover}" alt="${escHtml(part.title)}" loading="lazy" onerror="this.onerror=null;this.src='${getPartCategoryCover(part.category)}'">
+            <span class="pill-city">${escHtml(part.city || 'Santo Domingo')}</span>
+            <span class="${isNew ? 'pill-cond-new' : 'pill-cond-used'}">${isNew ? '✨ Nueva' : '🔧 Usada'}</span>
+            <span class="pill-sale-tag">${stockNum > 1 ? `Stock: ${stockNum}` : '1 disp.'}</span>
+          </div>
+          <div class="eq-body">
+            <div class="eq-cat">${escHtml(part.category)}${part.partNumber ? ' • ' + escHtml(part.partNumber) : ''}</div>
+            <div class="eq-title" style="color:var(--navy);">${escHtml(part.title)}</div>
+            <div class="eq-owner" style="flex-direction:column; align-items:flex-start; gap:2px;">
+              <span style="font-size:11.5px; color:var(--text-muted);">${escHtml(part.compatibleWith || part.brand || 'Maquinaria Pesada RD')}</span>
+              <span style="font-size:11px; font-weight:700; color:#065F46;">✓ ${escHtml(part.owner || 'Vendedor Verificado')}</span>
+            </div>
+            <div class="eq-foot">
+              <div class="eq-price">${fmtRD(part.price || 0)} <small>c/u</small></div>
+              <button type="button" class="btn btn-navy" onclick="event.stopPropagation(); openMarketBuySheet('part', '${escHtml(part.id)}')" style="padding:8px 13px; font-size:12px;">Ver / Comprar</button>
             </div>
           </div>
         </article>
@@ -1997,7 +3012,11 @@
       document.getElementById('fOp').checked = false;
       document.getElementById('fAvail').checked = false;
       activeCat = 'Todos';
+      activePartCat = 'Todos';
+      activeMarketCond = 'all';
       document.querySelectorAll('#catChips .app-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === 'Todos'));
+      document.querySelectorAll('#partCatChips .app-chip').forEach(c => c.classList.toggle('active', c.dataset.pcat === 'Todos'));
+      document.querySelectorAll('#marketCondPills .cond-pill').forEach(b => b.classList.toggle('active', b.dataset.cond === 'all'));
       renderCatalog();
     }
 
@@ -2011,11 +3030,76 @@
     function renderCatalog() {
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
       const city = document.getElementById('cityFilter').value;
+      const sort = document.getElementById('fSort').value;
+      const box = document.getElementById('catalogFeed');
+
+      if (activeMarketMode === 'parts') {
+        let list = partsCatalog.filter(p => {
+          const hay = `${p.title || ''} ${p.desc || ''} ${p.category || ''} ${p.partNumber || ''} ${p.brand || ''} ${p.compatibleWith || ''} ${p.owner || ''}`.toLowerCase();
+          const mq = !q || hay.includes(q);
+          const mc = activePartCat === 'Todos' || p.category === activePartCat;
+          const mcity = !city || p.city === city;
+          const mcond = activeMarketCond === 'all' || String(p.condition || 'nueva').toLowerCase() === activeMarketCond;
+          return mq && mc && mcity && mcond;
+        });
+
+        if (sort === 'asc') list.sort((a, b) => (a.price || 0) - (b.price || 0));
+        if (sort === 'desc') list.sort((a, b) => (b.price || 0) - (a.price || 0));
+
+        if (list.length === 0) {
+          box.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-badge">⚙️</div>
+              <h3>No encontramos piezas con esos filtros</h3>
+              <p>Prueba cambiando la categoría o condición (Nueva / Usada), o publica tus propios repuestos disponibles en RD.</p>
+              <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn btn-navy" onclick="clearCatalogFilters()">Ver Todas las Piezas</button>
+                <button class="btn btn-primary" onclick="openPublishPartSheet()">+ Publicar Pieza en Venta</button>
+              </div>
+            </div>
+          `;
+          return;
+        }
+        box.innerHTML = list.map(partCardHTML).join('');
+        return;
+      }
+
+      if (activeMarketMode === 'sale') {
+        let list = getCombinedSaleMachines().filter(e => {
+          const hay = `${e.title || ''} ${e.desc || ''} ${e.category || ''} ${e.power || ''} ${e.owner || ''}`.toLowerCase();
+          const mq = !q || hay.includes(q);
+          const mc = activeCat === 'Todos' || e.category === activeCat;
+          const mcity = !city || e.city === city;
+          const mcond = activeMarketCond === 'all' || String(e.condition || 'usada').toLowerCase() === activeMarketCond;
+          return mq && mc && mcity && mcond;
+        });
+
+        if (sort === 'asc') list.sort((a, b) => (a.salePrice || 0) - (b.salePrice || 0));
+        if (sort === 'desc') list.sort((a, b) => (b.salePrice || 0) - (a.salePrice || 0));
+
+        if (list.length === 0) {
+          box.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-badge">🏷️</div>
+              <h3>No encontramos equipos en venta con esos filtros</h3>
+              <p>Limpia los filtros o publica tu maquinaria nueva o usada en venta con cobro seguro y e-NCF.</p>
+              <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn btn-navy" onclick="clearCatalogFilters()">Ver Todos los Equipos</button>
+                <button class="btn btn-primary" onclick="openPublishSheet('sale')">+ Vender mi Equipo</button>
+              </div>
+            </div>
+          `;
+          return;
+        }
+        box.innerHTML = list.map(saleCardHTML).join('');
+        return;
+      }
+
+      // Default mode: 'rent'
       const op = document.getElementById('fOp').checked;
       const avail = document.getElementById('fAvail').checked;
-      const sort = document.getElementById('fSort').value;
 
-      let list = equipment.filter(e => {
+      let list = getRentEquipmentList().filter(e => {
         const mq = !q || e.title.toLowerCase().includes(q) || (e.desc || '').toLowerCase().includes(q) || (e.owner || '').toLowerCase().includes(q) || (e.category || '').toLowerCase().includes(q) || (e.power || '').toLowerCase().includes(q);
         const mc = activeCat === 'Todos' || e.category === activeCat;
         const mcity = !city || e.city === city;
@@ -2027,7 +3111,6 @@
       if (sort === 'asc') list.sort((a, b) => a.priceDay - b.priceDay);
       if (sort === 'desc') list.sort((a, b) => b.priceDay - a.priceDay);
 
-      const box = document.getElementById('catalogFeed');
       if (list.length === 0) {
         if (equipment.length > 0) {
           box.innerHTML = `
@@ -2059,8 +3142,377 @@
       box.innerHTML = list.map(cardHTML).join('');
     }
 
+    /* =========================================================
+       IN-APP BUY SHEET FOR MACHINERY SALES & SPARE PARTS
+       ========================================================= */
+    function openMarketBuySheet(kind, id) {
+      const isPart = kind === 'part';
+      const item = isPart
+        ? partsCatalog.find(p => String(p.id) === String(id))
+        : getCombinedSaleMachines().find(s => String(s.id) === String(id));
+      if (!item) return;
+
+      activeBuyContext = { kind, item };
+      const isNew = String(item.condition || (isPart ? 'nueva' : 'usada')).toLowerCase() === 'nueva';
+      const unitPrice = isPart ? Number(item.price || 0) : Number(item.salePrice || 0);
+      const maxStock = isPart ? Math.max(1, Number(item.stock || 1)) : 1;
+      const cover = item.img || (isPart ? getPartCategoryCover(item.category) : defaultCover(item.category));
+
+      document.getElementById('buySheetTitle').textContent = isPart ? 'Comprar Pieza / Repuesto' : 'Comprar Maquinaria en Green Mile';
+      document.getElementById('buySheetSub').textContent = isPart
+        ? `${item.category} • Compra verificada con factura e-NCF`
+        : `${item.category} • Inspección, traspaso y factura e-NCF`;
+
+      document.getElementById('marketBuyBody').innerHTML = `
+        <div style="display:grid; grid-template-columns:130px 1fr; gap:12px; align-items:start; background:var(--navy-soft); border:1px solid #DCE5F0; border-radius:14px; padding:12px; margin-bottom:14px;">
+          <img src="${cover}" alt="${escHtml(item.title)}" style="width:130px; height:98px; object-fit:cover; border-radius:10px; display:block;" />
+          <div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:5px;">
+              <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:${isNew ? '#059669' : '#D97706'}; color:#fff; text-transform:uppercase;">${isNew ? '✨ Nueva' : '🔧 Usada'}</span>
+              <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:#fff; color:var(--navy); border:1px solid var(--border);">${escHtml(item.city || 'RD')}</span>
+              ${isPart && item.partNumber ? `<span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:#fff; color:var(--orange); font-family:monospace;">${escHtml(item.partNumber)}</span>` : ''}
+            </div>
+            <strong style="font-size:15px; color:var(--navy); display:block; line-height:1.25;">${escHtml(item.title)}</strong>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+              ${isPart
+                ? `<strong>Compatible:</strong> ${escHtml(item.compatibleWith || 'Maquinaria Pesada')}`
+                : `<strong>Año / Uso:</strong> ${escHtml(item.year || 'N/D')} • ${escHtml(item.hoursUsed || item.power || '')}`}
+            </div>
+            <div style="font-size:11.5px; color:#065F46; font-weight:700; margin-top:4px;">✓ Vendedor: ${escHtml(item.owner || 'Verificado DGII')} • ${escHtml(item.warranty || 'Respaldo Green Mile RD')}</div>
+          </div>
+        </div>
+
+        <p style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:14px;">${escHtml(item.desc || '')}</p>
+
+        <div class="f-grid">
+          ${isPart ? `
+            <div class="f-field">
+              <label for="buyQty">Cantidad (Disp: ${maxStock})</label>
+              <div class="f-box">
+                <input type="number" id="buyQty" min="1" max="${maxStock}" value="1" oninput="updateMarketBuyReceipt()" required>
+              </div>
+            </div>
+          ` : `<input type="hidden" id="buyQty" value="1">`}
+
+          <div class="f-field ${isPart ? '' : 'full'}">
+            <label for="buyDelivery">Entrega / Inspección</label>
+            <div class="f-box">
+              <select id="buyDelivery" onchange="updateMarketBuyReceipt()">
+                <option value="pickup">🏢 Retiro / Inspección en patio (${escHtml(item.city || 'RD')})</option>
+                <option value="shipping">${isPart ? '📦 Envío por mensajería / carga en RD' : '🚛 Coordinar traslado en Lowboy en RD'}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="f-field">
+            <label for="buyNcfType">Comprobante Fiscal (e-NCF)</label>
+            <div class="f-box">
+              <select id="buyNcfType">
+                <option value="E31">E31 • Crédito Fiscal (Empresa)</option>
+                <option value="E32">E32 • Consumo (Personal)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="f-field">
+            <label for="buyPayment">Método de Pago</label>
+            <div class="f-box">
+              <select id="buyPayment">
+                <option value="transfer">🏦 Transferencia Bancaria (Popular / BHD / Banreservas)</option>
+                <option value="inspection">🤝 Reserva con Inspección Previa en Patio</option>
+                <option value="card">💳 Tarjeta Corporativa / Financiamiento</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="f-field">
+            <label for="buyBuyerName">Tu Nombre o Empresa <small>* Obligatorio</small></label>
+            <div class="f-box">
+              <input type="text" id="buyBuyerName" value="${escHtml(currentOwner ? currentOwner.name : '')}" placeholder="Ej. Constructora del Este, S.R.L." required>
+            </div>
+          </div>
+
+          <div class="f-field">
+            <label for="buyBuyerRnc">RNC / Cédula <small>* Para e-NCF</small></label>
+            <div class="f-box">
+              <input type="text" id="buyBuyerRnc" value="${escHtml(currentOwner ? (currentOwner.rncFormatted || '') : '')}" placeholder="Ej. 1-31-00000-1" required>
+            </div>
+          </div>
+
+          <div class="f-field full">
+            <label for="buyBuyerPhone">Teléfono / Contacto en RD <small>* Confidencial</small></label>
+            <div class="f-box">
+              <span class="f-prefix">🇩🇴 +1</span>
+              <input type="tel" id="buyBuyerPhone" value="${escHtml(currentOwner ? (currentOwner.phone || '') : '')}" placeholder="809-555-0199" required>
+            </div>
+          </div>
+
+          <div class="f-field full">
+            <label for="buyNotes">Notas / Dirección de entrega (Opcional)</label>
+            <div class="f-box">
+              <textarea id="buyNotes" rows="2" placeholder="Ej. Necesito despacho a obra en Santiago o agendar inspección mecánica mañana..."></textarea>
+            </div>
+          </div>
+
+          <div class="f-field full">
+            <div id="marketBuyReceipt" class="receipt" style="margin-top:0;"></div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('marketBuySubmitBtn').textContent = isPart
+        ? `Confirmar Compra (${fmtRD(Math.round(unitPrice * 1.18))})`
+        : `Solicitar Compra / Inspección (${fmtRD(Math.round(unitPrice * 1.18))})`;
+
+      updateMarketBuyReceipt();
+      openSheet('marketBuySheet');
+    }
+
+    function updateMarketBuyReceipt() {
+      if (!activeBuyContext) return;
+      const { kind, item } = activeBuyContext;
+      const isPart = kind === 'part';
+      const unitPrice = isPart ? Number(item.price || 0) : Number(item.salePrice || 0);
+      const qty = Math.max(1, Number(document.getElementById('buyQty')?.value || 1));
+      const subtotal = unitPrice * qty;
+      const itbis = Math.round(subtotal * 0.18);
+      const total = subtotal + itbis;
+
+      const box = document.getElementById('marketBuyReceipt');
+      if (box) {
+        box.innerHTML = `
+          <div class="r-row"><span>${isPart ? `Precio unitario × ${qty}` : 'Precio de venta acordado'}</span><strong>${fmtRD(subtotal)}</strong></div>
+          <div class="r-row"><span>ITBIS (18% DGII • e-NCF)</span><span>${fmtRD(itbis)}</span></div>
+          <div class="r-total"><span>Total Estimado (RD$)</span><span>${fmtRD(total)}</span></div>
+        `;
+      }
+      const btn = document.getElementById('marketBuySubmitBtn');
+      if (btn) {
+        btn.textContent = isPart
+          ? `Confirmar Orden de Compra (${fmtRD(total)})`
+          : `Reservar Compra / Inspección (${fmtRD(total)})`;
+      }
+    }
+
+    async function submitMarketBuyOrder(e) {
+      e.preventDefault();
+      if (!activeBuyContext) return;
+      const { kind, item } = activeBuyContext;
+      const isPart = kind === 'part';
+      const unitPrice = isPart ? Number(item.price || 0) : Number(item.salePrice || 0);
+      const qty = Math.max(1, Number(document.getElementById('buyQty')?.value || 1));
+      const subtotal = unitPrice * qty;
+      const itbis = Math.round(subtotal * 0.18);
+      const total = subtotal + itbis;
+
+      const buyerName = document.getElementById('buyBuyerName')?.value.trim() || '';
+      const buyerRnc = document.getElementById('buyBuyerRnc')?.value.trim() || '';
+      const buyerPhone = document.getElementById('buyBuyerPhone')?.value.trim() || '';
+      if (!buyerName || !buyerRnc || buyerPhone.replace(/\D/g, '').length < 7) {
+        toast('Completa tu nombre/empresa, RNC/Cédula y teléfono de contacto');
+        return;
+      }
+
+      const orderId = Date.now();
+      const orderRec = {
+        id: orderId,
+        orderCode: `ORD-${String(orderId).slice(-5)}`,
+        kind,
+        itemId: item.id,
+        itemTitle: item.title,
+        category: item.category,
+        condition: item.condition || (isPart ? 'nueva' : 'usada'),
+        partNumber: item.partNumber || '',
+        sellerName: item.owner || 'Vendedor Verificado',
+        sellerCity: item.city || 'RD',
+        qty,
+        unitPrice,
+        subtotal,
+        itbis,
+        total,
+        deliveryMode: document.getElementById('buyDelivery')?.value || 'pickup',
+        ncfType: document.getElementById('buyNcfType')?.value || 'E31',
+        paymentMethod: document.getElementById('buyPayment')?.value || 'transfer',
+        buyerId: currentOwner ? currentOwner.id : null,
+        buyerName,
+        buyerRnc,
+        buyerPhone,
+        notes: document.getElementById('buyNotes')?.value.trim() || '',
+        status: 'en_revision',
+        createdAtIso: new Date().toISOString()
+      };
+
+      orders = [orderRec, ...orders.filter(o => String(o.id) !== String(orderRec.id))];
+      if (window.GM_FIREBASE && window.GM_FIREBASE.saveOrder) {
+        window.GM_FIREBASE.saveOrder(orderRec).catch(() => {});
+      }
+
+      closeSheet('marketBuySheet');
+      renderCurrentTab();
+      toast(`✓ Orden ${orderRec.orderCode} registrada en Green Mile RD`);
+    }
+
+    /* =========================================================
+       PUBLISH SPARE PART (OWNER FLOW — NEW & USED)
+       ========================================================= */
+    function openPublishPartSheet() {
+      syncOwnerUI();
+      if (!currentOwner) {
+        promptLoginFor({ type: 'publishPart' }, 'Inicia sesión o crea tu cuenta verificada para vender piezas');
+        return;
+      }
+      partPhotoList = [];
+      document.getElementById('publishPartForm').reset();
+      if (currentOwner.city) {
+        const citySel = document.getElementById('partCity');
+        if (citySel && Array.from(citySel.options).some(o => o.value === currentOwner.city)) {
+          citySel.value = currentOwner.city;
+        }
+      }
+      const sum = document.getElementById('pubPartOwnerSummary');
+      if (sum) {
+        sum.innerHTML = `
+          <div>
+            <strong style="font-size:13.5px; color:#065F46; display:block;">✓ ${escHtml(currentOwner.name)}</strong>
+            <span style="font-size:11.5px; color:#047857;">RNC/Cédula: ${escHtml(currentOwner.rncFormatted || '')} • Vendedor Verificado</span>
+          </div>
+        `;
+      }
+      renderPartPhotosGrid();
+      openSheet('publishPartSheet');
+    }
+
+    function renderPartPhotosGrid() {
+      const grid = document.getElementById('partPhotosGrid');
+      const txt = document.getElementById('partCamText');
+      if (txt) {
+        txt.innerHTML = partPhotoList.length >= 5
+          ? `<strong style="color:var(--success); display:block; font-size:13px;">✓ Máximo de 5 fotos alcanzado</strong>`
+          : `<strong style="color:var(--navy); display:block; font-size:13.5px;">📷 Subir fotos reales de la pieza (${partPhotoList.length}/5)</strong><span style="font-size:11.5px; color:var(--text-muted);">Toca aquí para tomar foto o elegir de tu galería</span>`;
+      }
+      if (!grid) return;
+      grid.innerHTML = partPhotoList.map((src, idx) => `
+        <div class="photo-slot ${idx === 0 ? 'main-cover' : ''}">
+          <img src="${src}" alt="Foto pieza ${idx + 1}">
+          <span class="photo-slot-badge">${idx === 0 ? '★ Portada' : 'Foto ' + (idx + 1)}</span>
+          <button type="button" class="photo-slot-del" onclick="removePartPhoto(${idx})" aria-label="Eliminar foto">&times;</button>
+        </div>
+      `).join('');
+    }
+
+    function removePartPhoto(idx) {
+      partPhotoList.splice(idx, 1);
+      renderPartPhotosGrid();
+    }
+
+    async function onPartPhotoPicked(e) {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      const slotsLeft = 5 - partPhotoList.length;
+      if (slotsLeft <= 0) { toast('Máximo 5 fotos permitidas'); e.target.value = ''; return; }
+      for (const file of files.slice(0, slotsLeft)) {
+        let dataUrl = null;
+        if (window.GM_FIREBASE && window.GM_FIREBASE.compressImageFile) {
+          dataUrl = await window.GM_FIREBASE.compressImageFile(file, 860, 0.74);
+        }
+        if (!dataUrl) {
+          dataUrl = await new Promise((resolve) => {
+            const r = new FileReader();
+            r.onload = (ev) => resolve(ev.target.result);
+            r.onerror = () => resolve(null);
+            r.readAsDataURL(file);
+          });
+        }
+        if (dataUrl && partPhotoList.length < 5) partPhotoList.push(dataUrl);
+      }
+      e.target.value = '';
+      renderPartPhotosGrid();
+    }
+
+    async function submitPublishPart(e) {
+      e.preventDefault();
+      if (!currentOwner) {
+        closeSheet('publishPartSheet');
+        promptLoginFor({ type: 'publishPart' }, 'Inicia sesión para publicar piezas');
+        return;
+      }
+      const cat = document.getElementById('partCat').value;
+      const condition = document.getElementById('partCondition').value;
+      const title = document.getElementById('partTitle').value.trim();
+      const price = Number(document.getElementById('partPrice').value);
+      const stock = Math.max(1, Number(document.getElementById('partStock').value) || 1);
+      if (title.length < 3) { toast('Ingresa el nombre de la pieza o repuesto'); return; }
+      if (!(price >= 100)) { toast('Ingresa un precio de venta válido en RD$'); return; }
+
+      const newPart = {
+        id: Date.now(),
+        ownerId: currentOwner.id,
+        category: cat,
+        condition,
+        title,
+        partNumber: document.getElementById('partNumber').value.trim(),
+        brand: document.getElementById('partBrand').value.trim() || 'OEM / Heavy Duty',
+        compatibleWith: document.getElementById('partCompatible').value.trim(),
+        price,
+        stock,
+        city: document.getElementById('partCity').value,
+        warranty: document.getElementById('partWarranty').value.trim() || (condition === 'nueva' ? 'Nueva con factura e-NCF' : 'Usada operativa verificada'),
+        desc: document.getElementById('partDesc').value.trim() || 'Disponible para entrega inmediata en República Dominicana.',
+        owner: currentOwner.name,
+        rnc: currentOwner.rncFormatted,
+        phone: currentOwner.phone,
+        img: partPhotoList[0] || getPartCategoryCover(cat),
+        images: partPhotoList.slice(0, 5)
+      };
+
+      partsCatalog = [newPart, ...partsCatalog.filter(p => String(p.id) !== String(newPart.id))];
+      if (window.GM_FIREBASE && window.GM_FIREBASE.savePart) {
+        await window.GM_FIREBASE.savePart(newPart);
+      }
+      closeSheet('publishPartSheet');
+      syncCounters();
+      switchTab('catalog');
+      switchMarketMode('parts');
+      toast('✓ Pieza publicada en el Catálogo de Repuestos RD');
+    }
+
+    function removePart(partId) {
+      partsCatalog = partsCatalog.filter(p => String(p.id) !== String(partId));
+      if (window.GM_FIREBASE && window.GM_FIREBASE.deletePart) {
+        window.GM_FIREBASE.deletePart(partId).catch(() => {});
+      }
+      syncCounters();
+      renderCurrentTab();
+      toast('Pieza eliminada del catálogo');
+    }
+
+    /* =========================================================
+       AUTH-PROTECTED SAVED TAB
+       ========================================================= */
+    function renderGuestGateCard(title, description, nextTab) {
+      return `
+        <div class="empty-state" style="max-width:520px; margin:20px auto; grid-column:1 / -1;">
+          <div class="empty-badge">🔒</div>
+          <h3>${escHtml(title)}</h3>
+          <p>${escHtml(description)}</p>
+          <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn btn-navy" onclick="pendingAuthAction={type:'tab',payload:'${nextTab}'}; switchOwnerAuthMode('login'); openSheet('ownerAuthSheet');">Iniciar Sesión</button>
+            <button class="btn btn-primary" onclick="pendingAuthAction={type:'tab',payload:'${nextTab}'}; switchOwnerAuthMode('register'); openSheet('ownerAuthSheet');">Crear Cuenta Gratis</button>
+          </div>
+        </div>
+      `;
+    }
+
     function renderSaved() {
       const box = document.getElementById('savedFeed');
+      if (!currentOwner) {
+        box.innerHTML = renderGuestGateCard(
+          'Inicia sesión para ver tus Guardados',
+          'Tu lista de equipos favoritos está disponible únicamente para usuarios autenticados en Green Mile RD.',
+          'saved'
+        );
+        return;
+      }
       const list = equipment.filter(e => savedIds.includes(e.id));
       if (list.length === 0) {
         box.innerHTML = `
@@ -2076,13 +3528,13 @@
       box.innerHTML = list.map(cardHTML).join('');
     }
 
-    // Número oficial de WhatsApp de Green Mile RD (reemplazar por tu número real en formato 1809XXXXXXX)
-    const GREEN_MILE_WA = '18095550100';
-
+    /* =========================================================
+       OBRAS RD & IN-APP POSTULAR MI EQUIPO (ZERO WHATSAPP!)
+       ========================================================= */
     function renderRequests() {
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
       const city = document.getElementById('cityFilter').value;
-      const list = requests.filter(r => (!q || r.title.toLowerCase().includes(q)) && (!city || r.city === city));
+      const list = requests.filter(r => (!q || r.title.toLowerCase().includes(q) || (r.notes || '').toLowerCase().includes(q)) && (!city || r.city === city));
       const box = document.getElementById('requestsFeed');
 
       if (list.length === 0) {
@@ -2099,35 +3551,255 @@
 
       box.innerHTML = list.map(r => {
         const refCode = `OBRA-${String(r.id).slice(-4)}`;
-        const msg = encodeURIComponent(`Hola Green Mile RD, tengo equipo disponible para la solicitud ${refCode}: "${r.title}" en ${r.city} (Presupuesto ${fmtRD(r.budget)}/día). Quiero postular mi equipo.`);
+        const reqBids = proposals.filter(p => String(p.requestId) === String(r.id));
+        const hasMyBid = reqBids.some(p => !currentOwner ? true : String(p.ownerId || '') === String(currentOwner.id));
         const placeBadgeHTML = r.placeTypeLabel
-          ? `<div style="display:inline-flex; align-items:center; align-self:flex-start; font-size:11px; font-weight:800; background:var(--orange-soft); color:var(--orange); padding:3px 9px; border-radius:999px;">${r.placeTypeLabel}</div>`
+          ? `<div style="display:inline-flex; align-items:center; align-self:flex-start; font-size:11px; font-weight:800; background:var(--orange-soft); color:var(--orange); padding:3px 9px; border-radius:999px;">${escHtml(r.placeTypeLabel)}</div>`
           : '';
         const permitsHTML = Array.isArray(r.permits) && r.permits.length
-          ? `<div style="display:flex; flex-wrap:wrap; gap:5px;">${r.permits.map(p => `<span style="font-size:10.5px; font-weight:700; background:var(--navy-soft); color:var(--navy); padding:2px 7px; border-radius:999px;">📋 ${p}</span>`).join('')}</div>`
+          ? `<div style="display:flex; flex-wrap:wrap; gap:5px;">${r.permits.map(p => `<span style="font-size:10.5px; font-weight:700; background:var(--navy-soft); color:var(--navy); padding:2px 7px; border-radius:999px;">📋 ${escHtml(p)}</span>`).join('')}</div>`
+          : '';
+        const bidsStatusHTML = reqBids.length > 0
+          ? `<div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+               <span style="font-size:11px; font-weight:800; color:#065F46; background:#ECFDF5; border:1px solid #A7F3D0; padding:3px 9px; border-radius:999px;">📩 ${reqBids.length} postulación${reqBids.length > 1 ? 'es' : ''} en revisión</span>
+               ${hasMyBid ? `<span style="font-size:11px; font-weight:800; color:#1E40AF; background:#EFF6FF; padding:3px 9px; border-radius:999px;">✓ Ya postulaste</span>` : ''}
+             </div>`
           : '';
         return `
           <div style="background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--orange); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow-sm);">
-            <div style="font-size:11px; font-weight:800; color:var(--orange); text-transform:uppercase;">${r.city} • Presupuesto ${fmtRD(r.budget)}/día</div>
-            <strong style="font-size:16px; color:var(--navy);">${r.title}</strong>
+            <div style="font-size:11px; font-weight:800; color:var(--orange); text-transform:uppercase;">${escHtml(r.city)} • Presupuesto ${fmtRD(r.budget)}/día</div>
+            <strong style="font-size:16px; color:var(--navy);">${escHtml(r.title)}</strong>
             ${placeBadgeHTML}
-            <p style="font-size:13px; color:var(--text-muted);">${r.notes || 'Disponibilidad inmediata requerida.'}</p>
+            <p style="font-size:13px; color:var(--text-muted);">${escHtml(r.notes || 'Disponibilidad inmediata requerida.')}</p>
             ${permitsHTML}
-            <div style="display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid var(--border); margin-top:auto; gap:8px;">
-              <span style="font-size:12px; font-weight:700; color:var(--navy);">🔒 ${refCode} • Gestionado por Green Mile</span>
-              <a class="btn btn-wa" style="padding:8px 14px; font-size:12px; white-space:nowrap;" target="_blank" rel="noopener" href="https://wa.me/${GREEN_MILE_WA}?text=${msg}">Postular mi Equipo</a>
+            ${bidsStatusHTML}
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid var(--border); margin-top:auto; gap:8px; flex-wrap:wrap;">
+              <span style="font-size:12px; font-weight:700; color:var(--navy);">🔒 ${refCode} • Gestionado en la App</span>
+              <button type="button" class="btn btn-primary" style="padding:8px 14px; font-size:12px; white-space:nowrap;" onclick="openBidSheet(${r.id})">📋 ${hasMyBid ? 'Postular Otro Equipo' : 'Postular mi Equipo'}</button>
             </div>
           </div>
         `;
       }).join('');
     }
 
-    let currentOwner = (window.GM_FIREBASE && window.GM_FIREBASE.getCurrentOwner)
-      ? window.GM_FIREBASE.getCurrentOwner()
-      : null;
-    let pendingOpenPublishAfterAuth = false;
-    let photoList = [];
+    function getCommissionPct() {
+      if (window.GM_BILLING && window.GM_BILLING.loadAdminConfig) {
+        const cfg = window.GM_BILLING.loadAdminConfig();
+        if (cfg && Number(cfg.standardCommissionPct) > 0) return Number(cfg.standardCommissionPct);
+      }
+      return 12;
+    }
 
+    function openBidSheet(reqId) {
+      const req = requests.find(r => String(r.id) === String(reqId));
+      if (!req) return;
+      activeBidReqId = req.id;
+
+      const refCode = `OBRA-${String(req.id).slice(-4)}`;
+      document.getElementById('bidReqSummary').innerHTML = `
+        <div style="font-size:11px; font-weight:800; color:var(--orange); text-transform:uppercase; margin-bottom:3px;">${escHtml(refCode)} • ${escHtml(req.city)} • Presupuesto ${fmtRD(req.budget)}/día</div>
+        <strong style="font-size:15px; color:var(--navy); display:block;">${escHtml(req.title)}</strong>
+        ${req.placeTypeLabel ? `<div style="font-size:11.5px; font-weight:700; color:var(--navy); margin-top:4px;">${escHtml(req.placeTypeLabel)}</div>` : ''}
+        <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">${escHtml(req.notes || 'Disponibilidad inmediata requerida.')}</p>
+      `;
+
+      // Populate equipment selector: owner's fleet first, then catalog, then custom option
+      const myFleet = getMyFleet();
+      const myIds = new Set(myFleet.map(e => String(e.id)));
+      const otherEq = getRentEquipmentList().filter(e => !myIds.has(String(e.id)));
+      const sel = document.getElementById('bidEquipSelect');
+
+      let opts = '';
+      if (myFleet.length > 0) {
+        opts += `<optgroup label="★ Mi Flota Verificada">`;
+        opts += myFleet.map(e => `<option value="${escHtml(e.id)}" data-price="${Number(e.priceDay) || 0}" data-op="${e.operator ? '1' : '0'}">★ ${escHtml(e.title)} (${escHtml(e.city)} • ${fmtRD(e.priceDay)}/día)</option>`).join('');
+        opts += `</optgroup>`;
+      }
+      opts += `<optgroup label="Catálogo de Referencia RD">`;
+      opts += otherEq.slice(0, 20).map(e => `<option value="${escHtml(e.id)}" data-price="${Number(e.priceDay) || 0}" data-op="${e.operator ? '1' : '0'}">${escHtml(e.title)} (${escHtml(e.city)})</option>`).join('');
+      opts += `</optgroup>`;
+      opts += `<option value="custom">➕ Otro equipo de mi flota (describir manualmente)…</option>`;
+      sel.innerHTML = opts;
+
+      // Default to custom if owner has no published fleet yet, otherwise select first own unit
+      if (myFleet.length === 0) {
+        sel.value = 'custom';
+      }
+
+      document.getElementById('bidCustomEquip').value = '';
+      document.getElementById('bidPriceDay').value = Number(req.budget) > 0 ? Number(req.budget) : 15000;
+      document.getElementById('bidTransportMode').value = 'included';
+      document.getElementById('bidTransportCost').value = '';
+      document.getElementById('bidNotes').value = '';
+      document.getElementById('bidOp').checked = true;
+      document.getElementById('bidTerms').checked = true;
+
+      // Render owner auth status box
+      const authBox = document.getElementById('bidOwnerAuthBox');
+      if (currentOwner) {
+        authBox.innerHTML = `
+          <div style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <div>
+              <strong style="font-size:13px; color:#065F46; display:block;">✓ Postulando como ${escHtml(currentOwner.name)}</strong>
+              <span style="font-size:11.5px; color:#047857;">RNC/Cédula: ${escHtml(currentOwner.rncFormatted || '')} • Datos confidenciales</span>
+            </div>
+          </div>
+        `;
+      } else {
+        authBox.innerHTML = `
+          <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:12px; padding:11px 12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+              <strong style="font-size:12px; color:var(--navy);">🔒 Datos confidenciales del Propietario</strong>
+              <button type="button" style="border:none; background:none; color:var(--orange); font-size:11.5px; font-weight:800; cursor:pointer;" onclick="closeSheet('bidSheet'); promptLoginFor({type:'bid', payload:${req.id}}, 'Inicia sesión para cargar tu flota verificada');">Iniciar sesión con mi cuenta →</button>
+            </div>
+            <div class="f-grid">
+              <div class="f-field">
+                <label for="bidOwnerName">Empresa / Nombre <small>*</small></label>
+                <div class="f-box"><input type="text" id="bidOwnerName" placeholder="Ej. Equipos del Cibao, S.R.L." required></div>
+              </div>
+              <div class="f-field">
+                <label for="bidOwnerPhone">Teléfono RD (Confidencial) <small>*</small></label>
+                <div class="f-box"><span class="f-prefix">🇩🇴 +1</span><input type="tel" id="bidOwnerPhone" placeholder="809-555-0199" required></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      onBidEquipChange();
+      onBidTransportChange();
+      updateBidPayoutPreview();
+      openSheet('bidSheet');
+    }
+
+    function onBidEquipChange() {
+      const sel = document.getElementById('bidEquipSelect');
+      const wrap = document.getElementById('bidCustomEquipWrap');
+      const customInput = document.getElementById('bidCustomEquip');
+      if (!sel || !wrap) return;
+      const isCustom = sel.value === 'custom';
+      wrap.style.display = isCustom ? 'block' : 'none';
+      if (customInput) customInput.required = isCustom;
+      if (!isCustom) {
+        const opt = sel.options[sel.selectedIndex];
+        const p = Number(opt?.dataset?.price || 0);
+        if (p >= 500) document.getElementById('bidPriceDay').value = p;
+        if (opt?.dataset?.op != null) document.getElementById('bidOp').checked = opt.dataset.op === '1';
+      }
+      updateBidPayoutPreview();
+    }
+
+    function onBidTransportChange() {
+      const mode = document.getElementById('bidTransportMode')?.value || 'included';
+      const wrap = document.getElementById('bidTransportCostWrap');
+      if (wrap) wrap.style.display = mode === 'extra' ? 'block' : 'none';
+      updateBidPayoutPreview();
+    }
+
+    function updateBidPayoutPreview() {
+      const box = document.getElementById('bidPayoutBox');
+      if (!box) return;
+      const priceDay = Math.max(0, Number(document.getElementById('bidPriceDay')?.value || 0));
+      const commPct = getCommissionPct();
+      const commAmt = Math.round(priceDay * (commPct / 100));
+      const netDay = Math.max(0, priceDay - commAmt);
+      const tMode = document.getElementById('bidTransportMode')?.value || 'included';
+      const tCost = tMode === 'extra' ? Math.max(0, Number(document.getElementById('bidTransportCost')?.value || 0)) : 0;
+
+      box.innerHTML = `
+        <div class="r-row"><span>Tarifa diaria propuesta al contratista</span><strong>${fmtRD(priceDay)} / día</strong></div>
+        <div class="r-row"><span>Comisión de gestión y cobro Green Mile (${commPct}%)</span><span>- ${fmtRD(commAmt)}</span></div>
+        ${tMode === 'extra' && tCost > 0 ? `<div class="r-row"><span>Traslado Lowboy adicional</span><span>+ ${fmtRD(tCost)}</span></div>` : ''}
+        <div class="r-total"><span>Tu Cobro Neto Garantizado</span><span style="color:#059669;">${fmtRD(netDay)} / día</span></div>
+      `;
+    }
+
+    async function submitBid(e) {
+      e.preventDefault();
+      const req = requests.find(r => String(r.id) === String(activeBidReqId));
+      if (!req) return;
+
+      const selVal = document.getElementById('bidEquipSelect').value;
+      let equipTitle = '';
+      let equipId = null;
+      if (selVal === 'custom') {
+        equipTitle = document.getElementById('bidCustomEquip').value.trim();
+        if (equipTitle.length < 3) {
+          toast('Describe la marca, modelo y capacidad de tu equipo');
+          return;
+        }
+      } else {
+        const foundEq = equipment.find(x => String(x.id) === String(selVal));
+        equipId = foundEq ? foundEq.id : selVal;
+        equipTitle = foundEq ? foundEq.title : document.getElementById('bidEquipSelect').options[document.getElementById('bidEquipSelect').selectedIndex].text;
+      }
+
+      const priceDay = Number(document.getElementById('bidPriceDay').value);
+      if (!(priceDay >= 500)) {
+        toast('Ingresa una tarifa diaria válida (mín. RD$ 500)');
+        return;
+      }
+
+      let ownerName = currentOwner ? currentOwner.name : (document.getElementById('bidOwnerName')?.value.trim() || '');
+      let ownerPhone = currentOwner ? currentOwner.phone : (document.getElementById('bidOwnerPhone')?.value.trim() || '');
+      if (!ownerName || ownerPhone.replace(/\D/g, '').length < 7) {
+        toast('Completa tu nombre/empresa y teléfono confidencial');
+        return;
+      }
+
+      const commPct = getCommissionPct();
+      const netPayoutDay = Math.max(0, priceDay - Math.round(priceDay * (commPct / 100)));
+      const transportMode = document.getElementById('bidTransportMode').value;
+      const transportCost = transportMode === 'extra' ? Math.max(0, Number(document.getElementById('bidTransportCost').value || 0)) : 0;
+
+      const prop = {
+        id: Date.now(),
+        requestId: req.id,
+        requestCode: `OBRA-${String(req.id).slice(-4)}`,
+        requestTitle: req.title,
+        requestCity: req.city,
+        equipmentId: equipId,
+        equipmentTitle: equipTitle,
+        priceDay,
+        netPayoutDay,
+        commissionPct: commPct,
+        availability: document.getElementById('bidAvail').value,
+        transportMode,
+        transportCost,
+        includeOperator: document.getElementById('bidOp').checked,
+        ownerId: currentOwner ? currentOwner.id : 'guest',
+        ownerName,
+        ownerRnc: currentOwner ? (currentOwner.rncFormatted || '') : '',
+        ownerPhone,
+        notes: document.getElementById('bidNotes').value.trim(),
+        status: 'en_revision',
+        createdAtIso: new Date().toISOString()
+      };
+
+      proposals = [prop, ...proposals.filter(p => String(p.id) !== String(prop.id))];
+      if (window.GM_FIREBASE && window.GM_FIREBASE.saveProposal) {
+        await window.GM_FIREBASE.saveProposal(prop);
+      }
+
+      closeSheet('bidSheet');
+      renderRequests();
+      if (activeTab === 'profile') renderProfile();
+      toast(`✓ Postulación enviada a ${prop.requestCode} dentro de Green Mile RD`);
+    }
+
+    async function withdrawBid(proposalId) {
+      proposals = proposals.filter(p => String(p.id) !== String(proposalId));
+      if (window.GM_FIREBASE && window.GM_FIREBASE.deleteProposal) {
+        await window.GM_FIREBASE.deleteProposal(proposalId);
+      }
+      renderRequests();
+      if (activeTab === 'profile') renderProfile();
+      toast('Postulación retirada');
+    }
+
+    /* =========================================================
+       AUTHENTICATION & OWNER ACCOUNT CONTROLLER
+       ========================================================= */
     const regDgiiController = (window.GM_DGII && window.GM_DGII.attachPair)
       ? window.GM_DGII.attachPair({
           rncInputId: 'regRnc',
@@ -2142,16 +3814,18 @@
         ? window.GM_FIREBASE.getCurrentOwner()
         : null;
 
+      document.body.classList.toggle('is-authed', Boolean(currentOwner));
+
       const hdrBtn = document.getElementById('ownerHeaderBtn');
       if (hdrBtn) {
         if (currentOwner) {
-          const shortName = currentOwner.name.length > 18 ? currentOwner.name.slice(0, 18) + '…' : currentOwner.name;
-          hdrBtn.innerHTML = `✓ ${shortName}`;
+          const shortName = currentOwner.name.length > 16 ? currentOwner.name.slice(0, 16) + '…' : currentOwner.name;
+          hdrBtn.innerHTML = `✓ ${escHtml(shortName)}`;
           hdrBtn.style.borderColor = '#6EE7B7';
           hdrBtn.style.background = '#ECFDF5';
           hdrBtn.style.color = '#065F46';
         } else {
-          hdrBtn.innerHTML = `👤 Cuenta Propietario`;
+          hdrBtn.innerHTML = `👤 Iniciar Sesión`;
           hdrBtn.style.borderColor = '';
           hdrBtn.style.background = '';
           hdrBtn.style.color = '';
@@ -2162,11 +3836,41 @@
       if (sumEl && currentOwner) {
         sumEl.innerHTML = `
           <div>
-            <strong style="font-size:14px; color:#065F46; display:block;">✓ ${currentOwner.name}</strong>
-            <span style="font-size:12px; color:#047857;">RNC/Cédula: ${currentOwner.rncFormatted} • Tel: +1 ${currentOwner.phone}</span>
+            <strong style="font-size:14px; color:#065F46; display:block;">✓ ${escHtml(currentOwner.name)}</strong>
+            <span style="font-size:12px; color:#047857;">RNC/Cédula: ${escHtml(currentOwner.rncFormatted || '')} • Tel: +1 ${escHtml(currentOwner.phone || '')}</span>
           </div>
           <button type="button" class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="closeSheet('publishSheet'); handleLogoutOwner();">Cambiar cuenta</button>
         `;
+      }
+      renderMenuDrawer();
+    }
+
+    function executePendingAuthAction() {
+      const act = pendingAuthAction;
+      pendingAuthAction = null;
+      if (!act) {
+        renderCurrentTab();
+        return;
+      }
+      if (act.type === 'publish') {
+        openPublishSheet(act.payload || 'rent');
+      } else if (act.type === 'publishPart') {
+        openPublishPartSheet();
+      } else if (act.type === 'tracking') {
+        window.location.href = './tracking.html';
+      } else if (act.type === 'tab' && act.payload) {
+        switchTab(act.payload);
+      } else if (act.type === 'bid' && act.payload) {
+        openBidSheet(act.payload);
+      } else if (act.type === 'save' && act.payload != null) {
+        if (!savedIds.includes(act.payload)) {
+          savedIds.push(act.payload);
+          syncCounters();
+          toast('♥ Equipo guardado en tus favoritos');
+        }
+        renderCurrentTab();
+      } else {
+        renderCurrentTab();
       }
     }
 
@@ -2175,7 +3879,7 @@
         switchTab('profile');
         return;
       }
-      pendingOpenPublishAfterAuth = false;
+      pendingAuthAction = { type: 'tab', payload: 'profile' };
       switchOwnerAuthMode('login');
       openSheet('ownerAuthSheet');
     }
@@ -2199,14 +3903,10 @@
       try {
         currentOwner = await window.GM_FIREBASE.loginOwnerAccount({ identifier, password });
         syncOwnerUI();
+        syncCounters();
         closeSheet('ownerAuthSheet');
         toast(`¡Bienvenido, ${currentOwner.name}!`);
-        if (pendingOpenPublishAfterAuth) {
-          pendingOpenPublishAfterAuth = false;
-          openPublishSheet();
-        } else {
-          renderCurrentTab();
-        }
+        executePendingAuthAction();
       } catch (err) {
         toast(err.message || 'No se pudo iniciar sesión');
       }
@@ -2256,14 +3956,10 @@
           password
         });
         syncOwnerUI();
+        syncCounters();
         closeSheet('ownerAuthSheet');
-        toast('✓ Cuenta de propietario creada y verificada');
-        if (pendingOpenPublishAfterAuth) {
-          pendingOpenPublishAfterAuth = false;
-          openPublishSheet();
-        } else {
-          renderCurrentTab();
-        }
+        toast('✓ Cuenta creada y verificada');
+        executePendingAuthAction();
       } catch (err) {
         toast(err.message || 'Error al registrar la cuenta');
       }
@@ -2275,53 +3971,75 @@
       }
       currentOwner = null;
       syncOwnerUI();
-      renderCurrentTab();
-      toast('Sesión de propietario cerrada');
+      syncCounters();
+      if (activeTab === 'profile' || activeTab === 'saved') {
+        switchTab('catalog');
+      } else {
+        renderCurrentTab();
+      }
+      toast('Sesión cerrada');
     }
 
+    /* =========================================================
+       MI PANEL (AUTHENTICATED ONLY)
+       ========================================================= */
     function renderProfile() {
+      const guestGate = document.getElementById('profileGuestGate');
+      const privContent = document.getElementById('profilePrivateContent');
+
+      if (!currentOwner) {
+        if (privContent) privContent.style.display = 'none';
+        if (guestGate) {
+          guestGate.style.display = 'block';
+          guestGate.innerHTML = renderGuestGateCard(
+            'Mi Panel es exclusivo para usuarios autenticados',
+            'Inicia sesión o registra tu cuenta con RNC/Cédula para consultar tus contratos firmados, facturas e-CF, postulaciones, piezas en venta y tracking GPS.',
+            'profile'
+          );
+        }
+        return;
+      }
+
+      if (guestGate) guestGate.style.display = 'none';
+      if (privContent) privContent.style.display = 'block';
+
       const oCard = document.getElementById('profileOwnerCard');
       if (oCard) {
-        if (currentOwner) {
-          oCard.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-              <div>
-                <span style="font-size:10.5px; font-weight:800; color:#059669; background:#ECFDF5; padding:3px 9px; border-radius:99px; text-transform:uppercase;">✓ Propietario Verificado DGII</span>
-                <strong style="font-size:17px; color:var(--navy); display:block; margin-top:6px;">${currentOwner.name}</strong>
-                <span style="font-size:12.5px; color:var(--text-muted);">RNC/Cédula: <strong>${currentOwner.rncFormatted}</strong> • ${currentOwner.email || ''} • +1 ${currentOwner.phone}</span>
-              </div>
-              <div style="display:flex; gap:8px;">
-                <button class="btn btn-primary" style="padding:8px 13px; font-size:12px;" onclick="openPublishSheet()">+ Subir Equipo</button>
-                <button class="btn btn-ghost" style="padding:8px 13px; font-size:12px; color:#DC2626;" onclick="handleLogoutOwner()">Cerrar Sesión</button>
-              </div>
+        oCard.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <div>
+              <span style="font-size:10.5px; font-weight:800; color:#059669; background:#ECFDF5; padding:3px 9px; border-radius:99px; text-transform:uppercase;">✓ Cuenta Verificada DGII</span>
+              <strong style="font-size:17px; color:var(--navy); display:block; margin-top:6px;">${escHtml(currentOwner.name)}</strong>
+              <span style="font-size:12.5px; color:var(--text-muted);">RNC/Cédula: <strong>${escHtml(currentOwner.rncFormatted || '')}</strong> • ${escHtml(currentOwner.email || '')} • +1 ${escHtml(currentOwner.phone || '')}</span>
             </div>
-          `;
-        } else {
-          oCard.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-              <div>
-                <strong style="font-size:16px; color:var(--navy); display:block;">¿Eres propietario de maquinaria?</strong>
-                <span style="font-size:12.5px; color:var(--text-muted);">Registra tu cuenta verificada con RNC/DGII para publicar tus equipos y gestionar tu flota.</span>
-              </div>
-              <div style="display:flex; gap:8px;">
-                <button class="btn btn-ghost" style="padding:8px 13px; font-size:12px;" onclick="switchOwnerAuthMode('login'); openSheet('ownerAuthSheet');">Iniciar Sesión</button>
-                <button class="btn btn-primary" style="padding:8px 13px; font-size:12px;" onclick="switchOwnerAuthMode('register'); openSheet('ownerAuthSheet');">Crear Cuenta</button>
-              </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-primary" style="padding:8px 13px; font-size:12px;" onclick="openPublishSheet('rent')">+ Subir Equipo</button>
+              <button class="btn btn-navy" style="padding:8px 13px; font-size:12px;" onclick="openPublishPartSheet()">+ Vender Pieza</button>
+              <button class="btn btn-ghost" style="padding:8px 13px; font-size:12px; color:#DC2626;" onclick="handleLogoutOwner()">Cerrar Sesión</button>
             </div>
-          `;
-        }
+          </div>
+        `;
       }
 
       syncInstallPwaButton();
+      syncCounters();
 
+      // 1. Contracts -> Direct links to dedicated contrato.html detail page (NO POPUP!)
       const cBox = document.getElementById('profileContracts');
       if (bookings.length === 0) {
-        cBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No hay contratos ni facturas e-CF generados todavía. Al confirmar un alquiler aparecerá aquí con su enlace de tracking GPS en tiempo real.</p>`;
+        cBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No hay contratos ni facturas e-CF generados todavía. Al confirmar un alquiler aparecerá aquí con su página de detalle e-CF y tracking GPS.</p>`;
       } else {
         cBox.innerHTML = bookings.map(raw => {
           const b = window.GM_BILLING ? window.GM_BILLING.normalizeBooking(raw) : raw;
           const pBadge = window.GM_BILLING ? window.GM_BILLING.paymentStatusBadge(b) : { text: 'REGISTRADO', bg: '#F1F5F9', color: '#0D223A' };
           const tr = allTrackingMap[String(b.id)];
+          const isDispatchReady = (
+            b.paymentStatus === 'paid' ||
+            b.stage === 'invoiced_dispatched' ||
+            b.stage === 'conduce_signed' ||
+            b.stage === 'gov_filed' ||
+            b.stage === 'settled'
+          );
           let trackBadgeHtml = `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#F1F5F9; color:#475569;">⏱ Despacho programado</span>`;
           if (tr && tr.status === 'en_route') {
             const etaLabel = Number.isFinite(Number(tr.etaMin)) ? ` • ~${Math.max(1, Math.round(tr.etaMin))} min` : '';
@@ -2331,52 +4049,131 @@
           } else if (tr && (tr.status === 'completed' || tr.status === 'operating')) {
             trackBadgeHtml = `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#ECFDF5; color:#065F46;">✅ Operando</span>`;
           }
+          const invoiceHref = `./contrato.html?booking=${encodeURIComponent(b.id)}&doc=invoice`;
+          const contractHref = `./contrato.html?booking=${encodeURIComponent(b.id)}&doc=contract`;
           return `
             <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
               <div>
                 <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
-                  <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${b.ncfType === 'E45' ? '#EFF6FF' : '#0D223A'}; color:${b.ncfType === 'E45' ? '#1E40AF' : '#fff'};">${b.ncfType || 'E31'}</span>
-                  <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${pBadge.bg}; color:${pBadge.color};">${pBadge.text}</span>
+                  <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${b.ncfType === 'E45' ? '#EFF6FF' : '#0D223A'}; color:${b.ncfType === 'E45' ? '#1E40AF' : '#fff'};">${escHtml(b.ncfType || 'E31')}</span>
+                  <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${pBadge.bg}; color:${pBadge.color};">${escHtml(pBadge.text)}</span>
                   ${trackBadgeHtml}
-                  ${b.encfNumber ? `<span style="font-size:10px; font-family:monospace; font-weight:800; color:var(--orange);">${b.encfNumber}</span>` : ''}
+                  ${b.encfNumber ? `<span style="font-size:10px; font-family:monospace; font-weight:800; color:var(--orange);">${escHtml(b.encfNumber)}</span>` : ''}
                 </div>
-                <strong style="font-size:14px; color:var(--navy); display:block;">${b.title}</strong>
-                <span style="font-size:11px; color:var(--text-muted);">${b.renter} • ${fmtRD(b.total)}</span>
+                <a href="${contractHref}" style="font-size:14px; font-weight:800; color:var(--navy); display:block; text-decoration:none;">${escHtml(b.title)}</a>
+                <span style="font-size:11px; color:var(--text-muted);">${escHtml(b.renter)} • ${fmtRD(b.total)}</span>
               </div>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <a class="btn btn-primary" style="padding:7px 11px; font-size:11px; text-decoration:none;" href="./tracking.html?booking=${encodeURIComponent(b.id)}">🗺️ Tracking</a>
-                <a class="btn btn-ghost" style="padding:7px 11px; font-size:11px; text-decoration:none;" href="./tracking.html?booking=${encodeURIComponent(b.id)}&role=operator">🚚 Operador</a>
-                <button class="btn btn-navy" style="padding:7px 11px; font-size:11px;" onclick="openContract(${b.id}, 'invoice')">🧾 Factura e-CF</button>
-                <button class="btn btn-ghost" style="padding:7px 11px; font-size:11px;" onclick="openContract(${b.id}, 'contract')">📄 Contrato</button>
+                ${isDispatchReady ? `<a class="btn btn-primary" style="padding:7px 11px; font-size:11px; text-decoration:none;" href="./tracking.html?booking=${encodeURIComponent(b.id)}">🗺️ Tracking</a>` : ''}
+                <a class="btn btn-navy" style="padding:7px 11px; font-size:11px; text-decoration:none;" href="${invoiceHref}">🧾 Factura e-CF</a>
+                <a class="btn btn-ghost" style="padding:7px 11px; font-size:11px; text-decoration:none;" href="${contractHref}">📄 Contrato</a>
               </div>
             </div>
           `;
         }).join('');
       }
 
-      const fBox = document.getElementById('profileFleet');
-      const myFleet = currentOwner
-        ? equipment.filter(e => String(e.ownerId || '') === String(currentOwner.id) || String(e.rnc || '').replace(/\D/g, '') === String(currentOwner.rncDigits))
-        : [];
+      // 2. Proposals submitted in Obras RD
+      const bBox = document.getElementById('profileBids');
+      if (bBox) {
+        if (proposals.length === 0) {
+          bBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Aún no has postulado maquinaria a solicitudes en <strong>Obras RD</strong>. Toca <strong>Explorar Obras RD</strong> y postula directamente en la app.</p>`;
+        } else {
+          bBox.innerHTML = proposals.map(p => `
+            <div style="border:1px solid var(--border); border-left:3px solid var(--orange); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div>
+                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
+                  <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:var(--navy-soft); color:var(--navy);">${escHtml(p.requestCode || 'OBRA')}</span>
+                  <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:#FEF3C7; color:#92400E;">🟡 En revisión por Green Mile RD</span>
+                </div>
+                <strong style="font-size:14px; color:var(--navy); display:block;">${escHtml(p.equipmentTitle)}</strong>
+                <span style="font-size:11.5px; color:var(--text-muted); display:block;">Obra: ${escHtml(p.requestTitle)} (${escHtml(p.requestCity || 'RD')})</span>
+                <span style="font-size:11.5px; color:#065F46; font-weight:700;">Tarifa: ${fmtRD(p.priceDay)}/día • Tu neto: ${fmtRD(p.netPayoutDay || p.priceDay)}/día • ${escHtml(p.availability || '')}</span>
+              </div>
+              <button type="button" class="btn btn-ghost" style="padding:6px 10px; font-size:11px; color:#DC2626;" onclick="withdrawBid(${p.id})">Retirar</button>
+            </div>
+          `).join('');
+        }
+      }
 
-      if (!currentOwner) {
-        fBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Inicia sesión en tu cuenta de propietario para administrar las máquinas que publiques.</p>`;
-      } else if (myFleet.length === 0) {
-        fBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Aún no has subido maquinaria con tu cuenta (${currentOwner.name}). Toca <strong>+ Publicar Equipo</strong> para subir hasta 5 fotos de tu primera unidad.</p>`;
+      // 3. Purchase Orders (Machinery Sales & Spare Parts)
+      const oBox = document.getElementById('profileOrders');
+      if (oBox) {
+        if (orders.length === 0) {
+          oBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No tienes órdenes de compra de equipos o repuestos todavía.</p>`;
+        } else {
+          oBox.innerHTML = orders.map(o => `
+            <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div>
+                <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:4px;">
+                  <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:var(--navy); color:#fff;">${escHtml(o.orderCode || 'ORD')}</span>
+                  <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:${o.condition === 'nueva' ? '#ECFDF5' : '#FEF3C7'}; color:${o.condition === 'nueva' ? '#059669' : '#92400E'};">${o.condition === 'nueva' ? '✨ Nueva' : '🔧 Usada'}</span>
+                  <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:#EFF6FF; color:#1E40AF;">${escHtml(o.ncfType || 'E31')}</span>
+                </div>
+                <strong style="font-size:14px; color:var(--navy); display:block;">${escHtml(o.itemTitle)} ${o.qty > 1 ? `× ${o.qty}` : ''}</strong>
+                <span style="font-size:11.5px; color:var(--text-muted);">Total con ITBIS: <strong>${fmtRD(o.total)}</strong> • Vendedor: ${escHtml(o.sellerName || '')} (${escHtml(o.sellerCity || '')})</span>
+              </div>
+              <span style="font-size:11px; font-weight:800; color:#065F46; background:#ECFDF5; padding:4px 10px; border-radius:99px;">✓ En Coordinación</span>
+            </div>
+          `).join('');
+        }
+      }
+
+      // 4. Owner's Published Spare Parts
+      const pBox = document.getElementById('profileParts');
+      if (pBox) {
+        const myParts = getMyParts();
+        if (myParts.length === 0) {
+          pBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Aún no has publicado repuestos en venta. Toca <strong>+ Publicar Pieza</strong> para vender piezas nuevas o usadas de tu taller o inventario.</p>`;
+        } else {
+          pBox.innerHTML = myParts.map(p => `
+            <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+              <div>
+                <div style="display:flex; gap:5px; margin-bottom:3px;">
+                  <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${p.condition === 'nueva' ? '#ECFDF5' : '#FEF3C7'}; color:${p.condition === 'nueva' ? '#059669' : '#92400E'};">${p.condition === 'nueva' ? '✨ Nueva' : '🔧 Usada'}</span>
+                  <span style="font-size:10px; font-weight:700; color:var(--text-muted);">${escHtml(p.category)}</span>
+                </div>
+                <strong style="font-size:14px; color:var(--navy); display:block;">${escHtml(p.title)}</strong>
+                <span style="font-size:11.5px; color:var(--text-muted);">${escHtml(p.city)} • ${fmtRD(p.price)} • Stock: ${p.stock || 1}</span>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-navy" style="padding:6px 10px; font-size:11px;" onclick="openMarketBuySheet('part', '${escHtml(p.id)}')">Ver</button>
+                <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px; color:#DC2626;" onclick="removePart('${escHtml(p.id)}')">Borrar</button>
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+
+      // 5. Owner's Published Machinery (Rent / Sale)
+      const fBox = document.getElementById('profileFleet');
+      const myFleet = getMyFleet();
+      if (myFleet.length === 0) {
+        fBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Aún no has subido maquinaria con tu cuenta (${escHtml(currentOwner.name)}). Toca <strong>+ Publicar Equipo</strong> para subir tu primera unidad en alquiler o venta.</p>`;
       } else {
         fBox.innerHTML = myFleet.map(e => {
+          const isSaleOnly = e.listingType === 'sale';
           const url = GM.getEquipmentPath(e, '');
           const countImgs = Array.isArray(e.images) && e.images.length ? e.images.length : 1;
+          const modePill = e.listingType === 'sale' ? '🏷️ Venta' : (e.listingType === 'both' ? '🚜 Alquiler y Venta' : '🚜 Alquiler');
+          const priceSummary = e.listingType === 'sale'
+            ? `${fmtRD(e.salePrice || 0)} venta`
+            : (e.listingType === 'both' ? `${fmtRD(e.priceDay)}/día • Venta ${fmtRD(e.salePrice || 0)}` : `${fmtRD(e.priceDay)}/día`);
           return `
             <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
               <div>
-                <a href="${url}" style="font-size:14px; font-weight:800; color:var(--navy); display:block; text-decoration:none;">${e.title}</a>
-                <span style="font-size:11px; color:var(--text-muted);">${e.city} • ${fmtRD(e.priceDay)}/día • 📷 ${countImgs} foto(s)</span>
+                <span style="font-size:10px; font-weight:800; color:var(--orange); background:var(--orange-soft); padding:2px 7px; border-radius:99px;">${modePill}</span>
+                ${isSaleOnly
+                  ? `<strong style="font-size:14px; color:var(--navy); display:block; margin-top:3px;">${escHtml(e.title)}</strong>`
+                  : `<a href="${url}" style="font-size:14px; font-weight:800; color:var(--navy); display:block; margin-top:3px; text-decoration:none;">${escHtml(e.title)}</a>`}
+                <span style="font-size:11px; color:var(--text-muted);">${escHtml(e.city)} • ${priceSummary} • 📷 ${countImgs} foto(s)</span>
               </div>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <a class="btn btn-navy" style="padding:6px 10px; font-size:11px;" href="${url}">Ver</a>
-                <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="shareCard(event, ${e.id})">Compartir</button>
-                <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="flipBusy(${e.id})">${e.busy ? 'Liberar' : 'Ocupar'}</button>
+                ${isSaleOnly
+                  ? `<button class="btn btn-navy" style="padding:6px 10px; font-size:11px;" onclick="openMarketBuySheet('sale', '${escHtml(e.id)}')">Ver</button>`
+                  : `<a class="btn btn-navy" style="padding:6px 10px; font-size:11px;" href="${url}">Ver</a>
+                     <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="shareCard(event, ${e.id})">Compartir</button>
+                     <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="flipBusy(${e.id})">${e.busy ? 'Liberar' : 'Ocupar'}</button>`}
                 <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px; color:#DC2626;" onclick="removeEq(${e.id})">Borrar</button>
               </div>
             </div>
@@ -2400,22 +4197,37 @@
 
     function removeEq(id) {
       equipment = equipment.filter(x => String(x.id) !== String(id));
+      salesCatalog = salesCatalog.filter(x => String(x.id) !== String(id));
       syncCounters();
       renderProfile();
       if (window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
         window.GM_FIREBASE.deleteEquipment(id).catch(() => {});
+        if (window.GM_FIREBASE.deleteSaleMachine) window.GM_FIREBASE.deleteSaleMachine(id).catch(() => {});
       }
       toast('Equipo eliminado');
     }
 
-    /* Publish Wizard — Gated by Pre-Registered Owner Account */
-    function openPublishSheet() {
+    /* =========================================================
+       PUBLISH MACHINERY WIZARD (ALQUILER / VENTA / AMBOS)
+       ========================================================= */
+    function onPubListingTypeChange() {
+      const mode = document.getElementById('pubListingType')?.value || 'rent';
+      const needsSale = mode === 'sale' || mode === 'both';
+      const needsRent = mode === 'rent' || mode === 'both';
+
+      const saleWrap = document.getElementById('pubSalePriceWrap');
+      const rentWraps = ['pubRentDayWrap', 'pubRentHourWrap', 'pubRentWeekWrap', 'pubRentTransWrap'];
+      if (saleWrap) saleWrap.style.display = needsSale ? 'block' : 'none';
+      rentWraps.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = needsRent ? 'block' : 'none';
+      });
+    }
+
+    function openPublishSheet(initialMode = 'rent') {
       syncOwnerUI();
       if (!currentOwner) {
-        pendingOpenPublishAfterAuth = true;
-        switchOwnerAuthMode('register');
-        openSheet('ownerAuthSheet');
-        toast('Primero crea o inicia sesión en tu Cuenta de Propietario');
+        promptLoginFor({ type: 'publish', payload: initialMode }, 'Primero crea o inicia sesión en tu cuenta verificada');
         return;
       }
 
@@ -2423,6 +4235,10 @@
       photoList = [];
       document.getElementById('publishForm').reset();
       document.getElementById('pubCat').value = 'Movimiento de Tierra';
+      const modeSel = document.getElementById('pubListingType');
+      if (modeSel) modeSel.value = ['rent', 'sale', 'both'].includes(initialMode) ? initialMode : 'rent';
+      onPubListingTypeChange();
+
       if (currentOwner.city) {
         const citySel = document.getElementById('pubCity');
         if (Array.from(citySel.options).some(o => o.value === currentOwner.city)) {
@@ -2522,6 +4338,7 @@
     }
 
     function validateWizardStep(step) {
+      const listingType = document.getElementById('pubListingType')?.value || 'rent';
       if (step === 1) {
         if (!document.getElementById('pubCat').value) {
           toast('Selecciona una categoría'); return false;
@@ -2539,16 +4356,26 @@
         }
       }
       if (step === 2) {
-        const day = Number(document.getElementById('pubPriceDay').value);
-        if (!(day >= 500)) {
-          toast('Ingresa una tarifa diaria válida (mín. RD$ 500)');
-          document.getElementById('pubPriceDay').focus();
-          return false;
+        if (listingType === 'rent' || listingType === 'both') {
+          const day = Number(document.getElementById('pubPriceDay').value);
+          if (!(day >= 500)) {
+            toast('Ingresa una tarifa diaria válida (mín. RD$ 500)');
+            document.getElementById('pubPriceDay').focus();
+            return false;
+          }
+        }
+        if (listingType === 'sale' || listingType === 'both') {
+          const sp = Number(document.getElementById('pubSalePrice').value);
+          if (!(sp >= 50000)) {
+            toast('Ingresa un precio de venta válido en RD$ (mín. RD$ 50,000)');
+            document.getElementById('pubSalePrice').focus();
+            return false;
+          }
         }
       }
       if (step === 3) {
         if (!currentOwner) {
-          toast('Inicia sesión en tu Cuenta de Propietario antes de publicar');
+          toast('Inicia sesión en tu cuenta antes de publicar');
           return false;
         }
         if (photoList.length < 1) {
@@ -2647,15 +4474,18 @@
       e.preventDefault();
       if (!currentOwner) {
         closeSheet('publishSheet');
-        pendingOpenPublishAfterAuth = true;
-        openSheet('ownerAuthSheet');
+        promptLoginFor({ type: 'publish', payload: document.getElementById('pubListingType')?.value || 'rent' });
         return;
       }
       if (!validateWizardStep(1)) { wizStep = 1; updateWiz(); return; }
       if (!validateWizardStep(2)) { wizStep = 2; updateWiz(); return; }
       if (!validateWizardStep(3)) { wizStep = 3; updateWiz(); return; }
 
-      const day = Number(document.getElementById('pubPriceDay').value);
+      const listingType = document.getElementById('pubListingType')?.value || 'rent';
+      const condition = document.getElementById('pubCondition')?.value || 'usada';
+      const day = Number(document.getElementById('pubPriceDay').value) || 0;
+      const salePrice = Number(document.getElementById('pubSalePrice')?.value || 0);
+      const hoursUsed = document.getElementById('pubHoursUsed')?.value.trim() || (condition === 'nueva' ? '0 hrs (Nueva)' : 'Verificada');
       const cat = document.getElementById('pubCat').value;
       const cityVal = document.getElementById('pubCity').value;
       const fallbackPt = window.GM_GEO ? window.GM_GEO.getCityCoords(cityVal) : null;
@@ -2663,6 +4493,10 @@
       const newEq = {
         id: Date.now(),
         ownerId: currentOwner.id,
+        listingType,
+        condition,
+        salePrice,
+        hoursUsed,
         category: cat,
         title: document.getElementById('pubTitle').value.trim(),
         power: document.getElementById('pubPower').value.trim() || 'Estándar',
@@ -2685,9 +4519,29 @@
         images: photoList.slice(0, 5)
       };
 
+      closeSheet('publishSheet');
+
+      if (listingType === 'sale') {
+        salesCatalog = [newEq, ...salesCatalog.filter(s => String(s.id) !== String(newEq.id))];
+        if (window.GM_FIREBASE && window.GM_FIREBASE.saveSaleMachine) {
+          await window.GM_FIREBASE.saveSaleMachine(newEq);
+        }
+        syncCounters();
+        switchTab('catalog');
+        switchMarketMode('sale');
+        toast('✓ Maquinaria publicada en Venta de Equipos RD');
+        return;
+      }
+
+      if (listingType === 'both') {
+        salesCatalog = [newEq, ...salesCatalog.filter(s => String(s.id) !== String(newEq.id))];
+        if (window.GM_FIREBASE && window.GM_FIREBASE.saveSaleMachine) {
+          window.GM_FIREBASE.saveSaleMachine(newEq).catch(() => {});
+        }
+      }
+
       equipment.unshift(newEq);
       syncCounters();
-      closeSheet('publishSheet');
 
       if (window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
         window.GM_FIREBASE.saveEquipment(newEq)
@@ -2698,6 +4552,9 @@
       }
     }
 
+    /* =========================================================
+       OBRAS RD REQUEST SUBMISSION (WITH DYNAMIC PLACE PERMITS)
+       ========================================================= */
     function onReqPlaceTypeChange() {
       const sel = document.getElementById('rPlaceType');
       const box = document.getElementById('reqDynamicPermitsBox');
@@ -2759,86 +4616,36 @@
       toast('☁️ Solicitud publicada y sincronizada en Obras RD');
     }
 
-    let activeHomeDocId = null;
-    let activeHomeDocTab = 'contract';
-
+    /* Navigate directly to dedicated contract detail page (NO popup) */
     function openContract(id, tab = 'contract') {
-      activeHomeDocId = id;
-      activeHomeDocTab = tab;
-      renderHomeDocModal();
-      openSheet('contractModal');
-    }
-
-    function switchHomeDocTab(tab) {
-      activeHomeDocTab = tab;
-      renderHomeDocModal();
-    }
-
-    function renderHomeDocModal() {
-      const raw = bookings.find(x => String(x.id) === String(activeHomeDocId));
-      if (!raw) return;
-      const BILL = window.GM_BILLING;
-      if (!BILL) return;
-      const b = BILL.normalizeBooking(raw);
-      const isGov = b.ncfType === 'E45';
-
-      let docHtml = '';
-      if (activeHomeDocTab === 'invoice') {
-        docHtml = BILL.buildPrintableInvoiceHtml(b, null, LOGO_URI);
-      } else if (activeHomeDocTab === 'gov' && isGov) {
-        docHtml = BILL.buildGovDossierHtml(b, null, LOGO_URI);
-      } else {
-        docHtml = BILL.buildPrintableContractHtml(b, null, LOGO_URI);
-      }
-
-      const trackClientHref = `./tracking.html?booking=${encodeURIComponent(b.id)}`;
-      const trackOpHref = `./tracking.html?booking=${encodeURIComponent(b.id)}&role=operator`;
-      const absTrackClient = new URL(trackClientHref, window.location.href).href;
-      const waTrackMsg = encodeURIComponent(`🚚 *Tracking GPS en Vivo — Green Mile RD*\nContrato #GM-${String(b.id).slice(-6)} • ${b.title}\nObra: ${b.address}\n\nSigue la unidad en el mapa en tiempo real:\n${absTrackClient}`);
-
-      document.getElementById('contractBody').innerHTML = `
-        <div class="auth-tabs no-print" style="grid-template-columns:repeat(${isGov ? 3 : 2}, 1fr); margin-bottom:12px;">
-          <button type="button" class="auth-tab ${activeHomeDocTab === 'contract' ? 'active' : ''}" onclick="switchHomeDocTab('contract')">📄 Contrato</button>
-          <button type="button" class="auth-tab ${activeHomeDocTab === 'invoice' ? 'active' : ''}" onclick="switchHomeDocTab('invoice')">🧾 Factura ${b.ncfType}</button>
-          ${isGov ? `<button type="button" class="auth-tab ${activeHomeDocTab === 'gov' ? 'active' : ''}" onclick="switchHomeDocTab('gov')">🏛️ Estado E45</button>` : ''}
-        </div>
-        ${docHtml}
-        <div class="no-print" style="margin-top:14px; padding:12px; border-radius:12px; background:#F8FAFC; border:1px solid var(--border);">
-          <div style="font-size:11px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px;">Tracking GPS en Vivo (Tipo Uber)</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
-            <a class="btn btn-primary" style="text-align:center; font-size:12px; padding:10px; text-decoration:none;" href="${trackClientHref}">🗺️ Seguir en Mapa</a>
-            <a class="btn btn-navy" style="text-align:center; font-size:12px; padding:10px; text-decoration:none;" href="${trackOpHref}">🚚 Modo Operador</a>
-          </div>
-          <a class="btn btn-ghost" style="width:100%; text-align:center; font-size:12px; padding:9px; color:#15803D; border-color:#BBF7D0; background:#F0FDF4; text-decoration:none;" href="https://wa.me/?text=${waTrackMsg}" target="_blank" rel="noopener">📲 Compartir Tracking por WhatsApp</a>
-        </div>
-        <div class="no-print" style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
-          <button class="btn btn-navy" style="flex:1;" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
-          <a class="btn btn-ghost" href="admin.html" style="text-decoration:none;">⚙️ Gestionar en Admin</a>
-        </div>
-      `;
+      window.location.href = `./contrato.html?booking=${encodeURIComponent(id)}&doc=${encodeURIComponent(tab)}`;
     }
 
     function activatePro() {
       isPro = true;
       syncCounters();
+      renderMenuDrawer();
       closeSheet('proSheet');
       toast('Plan Pro activado (-10%)');
     }
 
     function exportBackup() {
-      const blob = new Blob([JSON.stringify({ equipment, requests, bookings }, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify({ equipment, salesCatalog, partsCatalog, requests, proposals, bookings, orders }, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'green-mile-app-rd.json';
       a.click();
     }
 
-    /* Apply optional ?cat= / ?city= / ?tab= filters when returning from individual pages */
+    /* Apply optional ?cat= / ?city= / ?tab= / ?mode= / ?login=1&next= parameters */
     function applyUrlParams() {
       const params = new URLSearchParams(window.location.search);
       const cat = params.get('cat');
       const city = params.get('city');
       const tab = params.get('tab');
+      const mode = params.get('mode');
+      const loginFlag = params.get('login');
+      const nextTarget = params.get('next');
 
       if (cat) {
         const chip = Array.from(document.querySelectorAll('#catChips .app-chip')).find(c => c.dataset.cat === cat);
@@ -2854,6 +4661,20 @@
           sel.value = city;
         }
       }
+      if (mode && ['rent', 'sale', 'parts'].includes(mode)) {
+        switchMarketMode(mode);
+      }
+
+      if (loginFlag === '1' && !currentOwner) {
+        if (nextTarget === 'tracking') {
+          pendingAuthAction = { type: 'tracking' };
+        } else if (nextTarget && ['profile', 'saved'].includes(nextTarget)) {
+          pendingAuthAction = { type: 'tab', payload: nextTarget };
+        }
+        switchOwnerAuthMode('login');
+        openSheet('ownerAuthSheet');
+      }
+
       if (tab && ['catalog', 'requests', 'saved', 'profile'].includes(tab)) {
         switchTab(tab);
         return;
@@ -2865,7 +4686,7 @@
     syncCounters();
     applyUrlParams();
 
-    /* Real-time tracking status listener (Firestore + local BroadcastChannel) */
+    /* Real-time listeners (Firestore + local fallback) */
     if (window.GM_FIREBASE && window.GM_FIREBASE.subscribeAllTracking) {
       window.GM_FIREBASE.subscribeAllTracking((trackMap) => {
         allTrackingMap = trackMap || {};
@@ -2873,7 +4694,41 @@
       });
     }
 
-    /* Connect real-time Cloud Firestore listeners */
+    if (window.GM_FIREBASE && window.GM_FIREBASE.subscribeProposals) {
+      window.GM_FIREBASE.subscribeProposals((list) => {
+        proposals = Array.isArray(list) ? list : [];
+        if (activeTab === 'requests') renderRequests();
+        if (activeTab === 'profile') renderProfile();
+      });
+    }
+
+    if (window.GM_FIREBASE && window.GM_FIREBASE.subscribeParts) {
+      window.GM_FIREBASE.subscribeParts((list) => {
+        partsCatalog = Array.isArray(list) && list.length ? list : DEFAULT_PARTS.slice();
+        syncCounters();
+        renderMenuDrawer();
+        if (activeTab === 'catalog' && activeMarketMode === 'parts') renderCatalog();
+        if (activeTab === 'profile') renderProfile();
+      }, DEFAULT_PARTS);
+    }
+
+    if (window.GM_FIREBASE && window.GM_FIREBASE.subscribeSales) {
+      window.GM_FIREBASE.subscribeSales((list) => {
+        salesCatalog = Array.isArray(list) && list.length ? list : DEFAULT_SALE_MACHINES.slice();
+        syncCounters();
+        renderMenuDrawer();
+        if (activeTab === 'catalog' && activeMarketMode === 'sale') renderCatalog();
+        if (activeTab === 'profile') renderProfile();
+      }, DEFAULT_SALE_MACHINES);
+    }
+
+    if (window.GM_FIREBASE && window.GM_FIREBASE.subscribeOrders) {
+      window.GM_FIREBASE.subscribeOrders((list) => {
+        orders = Array.isArray(list) ? list : [];
+        if (activeTab === 'profile') renderProfile();
+      });
+    }
+
     if (window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
       window.GM_FIREBASE.subscribeEquipment((cloudList) => {
         equipment = cloudList;

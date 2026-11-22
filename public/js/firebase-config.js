@@ -643,6 +643,320 @@
     }
   }
 
+  const LOCAL_PROPOSALS_KEY = 'gm_rd_proposals_v1';
+
+  function getLocalProposals() {
+    try {
+      const list = JSON.parse(localStorage.getItem(LOCAL_PROPOSALS_KEY) || '[]');
+      return Array.isArray(list) ? list : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveLocalProposals(list) {
+    try {
+      localStorage.setItem(LOCAL_PROPOSALS_KEY, JSON.stringify(Array.isArray(list) ? list : []));
+    } catch (_) {}
+  }
+
+  function subscribeProposals(onData) {
+    setTimeout(() => onData(getLocalProposals()), 0);
+    if (!db) return () => {};
+    return db.collection('proposals').onSnapshot(
+      (snap) => {
+        const cloudMap = new Map();
+        snap.forEach((doc) => {
+          const d = Object.assign({}, doc.data(), { id: doc.data().id ?? doc.id, cloudSynced: true });
+          cloudMap.set(String(d.id), d);
+        });
+        // Mantener solo postulaciones locales aún pendientes de sincronizar en la nube
+        getLocalProposals().forEach((lp) => {
+          if (lp && lp.cloudSynced === false && !cloudMap.has(String(lp.id))) {
+            cloudMap.set(String(lp.id), lp);
+          }
+        });
+        const merged = Array.from(cloudMap.values()).sort((a, b) => Number(b.id) - Number(a.id));
+        saveLocalProposals(merged);
+        onData(merged);
+      },
+      (err) => console.warn('[Green Mile Firebase] Proposals listener error:', err.message)
+    );
+  }
+
+  async function saveProposal(proposal) {
+    if (!proposal || proposal.id == null) return proposal;
+    const localRecord = Object.assign({}, proposal, { cloudSynced: false });
+    const local = getLocalProposals().filter((p) => String(p.id) !== String(proposal.id));
+    local.unshift(localRecord);
+    saveLocalProposals(local);
+
+    if (!db) return localRecord;
+    try {
+      await db.collection('proposals').doc(String(proposal.id)).set(
+        Object.assign({}, proposal, {
+          cloudSynced: true,
+          createdAt: global.firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: global.firebase.firestore.FieldValue.serverTimestamp()
+        }),
+        { merge: true }
+      );
+      const synced = Object.assign({}, proposal, { cloudSynced: true });
+      const updated = getLocalProposals().map((p) => (String(p.id) === String(proposal.id) ? synced : p));
+      saveLocalProposals(updated);
+      return synced;
+    } catch (err) {
+      console.warn('[Green Mile Firebase] saveProposal fallback local:', err.message);
+      return localRecord;
+    }
+  }
+
+  async function deleteProposal(proposalId) {
+    if (proposalId == null) return;
+    const next = getLocalProposals().filter((p) => String(p.id) !== String(proposalId));
+    saveLocalProposals(next);
+    if (!db) return;
+    try {
+      await db.collection('proposals').doc(String(proposalId)).delete();
+    } catch (err) {
+      console.warn('[Green Mile Firebase] deleteProposal warning:', err.message);
+    }
+  }
+
+  const LOCAL_PARTS_KEY = 'gm_rd_parts_v1';
+  const LOCAL_SALES_KEY = 'gm_rd_sales_v1';
+  const LOCAL_ORDERS_KEY = 'gm_rd_orders_v1';
+
+  function getLocalParts(defaultParts = []) {
+    try {
+      const raw = localStorage.getItem(LOCAL_PARTS_KEY);
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list) && list.length) return list;
+      }
+    } catch (_) {}
+    return Array.isArray(defaultParts) ? defaultParts.map((p) => Object.assign({}, p)) : [];
+  }
+
+  function saveLocalParts(list) {
+    try {
+      localStorage.setItem(LOCAL_PARTS_KEY, JSON.stringify(Array.isArray(list) ? list : []));
+    } catch (_) {}
+  }
+
+  function subscribeParts(onData, defaultParts = []) {
+    setTimeout(() => onData(getLocalParts(defaultParts)), 0);
+    if (!db) return () => {};
+    seedIfEmpty('parts', defaultParts).catch((err) => {
+      console.warn('[Green Mile Firebase] Seed parts skipped:', err.message);
+    });
+    return db.collection('parts').onSnapshot(
+      (snap) => {
+        const cloudMap = new Map();
+        snap.forEach((doc) => {
+          const d = Object.assign({}, doc.data(), { id: doc.data().id ?? doc.id, cloudSynced: true });
+          cloudMap.set(String(d.id), d);
+        });
+        if (cloudMap.size === 0 && Array.isArray(defaultParts)) {
+          defaultParts.forEach((p) => cloudMap.set(String(p.id), Object.assign({}, p)));
+        }
+        getLocalParts([]).forEach((lp) => {
+          if (lp && lp.cloudSynced === false && !cloudMap.has(String(lp.id))) {
+            cloudMap.set(String(lp.id), lp);
+          }
+        });
+        const merged = Array.from(cloudMap.values()).sort((a, b) => Number(b.id) - Number(a.id));
+        saveLocalParts(merged);
+        onData(merged);
+      },
+      (err) => console.warn('[Green Mile Firebase] Parts listener error:', err.message)
+    );
+  }
+
+  async function savePart(part) {
+    if (!part || part.id == null) return part;
+    const localRec = Object.assign({}, part, { cloudSynced: false });
+    const next = getLocalParts([]).filter((p) => String(p.id) !== String(part.id));
+    next.unshift(localRec);
+    saveLocalParts(next);
+
+    if (!db) return localRec;
+    try {
+      await db.collection('parts').doc(String(part.id)).set(
+        Object.assign({}, part, {
+          cloudSynced: true,
+          createdAt: global.firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: global.firebase.firestore.FieldValue.serverTimestamp()
+        }),
+        { merge: true }
+      );
+      const synced = Object.assign({}, part, { cloudSynced: true });
+      saveLocalParts(getLocalParts([]).map((p) => (String(p.id) === String(part.id) ? synced : p)));
+      return synced;
+    } catch (err) {
+      console.warn('[Green Mile Firebase] savePart local fallback:', err.message);
+      return localRec;
+    }
+  }
+
+  async function deletePart(partId) {
+    if (partId == null) return;
+    saveLocalParts(getLocalParts([]).filter((p) => String(p.id) !== String(partId)));
+    if (!db) return;
+    try {
+      await db.collection('parts').doc(String(partId)).delete();
+    } catch (err) {
+      console.warn('[Green Mile Firebase] deletePart warning:', err.message);
+    }
+  }
+
+  function getLocalSales(defaultSales = []) {
+    try {
+      const raw = localStorage.getItem(LOCAL_SALES_KEY);
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list) && list.length) return list;
+      }
+    } catch (_) {}
+    return Array.isArray(defaultSales) ? defaultSales.map((s) => Object.assign({}, s)) : [];
+  }
+
+  function saveLocalSales(list) {
+    try {
+      localStorage.setItem(LOCAL_SALES_KEY, JSON.stringify(Array.isArray(list) ? list : []));
+    } catch (_) {}
+  }
+
+  function subscribeSales(onData, defaultSales = []) {
+    setTimeout(() => onData(getLocalSales(defaultSales)), 0);
+    if (!db) return () => {};
+    seedIfEmpty('sales', defaultSales).catch((err) => {
+      console.warn('[Green Mile Firebase] Seed sales skipped:', err.message);
+    });
+    return db.collection('sales').onSnapshot(
+      (snap) => {
+        const cloudMap = new Map();
+        snap.forEach((doc) => {
+          const d = Object.assign({}, doc.data(), { id: doc.data().id ?? doc.id, cloudSynced: true });
+          cloudMap.set(String(d.id), d);
+        });
+        if (cloudMap.size === 0 && Array.isArray(defaultSales)) {
+          defaultSales.forEach((s) => cloudMap.set(String(s.id), Object.assign({}, s)));
+        }
+        getLocalSales([]).forEach((ls) => {
+          if (ls && ls.cloudSynced === false && !cloudMap.has(String(ls.id))) {
+            cloudMap.set(String(ls.id), ls);
+          }
+        });
+        const merged = Array.from(cloudMap.values()).sort((a, b) => Number(b.id) - Number(a.id));
+        saveLocalSales(merged);
+        onData(merged);
+      },
+      (err) => console.warn('[Green Mile Firebase] Sales listener error:', err.message)
+    );
+  }
+
+  async function saveSaleMachine(item) {
+    if (!item || item.id == null) return item;
+    const localRec = Object.assign({}, item, { cloudSynced: false });
+    const next = getLocalSales([]).filter((s) => String(s.id) !== String(item.id));
+    next.unshift(localRec);
+    saveLocalSales(next);
+
+    if (!db) return localRec;
+    try {
+      await db.collection('sales').doc(String(item.id)).set(
+        Object.assign({}, item, {
+          cloudSynced: true,
+          createdAt: global.firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: global.firebase.firestore.FieldValue.serverTimestamp()
+        }),
+        { merge: true }
+      );
+      const synced = Object.assign({}, item, { cloudSynced: true });
+      saveLocalSales(getLocalSales([]).map((s) => (String(s.id) === String(item.id) ? synced : s)));
+      return synced;
+    } catch (err) {
+      console.warn('[Green Mile Firebase] saveSaleMachine local fallback:', err.message);
+      return localRec;
+    }
+  }
+
+  async function deleteSaleMachine(saleId) {
+    if (saleId == null) return;
+    saveLocalSales(getLocalSales([]).filter((s) => String(s.id) !== String(saleId)));
+    if (!db) return;
+    try {
+      await db.collection('sales').doc(String(saleId)).delete();
+    } catch (err) {
+      console.warn('[Green Mile Firebase] deleteSaleMachine warning:', err.message);
+    }
+  }
+
+  function getLocalOrders() {
+    try {
+      const list = JSON.parse(localStorage.getItem(LOCAL_ORDERS_KEY) || '[]');
+      return Array.isArray(list) ? list : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveLocalOrders(list) {
+    try {
+      localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(Array.isArray(list) ? list : []));
+    } catch (_) {}
+  }
+
+  function subscribeOrders(onData) {
+    setTimeout(() => onData(getLocalOrders()), 0);
+    if (!db) return () => {};
+    return db.collection('orders').onSnapshot(
+      (snap) => {
+        const cloudMap = new Map();
+        snap.forEach((doc) => {
+          const d = Object.assign({}, doc.data(), { id: doc.data().id ?? doc.id, cloudSynced: true });
+          cloudMap.set(String(d.id), d);
+        });
+        getLocalOrders().forEach((lo) => {
+          if (lo && lo.cloudSynced === false && !cloudMap.has(String(lo.id))) {
+            cloudMap.set(String(lo.id), lo);
+          }
+        });
+        const merged = Array.from(cloudMap.values()).sort((a, b) => Number(b.id) - Number(a.id));
+        saveLocalOrders(merged);
+        onData(merged);
+      },
+      (err) => console.warn('[Green Mile Firebase] Orders listener error:', err.message)
+    );
+  }
+
+  async function saveOrder(order) {
+    if (!order || order.id == null) return order;
+    const localRec = Object.assign({}, order, { cloudSynced: false });
+    const next = getLocalOrders().filter((o) => String(o.id) !== String(order.id));
+    next.unshift(localRec);
+    saveLocalOrders(next);
+
+    if (!db) return localRec;
+    try {
+      await db.collection('orders').doc(String(order.id)).set(
+        Object.assign({}, order, {
+          cloudSynced: true,
+          createdAt: global.firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: global.firebase.firestore.FieldValue.serverTimestamp()
+        }),
+        { merge: true }
+      );
+      const synced = Object.assign({}, order, { cloudSynced: true });
+      saveLocalOrders(getLocalOrders().map((o) => (String(o.id) === String(order.id) ? synced : o)));
+      return synced;
+    } catch (err) {
+      console.warn('[Green Mile Firebase] saveOrder local fallback:', err.message);
+      return localRec;
+    }
+  }
+
   global.GM_FIREBASE = {
     isReady,
     compressImageFile,
@@ -675,6 +989,21 @@
     getLocalTracking,
     subscribeTracking,
     subscribeAllTracking,
-    upsertTracking
+    upsertTracking,
+    getLocalProposals,
+    subscribeProposals,
+    saveProposal,
+    deleteProposal,
+    getLocalParts,
+    subscribeParts,
+    savePart,
+    deletePart,
+    getLocalSales,
+    subscribeSales,
+    saveSaleMachine,
+    deleteSaleMachine,
+    getLocalOrders,
+    subscribeOrders,
+    saveOrder
   };
 })(window);

@@ -135,6 +135,16 @@
 
   function toggleFavorite() {
     if (!currentItem) return;
+    const authUser = (window.GM_FIREBASE && window.GM_FIREBASE.getCurrentOwner)
+      ? window.GM_FIREBASE.getCurrentOwner()
+      : null;
+    if (!authUser) {
+      toast('Inicia sesión en tu cuenta para guardar equipos en favoritos');
+      setTimeout(() => {
+        window.location.href = `${BASE}index.html?login=1&next=saved`;
+      }, 650);
+      return;
+    }
     const id = currentItem.id;
     if (state.savedIds.includes(id)) {
       state.savedIds = state.savedIds.filter(x => x !== id);
@@ -149,7 +159,10 @@
 
   function updateFavoriteButtons() {
     if (!currentItem) return;
-    const isSaved = state.savedIds.includes(currentItem.id);
+    const authUser = (window.GM_FIREBASE && window.GM_FIREBASE.getCurrentOwner)
+      ? window.GM_FIREBASE.getCurrentOwner()
+      : null;
+    const isSaved = Boolean(authUser) && state.savedIds.includes(currentItem.id);
     const btn = document.getElementById('headerFavBtn');
     if (btn) {
       btn.classList.toggle('saved', isSaved);
@@ -1488,16 +1501,25 @@
       if (cCvvEl) cCvvEl.value = '';
     }
 
+    const authOwner = (window.GM_FIREBASE && window.GM_FIREBASE.getCurrentOwner)
+      ? window.GM_FIREBASE.getCurrentOwner()
+      : null;
+    if (authOwner && !rec.accountId) {
+      rec.accountId = authOwner.id;
+    }
+
     state.bookings.unshift(rec);
     const localEq = state.equipment.find(x => String(x.id) === String(currentItem.id));
     if (localEq) localEq.busy = true;
     currentItem.busy = true;
     GM.saveState(state);
+
+    const cloudTasks = [];
     if (!serverPersisted && window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
-      window.GM_FIREBASE.saveBooking(rec, currentItem.id).catch(() => {});
+      cloudTasks.push(window.GM_FIREBASE.saveBooking(rec, currentItem.id).catch(() => {}));
     }
     if (window.GM_FIREBASE && window.GM_FIREBASE.upsertTracking) {
-      window.GM_FIREBASE.upsertTracking(rec.id, {
+      cloudTasks.push(window.GM_FIREBASE.upsertTracking(rec.id, {
         bookingId: String(rec.id),
         status: 'scheduled',
         equipmentTitle: rec.title,
@@ -1512,7 +1534,13 @@
         remainingKm: rec.distanceKm,
         etaMin: rec.durationMin,
         progressPct: 0
-      }).catch(() => {});
+      }).catch(() => {}));
+    }
+    if (cloudTasks.length) {
+      await Promise.race([
+        Promise.all(cloudTasks),
+        new Promise((resolve) => setTimeout(resolve, 1600))
+      ]);
     }
 
     const pill = document.getElementById('availPill');
@@ -1532,84 +1560,27 @@
     }
 
     const finalAuth = (rec.cardInfo && rec.cardInfo.authCode) || (cardInfo && cardInfo.authCode) || 'OK';
-    openContract(rec, isCardPaid ? 'invoice' : 'contract');
     toast(isCardPaid
       ? `✓ Pago aprobado (${finalAuth}) y ${rec.encfNumber} emitido`
       : (selectedNcfType === 'E45'
         ? '✓ Expediente Gubernamental (e-CF 45) registrado y enviado a Administración'
         : '✓ Obra georreferenciada, permisos confirmados y contrato firmado'));
+    openContract(rec, isCardPaid ? 'invoice' : 'contract', true);
   }
 
   function switchContractTab(tab) {
     activeContractTab = tab;
-    renderContractModalBody();
-  }
-
-  function renderContractModalBody() {
-    if (!activeContractRecord || !BILL) return;
-    const b = activeContractRecord;
-    const logoSrc = BASE + 'logo.png?v=20261122-4';
-    const isGov = (b.ncfType === 'E45');
-    const isDispatchReady = (
-      b.paymentStatus === 'paid' ||
-      b.stage === 'invoiced_dispatched' ||
-      b.stage === 'conduce_signed' ||
-      b.stage === 'gov_filed' ||
-      b.stage === 'settled'
-    );
-
-    let docHtml = '';
-    if (activeContractTab === 'invoice') {
-      docHtml = BILL.buildPrintableInvoiceHtml(b, null, logoSrc);
-    } else if (activeContractTab === 'gov' && isGov) {
-      docHtml = BILL.buildGovDossierHtml(b, null, logoSrc);
-    } else {
-      docHtml = BILL.buildPrintableContractHtml(b, null, logoSrc);
+    if (activeContractRecord) {
+      openContract(activeContractRecord, tab, false);
     }
-
-    const trackClientHref = `${BASE}tracking.html?booking=${encodeURIComponent(b.id)}`;
-    const absTrackClient = new URL(trackClientHref, window.location.href).href;
-    const waTrackMsg = encodeURIComponent(`🚚 *Seguimiento de Despacho — Green Mile RD*\nContrato #GM-${String(b.id).slice(-6)} • ${b.title}\nObra: ${b.address}\n\nSigue la unidad rumbo a obra en tiempo real:\n${absTrackClient}`);
-
-    const dispatchBanner = isDispatchReady
-      ? `
-        <div class="no-print" style="margin-top:16px; padding:14px 16px; border-radius:14px; background:#F8FAFC; border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-          <div style="min-width:220px; flex:1;">
-            <div style="font-size:11.5px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:0.04em;">🚚 Siguiente paso: Seguimiento de Despacho a Obra</div>
-            <div style="font-size:12.5px; color:var(--text-muted); margin-top:2px;">Cuando el operador inicie la ruta en lowboy podrás ver su ubicación GPS y hora estimada de llegada.</div>
-          </div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <a class="btn btn-primary" style="font-size:13px; padding:10px 16px; text-decoration:none;" href="${trackClientHref}">🗺️ Seguir Despacho</a>
-            <a class="btn btn-ghost" style="font-size:13px; padding:10px 14px; color:#15803D; border-color:#BBF7D0; background:#F0FDF4; text-decoration:none;" href="https://wa.me/?text=${waTrackMsg}" target="_blank" rel="noopener">📲 Compartir WhatsApp</a>
-          </div>
-        </div>
-      `
-      : `
-        <div class="no-print" style="margin-top:16px; padding:13px 16px; border-radius:14px; background:#FFFBEB; border:1px solid #FDE68A; font-size:12.5px; color:#92400E; line-height:1.5;">
-          <strong>📍 Despacho y Seguimiento GPS (etapa posterior al contrato):</strong> Una vez Administración valide ${isGov ? 'tu Orden de Compra / expediente estatal (e-CF 45)' : 'tu pago / transferencia'} y autorice la salida de la unidad, recibirás el enlace de seguimiento GPS en vivo rumbo a la obra.
-        </div>
-      `;
-
-    document.getElementById('contractBody').innerHTML = `
-      <div class="doc-tabs no-print">
-        <button type="button" class="doc-tab ${activeContractTab === 'contract' ? 'active' : ''}" onclick="window.GM_DETAIL.switchContractTab('contract')">📄 Contrato Digital</button>
-        <button type="button" class="doc-tab ${activeContractTab === 'invoice' ? 'active' : ''}" onclick="window.GM_DETAIL.switchContractTab('invoice')">🧾 ${b.encfNumber ? 'Factura ' + esc(b.ncfType) : 'Proforma ' + esc(b.ncfType)}</button>
-        ${isGov ? `<button type="button" class="doc-tab ${activeContractTab === 'gov' ? 'active' : ''}" onclick="window.GM_DETAIL.switchContractTab('gov')">🏛️ Carátula Estado</button>` : ''}
-      </div>
-      ${docHtml}
-      ${dispatchBanner}
-      <div class="no-print" style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
-        <button type="button" class="btn btn-navy" style="flex:1; min-height:46px; font-size:14.5px;" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
-        <a class="btn btn-ghost" href="${BASE}admin.html" style="font-size:13px; min-height:46px; display:inline-flex; align-items:center;">⚙️ Centro Administrativo</a>
-      </div>
-    `;
   }
 
-  function openContract(b, initialTab = 'contract') {
+  function openContract(b, initialTab = 'contract', newlyCreated = false) {
+    if (!b || b.id == null) return;
     activeContractRecord = b;
     activeContractTab = initialTab;
-    renderContractModalBody();
-    openSheet('contractModal');
+    const targetUrl = `${BASE}contrato.html?booking=${encodeURIComponent(b.id)}&doc=${encodeURIComponent(initialTab)}${newlyCreated ? '&created=1' : ''}`;
+    window.location.href = targetUrl;
   }
 
   function renderRelated(item) {

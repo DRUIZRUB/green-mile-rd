@@ -838,19 +838,38 @@
     bindEvents();
 
     const params = new URLSearchParams(window.location.search);
+    const bookingParam = params.get('booking');
+    const hashBooking = decodeBookingPayload(window.location.hash);
+    const authUser = (FB && FB.getCurrentOwner) ? FB.getCurrentOwner() : null;
+
+    if (!authUser) {
+      const backBtn = $('backAppBtn');
+      if (backBtn) {
+        backBtn.href = './index.html';
+        backBtn.textContent = '← Catálogo';
+      }
+    }
+
+    // Proteger acceso directo al Tracking si no está autenticado ni trae enlace compartido de un despacho
+    if (!authUser && !bookingParam && !hashBooking) {
+      const gate = $('trackingAuthGate');
+      if (gate) gate.style.display = 'flex';
+      const statusTxt = $('topStatusText');
+      if (statusTxt) statusTxt.textContent = 'Inicia sesión para ver tracking';
+      showEmptyState(true);
+      return;
+    }
+
     role = params.get('role') === 'operator' ? 'operator' : 'client';
     updateRoleUI();
 
     const state = GM ? GM.loadState() : { bookings: [] };
-    allBookings = Array.isArray(state.bookings) ? state.bookings.slice() : [];
-
-    const bookingParam = params.get('booking');
-    const hashBooking = decodeBookingPayload(window.location.hash);
+    allBookings = authUser && Array.isArray(state.bookings) ? state.bookings.slice() : [];
 
     if (FB && FB.subscribeAllTracking) {
       FB.subscribeAllTracking((tMap) => {
         allTrackingMap = tMap || {};
-        if (allBookings.length > 1 && currentBooking) {
+        if (authUser && allBookings.length > 1 && currentBooking) {
           populateBookingPicker(currentBooking.id);
         }
       });
@@ -858,7 +877,8 @@
 
     let targetBooking = null;
     if (bookingParam) {
-      targetBooking = allBookings.find((b) => String(b.id) === String(bookingParam)) || null;
+      targetBooking = (Array.isArray(state.bookings) ? state.bookings : [])
+        .find((b) => String(b.id) === String(bookingParam)) || null;
       if (!targetBooking && FB && FB.isReady()) {
         targetBooking = await FB.getBookingById(bookingParam);
       }
@@ -872,19 +892,23 @@
     }
 
     if (targetBooking) {
-      populateBookingPicker(targetBooking.id);
+      if (authUser) {
+        populateBookingPicker(targetBooking.id);
+      } else if ($('bookingPickerWrap')) {
+        $('bookingPickerWrap').style.display = 'none';
+      }
       await loadSelectedBooking(targetBooking);
     } else {
       // Wait briefly for Cloud Firestore bookings before displaying empty state
-      if (FB && FB.isReady()) {
+      if (authUser && FB && FB.isReady()) {
         $('topStatusText').textContent = 'Buscando despachos en Firestore…';
       } else {
         showEmptyState(true);
       }
     }
 
-    // Subscribe to real Cloud Firestore bookings
-    if (FB && FB.isReady()) {
+    // Subscribe to real Cloud Firestore bookings solo para usuarios autenticados
+    if (authUser && FB && FB.isReady()) {
       updateSyncBadge(true);
       FB.subscribeBookings(async (cloudBookings) => {
         if (Array.isArray(cloudBookings)) {
