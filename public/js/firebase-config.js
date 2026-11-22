@@ -2,10 +2,10 @@
 (function (global) {
   const FIREBASE_CONFIG = {
     apiKey: 'YOUR_FIREBASE_API_KEY',
-    authDomain: 'studio-8139121026-17b90.firebaseapp.com',
-    projectId: 'studio-8139121026-17b90',
-    storageBucket: 'studio-8139121026-17b90.firebasestorage.app',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+    authDomain: 'new-prototype-cb0o0.firebaseapp.com',
+    projectId: 'new-prototype-cb0o0',
+    storageBucket: 'new-prototype-cb0o0.firebasestorage.app',
+    messagingSenderId: '576601750547',
     appId: 'YOUR_FIREBASE_APP_ID'
   };
 
