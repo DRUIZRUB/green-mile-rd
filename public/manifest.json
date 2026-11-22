@@ -1,0 +1,49 @@
+{
+  "name": "Green Mile Construction RD",
+  "short_name": "Green Mile RD",
+  "description": "Alquiler gestionado de maquinaria pesada en República Dominicana con cotizador, contrato digital e-NCF y tracking GPS en vivo tipo Uber.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0D223A",
+  "theme_color": "#0D223A",
+  "lang": "es-DO",
+  "categories": ["business", "productivity", "navigation"],
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tracking GPS en Vivo",
+      "short_name": "Tracking",
+      "description": "Seguir maquinaria en camino hacia la obra en tiempo real",
+      "url": "./tracking.html?demo=1",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mi Panel y Contratos",
+      "short_name": "Mi Panel",
+      "description": "Ver contratos firmados y despachos activos",
+      "url": "./index.html?tab=profile",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

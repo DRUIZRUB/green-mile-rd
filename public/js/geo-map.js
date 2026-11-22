@@ -396,16 +396,374 @@
     };
   }
 
+  function computeBearing(a, b) {
+    if (!a || !b) return 0;
+    const toRad = (deg) => (deg * Math.PI) / 180;
+    const toDeg = (rad) => (rad * 180) / Math.PI;
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const y = Math.sin(dLng) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+    return (toDeg(Math.atan2(y, x)) + 360) % 360;
+  }
+
+  function makeDestinationIcon(L) {
+    return L.divIcon({
+      className: 'gm-track-dest-wrap',
+      html: `
+        <div class="gm-track-dest-pulse"></div>
+        <div class="gm-track-dest-pin">
+          <span>O</span>
+        </div>
+      `,
+      iconSize: [38, 46],
+      iconAnchor: [19, 42],
+      popupAnchor: [0, -38]
+    });
+  }
+
+  function makeVehicleIcon(L, headingDeg, status) {
+    const rot = Number.isFinite(Number(headingDeg)) ? Math.round(Number(headingDeg)) : 0;
+    const activeCls = status === 'en_route' ? ' is-live' : (status === 'arrived' || status === 'operating' ? ' is-arrived' : '');
+    return L.divIcon({
+      className: 'gm-track-vehicle-wrap',
+      html: `
+        <div class="gm-track-vehicle${activeCls}">
+          <div class="gm-track-vehicle-ring"></div>
+          <div class="gm-track-vehicle-rot" style="transform: rotate(${rot}deg);">
+            <svg width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+              <path d="M14 2.5L23.5 23.5L14 18.8L4.5 23.5L14 2.5Z" fill="#FFFFFF" stroke="#0D223A" stroke-width="1.6" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+      `,
+      iconSize: [48, 48],
+      iconAnchor: [24, 24],
+      popupAnchor: [0, -24]
+    });
+  }
+
+  /**
+   * Mapa en vivo tipo Uber para tracking del operador/equipo desde el patio base hasta la obra.
+   */
+  async function createLiveTrackingMap(opts) {
+    const L = await loadLeaflet();
+    const container = document.getElementById(opts.mapId);
+    if (!container) return null;
+
+    const origin = opts.origin || DR_CITY_COORDS['Santo Domingo'];
+    const dest = opts.dest || origin;
+
+    const map = L.map(container, {
+      center: [(origin.lat + dest.lat) / 2, (origin.lng + dest.lng) / 2],
+      zoom: 13,
+      zoomControl: false
+    });
+
+    const streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    });
+
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Tiles &copy; Esri'
+    });
+
+    let currentLayerMode = 'streets';
+    streetsLayer.addTo(map);
+
+    const originMarker = L.marker([origin.lat, origin.lng], {
+      icon: makePinIcon(L, 'B', '#0D223A')
+    })
+      .addTo(map)
+      .bindPopup(`<strong>Patio / Base</strong><br>${origin.label || 'Origen'}`);
+
+    const destMarker = L.marker([dest.lat, dest.lng], {
+      icon: makeDestinationIcon(L)
+    })
+      .addTo(map)
+      .bindPopup(`<strong>Obra (Destino)</strong><br>${dest.label || 'Punto de entrega'}`);
+
+    let plannedLine = null;
+    let remainingCasing = null;
+    let remainingLine = null;
+    let trailLine = null;
+    let accuracyCircle = null;
+    let vehicleMarker = null;
+
+    let currentPos = null;
+    let currentHeading = 0;
+    let currentStatus = 'scheduled';
+    let animFrame = null;
+    let trailPoints = [];
+    let followVehicle = true;
+
+    map.on('dragstart', () => {
+      if (followVehicle) {
+        followVehicle = false;
+        if (typeof opts.onFollowChange === 'function') opts.onFollowChange(false);
+      }
+    });
+
+    function setTileLayer(mode) {
+      const next = mode === 'satellite' ? 'satellite' : 'streets';
+      if (next === currentLayerMode) return currentLayerMode;
+      if (next === 'satellite') {
+        map.removeLayer(streetsLayer);
+        satelliteLayer.addTo(map);
+      } else {
+        map.removeLayer(satelliteLayer);
+        streetsLayer.addTo(map);
+      }
+      currentLayerMode = next;
+      return currentLayerMode;
+    }
+
+    function setPlannedRoute(geometry, isRoadRoute) {
+      if (plannedLine) map.removeLayer(plannedLine);
+      if (!Array.isArray(geometry) || geometry.length < 2) return;
+      plannedLine = L.polyline(geometry, {
+        color: '#64748B',
+        weight: 4,
+        opacity: 0.45,
+        dashArray: isRoadRoute ? '8 8' : '6 8'
+      }).addTo(map);
+    }
+
+    function setActiveRoute(geometry, isRoadRoute) {
+      if (remainingCasing) map.removeLayer(remainingCasing);
+      if (remainingLine) map.removeLayer(remainingLine);
+      if (!Array.isArray(geometry) || geometry.length < 2) return;
+      remainingCasing = L.polyline(geometry, {
+        color: '#FFFFFF',
+        weight: 8,
+        opacity: 0.92,
+        lineCap: 'round',
+        lineJoin: 'round'
+      }).addTo(map);
+      remainingLine = L.polyline(geometry, {
+        color: '#B85A27',
+        weight: 5,
+        opacity: 0.96,
+        lineCap: 'round',
+        lineJoin: 'round',
+        dashArray: isRoadRoute === false ? '8 8' : null
+      }).addTo(map);
+      if (trailLine) trailLine.bringToFront();
+    }
+
+    function pushTrailPoint(lat, lng) {
+      const last = trailPoints[trailPoints.length - 1];
+      if (!last || haversineKm({ lat: last[0], lng: last[1] }, { lat, lng }) >= 0.015) {
+        trailPoints.push([lat, lng]);
+        if (trailPoints.length > 400) trailPoints = trailPoints.slice(-400);
+        if (trailLine) {
+          trailLine.setLatLngs(trailPoints);
+        } else if (trailPoints.length >= 2) {
+          trailLine = L.polyline(trailPoints, {
+            color: '#059669',
+            weight: 4.5,
+            opacity: 0.88,
+            lineCap: 'round',
+            lineJoin: 'round'
+          }).addTo(map);
+        }
+      }
+    }
+
+    function clearTrail() {
+      trailPoints = [];
+      if (trailLine) {
+        map.removeLayer(trailLine);
+        trailLine = null;
+      }
+    }
+
+    function applyVehicleRotation(deg, status) {
+      if (!vehicleMarker) return;
+      const el = vehicleMarker.getElement();
+      if (!el) return;
+      const rotEl = el.querySelector('.gm-track-vehicle-rot');
+      if (rotEl) rotEl.style.transform = `rotate(${Math.round(deg)}deg)`;
+      const wrapEl = el.querySelector('.gm-track-vehicle');
+      if (wrapEl) {
+        wrapEl.classList.toggle('is-live', status === 'en_route');
+        wrapEl.classList.toggle('is-arrived', status === 'arrived' || status === 'operating' || status === 'completed');
+      }
+    }
+
+    function updateVehicle(pos, options = {}) {
+      if (!pos || !Number.isFinite(Number(pos.lat)) || !Number.isFinite(Number(pos.lng))) return;
+      const target = { lat: Number(pos.lat), lng: Number(pos.lng) };
+      const status = options.status || currentStatus;
+      currentStatus = status;
+
+      let nextHeading = currentHeading;
+      if (Number.isFinite(Number(pos.heading))) {
+        nextHeading = Number(pos.heading);
+      } else if (currentPos && haversineKm(currentPos, target) > 0.008) {
+        nextHeading = computeBearing(currentPos, target);
+      }
+
+      if (!vehicleMarker) {
+        currentPos = target;
+        currentHeading = nextHeading;
+        vehicleMarker = L.marker([target.lat, target.lng], {
+          icon: makeVehicleIcon(L, currentHeading, status),
+          zIndexOffset: 900
+        }).addTo(map);
+        if (options.popupHtml) vehicleMarker.bindPopup(options.popupHtml);
+      } else {
+        const startPos = Object.assign({}, currentPos);
+        const startHeading = currentHeading;
+        // Shortest angular interpolation
+        let deltaHeading = ((nextHeading - startHeading + 540) % 360) - 180;
+        const duration = options.animate === false ? 0 : Math.min(1200, Math.max(260, Number(options.durationMs) || 680));
+
+        if (animFrame) cancelAnimationFrame(animFrame);
+        if (duration === 0) {
+          currentPos = target;
+          currentHeading = (startHeading + deltaHeading + 360) % 360;
+          vehicleMarker.setLatLng([target.lat, target.lng]);
+          applyVehicleRotation(currentHeading, status);
+        } else {
+          const t0 = performance.now();
+          const step = (now) => {
+            const p = Math.min(1, (now - t0) / duration);
+            // Smooth ease-out cubic
+            const ease = 1 - Math.pow(1 - p, 3);
+            const lat = startPos.lat + (target.lat - startPos.lat) * ease;
+            const lng = startPos.lng + (target.lng - startPos.lng) * ease;
+            const hdg = (startHeading + deltaHeading * ease + 360) % 360;
+            currentPos = { lat, lng };
+            currentHeading = hdg;
+            vehicleMarker.setLatLng([lat, lng]);
+            applyVehicleRotation(hdg, status);
+            if (p < 1) {
+              animFrame = requestAnimationFrame(step);
+            } else {
+              animFrame = null;
+            }
+          };
+          animFrame = requestAnimationFrame(step);
+        }
+      }
+
+      if (options.recordTrail !== false && status === 'en_route') {
+        pushTrailPoint(target.lat, target.lng);
+      }
+
+      if (Number.isFinite(Number(pos.accuracy)) && pos.accuracy > 5 && pos.accuracy < 600) {
+        if (!accuracyCircle) {
+          accuracyCircle = L.circle([target.lat, target.lng], {
+            radius: pos.accuracy,
+            color: '#0D223A',
+            weight: 1,
+            fillColor: '#3B82F6',
+            fillOpacity: 0.12
+          }).addTo(map);
+        } else {
+          accuracyCircle.setLatLng([target.lat, target.lng]);
+          accuracyCircle.setRadius(pos.accuracy);
+        }
+      } else if (accuracyCircle) {
+        map.removeLayer(accuracyCircle);
+        accuracyCircle = null;
+      }
+
+      if (followVehicle) {
+        panToVisible(target, Math.max(map.getZoom(), 14));
+      }
+    }
+
+    function panToVisible(latlng, zoom) {
+      if (!latlng) return;
+      const targetZoom = zoom || Math.max(map.getZoom(), 14);
+      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 920;
+      const pt = map.project([latlng.lat, latlng.lng], targetZoom);
+      // Shift camera center so the vehicle stays centered in the open map window
+      const offsetX = isDesktop ? -210 : 0;
+      const offsetY = isDesktop ? 0 : Math.round((typeof window !== 'undefined' ? window.innerHeight : 760) * 0.22);
+      const shifted = map.unproject(L.point(pt.x + offsetX, pt.y + offsetY), targetZoom);
+      map.setView(shifted, targetZoom, { animate: true, duration: 0.55 });
+    }
+
+    function fitAll(paddingBottom) {
+      const pts = [
+        [origin.lat, origin.lng],
+        [dest.lat, dest.lng]
+      ];
+      if (currentPos) pts.push([currentPos.lat, currentPos.lng]);
+      const bounds = L.latLngBounds(pts);
+      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 920;
+      const mobPadBottom = paddingBottom || Math.round((typeof window !== 'undefined' ? window.innerHeight : 760) * 0.52);
+      map.fitBounds(bounds, {
+        paddingTopLeft: isDesktop ? [456, 86] : [36, 72],
+        paddingBottomRight: isDesktop ? [60, 48] : [56, mobPadBottom],
+        maxZoom: 15
+      });
+    }
+
+    function focusVehicle() {
+      followVehicle = true;
+      if (typeof opts.onFollowChange === 'function') opts.onFollowChange(true);
+      if (currentPos) {
+        panToVisible(currentPos, Math.max(map.getZoom(), 15));
+      } else {
+        fitAll();
+      }
+    }
+
+    function setFollowMode(enabled) {
+      followVehicle = Boolean(enabled);
+      if (typeof opts.onFollowChange === 'function') opts.onFollowChange(followVehicle);
+      if (followVehicle && currentPos) {
+        panToVisible(currentPos, Math.max(map.getZoom(), 14));
+      }
+    }
+
+    setTimeout(() => {
+      map.invalidateSize();
+      fitAll();
+    }, 180);
+
+    return {
+      map,
+      setTileLayer,
+      getTileLayer: () => currentLayerMode,
+      setPlannedRoute,
+      setActiveRoute,
+      updateVehicle,
+      clearTrail,
+      fitAll,
+      focusVehicle,
+      focusDestination: () => map.setView([dest.lat, dest.lng], 16, { animate: true }),
+      setFollowMode,
+      isFollowing: () => followVehicle,
+      zoomIn: () => map.zoomIn(),
+      zoomOut: () => map.zoomOut(),
+      invalidate: () => map.invalidateSize(),
+      destroy: () => {
+        if (animFrame) cancelAnimationFrame(animFrame);
+        map.remove();
+      }
+    };
+  }
+
   global.GM_GEO = {
     DR_CITY_COORDS,
     getCityCoords,
     getEquipmentOrigin,
     haversineKm,
+    computeBearing,
     calculateRoute,
     calculateTransportQuote,
     searchAddress,
     reverseGeocode,
     createWorksitePicker,
-    createPatioPicker
+    createPatioPicker,
+    createLiveTrackingMap
   };
 })(window);

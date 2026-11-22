@@ -42,5 +42,12 @@ service cloud.firestore {
                     && request.resource.data.rating <= 5;
       allow update, delete: if false;
     }
+
+    match /tracking/{bookingId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.bookingId is string
+                            && request.resource.data.status in ['scheduled', 'en_route', 'arrived', 'operating', 'completed'];
+      allow delete: if false;
+    }
   }
 }

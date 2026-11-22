@@ -1,2 +1,12 @@
 .firebase/
-.firebase/
+node_modules/
+.DS_Store
+
+# Capacitor native build outputs
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/

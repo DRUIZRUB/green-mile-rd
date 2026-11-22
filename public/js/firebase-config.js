@@ -376,6 +376,213 @@
     );
   }
 
+  const LOCAL_TRACKING_KEY = 'gm_rd_tracking_v1';
+  const TRACKING_CHANNEL_NAME = 'gm_rd_tracking_channel_v1';
+  const VALID_TRACKING_STATUSES = new Set(['scheduled', 'en_route', 'arrived', 'operating', 'completed']);
+
+  function getLocalTrackingMap() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(LOCAL_TRACKING_KEY) || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function getLocalTracking(bookingId) {
+    if (bookingId == null) return null;
+    const map = getLocalTrackingMap();
+    return map[String(bookingId)] || null;
+  }
+
+  function saveLocalTracking(bookingId, docData) {
+    if (bookingId == null || !docData) return;
+    try {
+      const map = getLocalTrackingMap();
+      map[String(bookingId)] = docData;
+      localStorage.setItem(LOCAL_TRACKING_KEY, JSON.stringify(map));
+    } catch (_) {}
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        const ch = new BroadcastChannel(TRACKING_CHANNEL_NAME);
+        ch.postMessage({ type: 'tracking_update', bookingId: String(bookingId), data: docData });
+        ch.close();
+      }
+    } catch (_) {}
+  }
+
+  async function getBookingById(id) {
+    if (!db || id == null) return null;
+    try {
+      const snap = await db.collection('bookings').doc(String(id)).get();
+      if (snap.exists) {
+        return Object.assign({}, snap.data(), { id: snap.data().id ?? snap.id });
+      }
+    } catch (err) {
+      console.warn('[Green Mile Firebase] getBookingById error:', err.message);
+    }
+    return null;
+  }
+
+  function subscribeBookingById(id, onData) {
+    if (!db || id == null) return () => {};
+    return db.collection('bookings').doc(String(id)).onSnapshot(
+      (snap) => {
+        if (snap.exists) {
+          onData(Object.assign({}, snap.data(), { id: snap.data().id ?? snap.id }));
+        }
+      },
+      (err) => console.warn('[Green Mile Firebase] Booking doc listener error:', err.message)
+    );
+  }
+
+  function subscribeTracking(bookingId, onData, onError) {
+    if (bookingId == null) return () => {};
+    const key = String(bookingId);
+    const cached = getLocalTracking(key);
+    if (cached) {
+      setTimeout(() => onData(cached, { source: 'local' }), 0);
+    }
+
+    let channel = null;
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        channel = new BroadcastChannel(TRACKING_CHANNEL_NAME);
+        channel.onmessage = (ev) => {
+          const msg = ev && ev.data;
+          if (msg && msg.type === 'tracking_update' && String(msg.bookingId) === key && msg.data) {
+            onData(msg.data, { source: 'broadcast' });
+          }
+        };
+      }
+    } catch (_) {}
+
+    const onStorage = (ev) => {
+      if (ev.key === LOCAL_TRACKING_KEY) {
+        const latest = getLocalTracking(key);
+        if (latest) onData(latest, { source: 'storage' });
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', onStorage);
+    }
+
+    let unsubCloud = () => {};
+    if (db) {
+      unsubCloud = db.collection('tracking').doc(key).onSnapshot(
+        (snap) => {
+          if (snap.exists) {
+            const data = Object.assign({}, snap.data(), { bookingId: key });
+            try {
+              const map = getLocalTrackingMap();
+              map[key] = data;
+              localStorage.setItem(LOCAL_TRACKING_KEY, JSON.stringify(map));
+            } catch (_) {}
+            onData(data, { source: 'cloud' });
+          }
+        },
+        (err) => {
+          console.warn('[Green Mile Firebase] Tracking listener error:', err.message);
+          if (typeof onError === 'function') onError(err);
+        }
+      );
+    }
+
+    return () => {
+      try { unsubCloud(); } catch (_) {}
+      try { if (channel) channel.close(); } catch (_) {}
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', onStorage);
+      }
+    };
+  }
+
+  function subscribeAllTracking(onData) {
+    const emitLocal = () => onData(getLocalTrackingMap());
+    setTimeout(emitLocal, 0);
+
+    let channel = null;
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        channel = new BroadcastChannel(TRACKING_CHANNEL_NAME);
+        channel.onmessage = () => emitLocal();
+      }
+    } catch (_) {}
+
+    const onStorage = (ev) => {
+      if (ev.key === LOCAL_TRACKING_KEY) emitLocal();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', onStorage);
+    }
+
+    let unsubCloud = () => {};
+    if (db) {
+      unsubCloud = db.collection('tracking').onSnapshot(
+        (snap) => {
+          const merged = Object.assign({}, getLocalTrackingMap());
+          snap.forEach((doc) => {
+            const d = Object.assign({}, doc.data(), { bookingId: doc.id });
+            const prev = merged[doc.id];
+            if (!prev || (d.updatedAtMs || 0) >= (prev.updatedAtMs || 0)) {
+              merged[doc.id] = d;
+            }
+          });
+          onData(merged);
+        },
+        (err) => console.warn('[Green Mile Firebase] All tracking listener error:', err.message)
+      );
+    }
+
+    return () => {
+      try { unsubCloud(); } catch (_) {}
+      try { if (channel) channel.close(); } catch (_) {}
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', onStorage);
+      }
+    };
+  }
+
+  async function upsertTracking(bookingId, patch) {
+    if (bookingId == null) return { ok: false, cloudSynced: false, error: 'bookingId requerido' };
+    const key = String(bookingId);
+    const existing = getLocalTracking(key) || {};
+    const nextStatus = VALID_TRACKING_STATUSES.has(patch && patch.status)
+      ? patch.status
+      : (VALID_TRACKING_STATUSES.has(existing.status) ? existing.status : 'scheduled');
+
+    const merged = Object.assign({}, existing, patch || {}, {
+      bookingId: key,
+      status: nextStatus,
+      updatedAtMs: Date.now()
+    });
+
+    // Clean undefined keys before Firestore write
+    const cleanPayload = {};
+    Object.keys(merged).forEach((k) => {
+      if (merged[k] !== undefined) cleanPayload[k] = merged[k];
+    });
+
+    saveLocalTracking(key, cleanPayload);
+
+    if (!db) {
+      return { ok: true, cloudSynced: false, data: cleanPayload };
+    }
+
+    try {
+      await db.collection('tracking').doc(key).set(
+        Object.assign({}, cleanPayload, {
+          updatedAt: global.firebase.firestore.FieldValue.serverTimestamp()
+        }),
+        { merge: true }
+      );
+      return { ok: true, cloudSynced: true, data: cleanPayload };
+    } catch (err) {
+      console.warn('[Green Mile Firebase] upsertTracking cloud fallback:', err.message);
+      return { ok: true, cloudSynced: false, data: cleanPayload, error: err.message };
+    }
+  }
+
   global.GM_FIREBASE = {
     isReady,
     compressImageFile,
@@ -388,6 +595,8 @@
     subscribeBookings,
     getEquipmentById,
     subscribeEquipmentById,
+    getBookingById,
+    subscribeBookingById,
     saveEquipment,
     updateEquipmentStatus,
     deleteEquipment,
@@ -396,6 +605,10 @@
     saveBooking,
     saveReview,
     subscribeReviews,
-    subscribeAllReviews
+    subscribeAllReviews,
+    getLocalTracking,
+    subscribeTracking,
+    subscribeAllTracking,
+    upsertTracking
   };
 })(window);

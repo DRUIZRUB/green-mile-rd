@@ -1,0 +1,42 @@
+{
+  "appId": "com.greenmilerd.app",
+  "appName": "Green Mile RD",
+  "webDir": "public",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "capacitor",
+    "allowNavigation": [
+      "*.firebaseapp.com",
+      "*.googleapis.com",
+      "*.gstatic.com",
+      "router.project-osrm.org",
+      "nominatim.openstreetmap.org",
+      "*.tile.openstreetmap.org",
+      "server.arcgisonline.com"
+    ]
+  },
+  "android": {
+    "backgroundColor": "#0D223A",
+    "allowMixedContent": false,
+    "captureInput": true
+  },
+  "ios": {
+    "backgroundColor": "#0D223A",
+    "contentInset": "automatic",
+    "allowsLinkPreview": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1400,
+      "launchAutoHide": true,
+      "backgroundColor": "#0D223A",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0D223A",
+      "overlaysWebView": false
+    }
+  }
+}

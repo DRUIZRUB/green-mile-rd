@@ -54,6 +54,8 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
   <meta name="twitter:title" content="${escAttr(title)}" />
   <meta name="twitter:description" content="${escAttr(description)}" />
   <meta name="twitter:image" content="${escAttr(ogImageUrl)}" />
+  <link rel="manifest" href="${basePrefix}manifest.json" />
+  <link rel="apple-touch-icon" href="${basePrefix}icons/apple-touch-icon.png" />
 
   <link rel="stylesheet" href="${cssHref}" />
 </head>
@@ -131,6 +133,7 @@ function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, 
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="${dataJs}"></script>
   <script src="${basePrefix}js/firebase-config.js"></script>
+  <script src="${basePrefix}js/native-bridge.js"></script>
   <script src="${basePrefix}js/dgii-validator.js"></script>
   <script src="${basePrefix}js/geo-map.js"></script>
   <script src="${basePrefix}js/reviews.js"></script>

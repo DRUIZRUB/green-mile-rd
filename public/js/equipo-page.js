@@ -783,11 +783,13 @@
     }
     const b = currentBreakdown();
     const sig = document.getElementById('sigCanvas').toDataURL('image/png');
+    const originInfo = window.GM_GEO ? window.GM_GEO.getEquipmentOrigin(currentItem) : null;
     const rec = {
       id: Date.now(),
       equipmentId: currentItem.id,
       title: currentItem.title,
       city: currentItem.city,
+      equipmentImg: currentItem.img && !String(currentItem.img).startsWith('data:') ? currentItem.img : '',
       owner: currentItem.owner,
       ownerRnc: currentItem.rnc || 'N/A',
       ownerPhone: currentItem.phone,
@@ -795,6 +797,9 @@
       renterRnc: document.getElementById('qRnc').value.trim(),
       dgiiVerified: true,
       address: document.getElementById('qAddr').value.trim(),
+      originLat: originInfo ? originInfo.lat : null,
+      originLng: originInfo ? originInfo.lng : null,
+      originLabel: originInfo ? originInfo.label : `${currentItem.city}, RD`,
       worksiteLat: geoState.lat,
       worksiteLng: geoState.lng,
       distanceKm: geoState.distanceKm,
@@ -820,6 +825,24 @@
     GM.saveState(state);
     if (window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
       window.GM_FIREBASE.saveBooking(rec, currentItem.id).catch(() => {});
+    }
+    if (window.GM_FIREBASE && window.GM_FIREBASE.upsertTracking) {
+      window.GM_FIREBASE.upsertTracking(rec.id, {
+        bookingId: String(rec.id),
+        status: 'scheduled',
+        equipmentTitle: rec.title,
+        operatorName: rec.owner || 'Operador Certificado',
+        operatorPhone: rec.ownerPhone || '',
+        originLat: rec.originLat,
+        originLng: rec.originLng,
+        destLat: rec.worksiteLat,
+        destLng: rec.worksiteLng,
+        lat: rec.originLat,
+        lng: rec.originLng,
+        remainingKm: rec.distanceKm,
+        etaMin: rec.durationMin,
+        progressPct: 0
+      }).catch(() => {});
     }
 
     const pill = document.getElementById('availPill');
@@ -854,6 +877,10 @@
           <span style="font-size:11px;">El contratista declara contar con estos permisos vigentes antes de la llegada del equipo y asume costos de standby, retención o viaje en vacío por falta de permisos.</span>
         </div>`
       : '';
+    const trackClientHref = `${BASE}tracking.html?booking=${encodeURIComponent(b.id)}`;
+    const trackOpHref = `${BASE}tracking.html?booking=${encodeURIComponent(b.id)}&role=operator`;
+    const absTrackClient = new URL(trackClientHref, window.location.href).href;
+    const waTrackMsg = encodeURIComponent(`🚚 *Tracking GPS en Vivo — Green Mile RD*\nContrato #GM-${String(b.id).slice(-6)} • ${b.title}\nObra: ${b.address}\n\nSigue la unidad en el mapa en tiempo real:\n${absTrackClient}`);
     document.getElementById('contractBody').innerHTML = `
       <div style="border:1.5px solid var(--border); border-radius:14px; padding:20px; background:#fff;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--navy); padding-bottom:12px; margin-bottom:14px; gap:10px;">
@@ -888,7 +915,15 @@
           ${b.signature ? `<img src="${b.signature}" alt="Firma" style="height:52px; border-bottom:1px solid var(--navy); margin:0 auto 4px; display:block;">` : ''}
           <span style="font-size:11px; font-weight:700; color:var(--navy);">Firma Digital — ${esc(b.renter)}</span>
         </div>
-        <button class="btn btn-navy no-print" style="width:100%; margin-top:16px;" onclick="window.print()">Imprimir / Guardar PDF</button>
+        <div class="no-print" style="margin-top:16px; padding:12px; border-radius:12px; background:#F8FAFC; border:1px solid var(--border);">
+          <div style="font-size:11px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px;">Tracking GPS en Vivo (Tipo Uber)</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+            <a class="btn btn-primary" style="text-align:center; font-size:12px; padding:10px;" href="${trackClientHref}">🗺️ Seguir en Mapa</a>
+            <a class="btn btn-navy" style="text-align:center; font-size:12px; padding:10px;" href="${trackOpHref}">🚚 Modo Operador</a>
+          </div>
+          <a class="btn btn-ghost" style="width:100%; text-align:center; font-size:12px; padding:9px; color:#15803D; border-color:#BBF7D0; background:#F0FDF4;" href="https://wa.me/?text=${waTrackMsg}" target="_blank" rel="noopener">📲 Compartir Tracking por WhatsApp</a>
+        </div>
+        <button class="btn btn-navy no-print" style="width:100%; margin-top:12px;" onclick="window.print()">Imprimir / Guardar PDF</button>
       </div>
     `;
     openSheet('contractModal');
