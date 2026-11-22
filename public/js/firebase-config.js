@@ -783,12 +783,26 @@
   const LOCAL_SALES_KEY = 'gm_rd_sales_v1';
   const LOCAL_ORDERS_KEY = 'gm_rd_orders_v1';
 
+  function applyDefaultPartImages(list, defaultParts = []) {
+    if (!Array.isArray(list) || !Array.isArray(defaultParts) || !defaultParts.length) return list;
+    const imgById = new Map(defaultParts.map((p) => [String(p.id), p.img]));
+    return list.map((item) => {
+      const canonicalImg = imgById.get(String(item && item.id));
+      if (canonicalImg && item && item.img && item.img !== canonicalImg && String(item.img).startsWith('img/parts/')) {
+        return Object.assign({}, item, { img: canonicalImg });
+      }
+      return item;
+    });
+  }
+
   function getLocalParts(defaultParts = []) {
     try {
       const raw = localStorage.getItem(LOCAL_PARTS_KEY);
       if (raw) {
         const list = JSON.parse(raw);
-        if (Array.isArray(list) && list.length) return list;
+        if (Array.isArray(list) && list.length) {
+          return applyDefaultPartImages(list, defaultParts);
+        }
       }
     } catch (_) {}
     return Array.isArray(defaultParts) ? defaultParts.map((p) => Object.assign({}, p)) : [];
@@ -809,8 +823,14 @@
     return db.collection('parts').onSnapshot(
       (snap) => {
         const cloudMap = new Map();
+        const imgById = new Map((defaultParts || []).map((p) => [String(p.id), p.img]));
         snap.forEach((doc) => {
           const d = Object.assign({}, doc.data(), { id: doc.data().id ?? doc.id, cloudSynced: true });
+          const canonicalImg = imgById.get(String(d.id));
+          if (canonicalImg && d.img && d.img !== canonicalImg && String(d.img).startsWith('img/parts/')) {
+            d.img = canonicalImg;
+            db.collection('parts').doc(String(d.id)).set({ img: canonicalImg }, { merge: true }).catch(() => {});
+          }
           cloudMap.set(String(d.id), d);
         });
         if (cloudMap.size === 0 && Array.isArray(defaultParts)) {
@@ -1013,6 +1033,108 @@
     }
   }
 
+  async function getPartById(partId) {
+    if (partId == null) return null;
+    const defaults = (global.GM_CATALOG && Array.isArray(global.GM_CATALOG.DEFAULT_PARTS))
+      ? global.GM_CATALOG.DEFAULT_PARTS
+      : [];
+    if (db) {
+      try {
+        const snap = await db.collection('parts').doc(String(partId)).get();
+        if (snap.exists) {
+          const item = Object.assign({}, snap.data(), { id: snap.data().id ?? snap.id });
+          return applyDefaultPartImages([item], defaults)[0];
+        }
+      } catch (_) {}
+    }
+    return getLocalParts(defaults).find((p) => String(p.id) === String(partId)) || null;
+  }
+
+  async function getSaleMachineById(saleId) {
+    if (saleId == null) return null;
+    if (db) {
+      try {
+        const snap = await db.collection('sales').doc(String(saleId)).get();
+        if (snap.exists) return Object.assign({}, snap.data(), { id: snap.data().id ?? snap.id });
+        const eqSnap = await db.collection('equipment').doc(String(saleId)).get();
+        if (eqSnap.exists) return Object.assign({}, eqSnap.data(), { id: eqSnap.data().id ?? eqSnap.id });
+      } catch (_) {}
+    }
+    return getLocalSales([]).find((s) => String(s.id) === String(saleId)) || null;
+  }
+
+  const LOCAL_CHATS_KEY = 'gm_rd_product_chats_v1';
+
+  function getLocalProductChats() {
+    try {
+      const list = JSON.parse(localStorage.getItem(LOCAL_CHATS_KEY) || '[]');
+      return Array.isArray(list) ? list : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveLocalProductChats(list) {
+    try {
+      localStorage.setItem(LOCAL_CHATS_KEY, JSON.stringify(Array.isArray(list) ? list : []));
+    } catch (_) {}
+  }
+
+  function subscribeAllProductChats(onData) {
+    setTimeout(() => onData(getLocalProductChats()), 0);
+    if (!db) return () => {};
+    return db.collection('product_chats').onSnapshot(
+      (snap) => {
+        const map = new Map();
+        snap.forEach((doc) => {
+          const d = Object.assign({}, doc.data(), { id: doc.data().id ?? doc.id, cloudSynced: true });
+          map.set(String(d.id), d);
+        });
+        getLocalProductChats().forEach((lc) => {
+          if (lc && lc.cloudSynced === false && !map.has(String(lc.id))) {
+            map.set(String(lc.id), lc);
+          }
+        });
+        const merged = Array.from(map.values()).sort((a, b) => Number(a.id) - Number(b.id));
+        saveLocalProductChats(merged);
+        onData(merged);
+      },
+      (err) => console.warn('[Green Mile Firebase] Product chats listener error:', err.message)
+    );
+  }
+
+  function subscribeProductChats(itemId, kind, onData) {
+    const filterFn = (all) => (all || []).filter(
+      (m) => String(m.itemId) === String(itemId) && (!kind || m.kind === kind)
+    );
+    return subscribeAllProductChats((all) => onData(filterFn(all)));
+  }
+
+  async function sendProductChatMessage(msg) {
+    if (!msg || msg.id == null) return msg;
+    const localRec = Object.assign({}, msg, { cloudSynced: false });
+    const next = getLocalProductChats().filter((m) => String(m.id) !== String(msg.id));
+    next.push(localRec);
+    saveLocalProductChats(next);
+
+    if (!db) return localRec;
+    try {
+      await db.collection('product_chats').doc(String(msg.id)).set(
+        Object.assign({}, msg, {
+          cloudSynced: true,
+          createdAt: global.firebase.firestore.FieldValue.serverTimestamp()
+        }),
+        { merge: true }
+      );
+      const synced = Object.assign({}, msg, { cloudSynced: true });
+      saveLocalProductChats(getLocalProductChats().map((m) => (String(m.id) === String(msg.id) ? synced : m)));
+      return synced;
+    } catch (err) {
+      console.warn('[Green Mile Firebase] sendProductChatMessage local fallback:', err.message);
+      return localRec;
+    }
+  }
+
   global.GM_FIREBASE = {
     isReady,
     compressImageFile,
@@ -1059,14 +1181,20 @@
     deleteProposal,
     getLocalParts,
     subscribeParts,
+    getPartById,
     savePart,
     deletePart,
     getLocalSales,
     subscribeSales,
+    getSaleMachineById,
     saveSaleMachine,
     deleteSaleMachine,
     getLocalOrders,
     subscribeOrders,
-    saveOrder
+    saveOrder,
+    getLocalProductChats,
+    subscribeProductChats,
+    subscribeAllProductChats,
+    sendProductChatMessage
   };
 })(window);

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0D223A" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="icon" type="image/png" href="logo.png?v=20261122-3" />
+  <link rel="icon" type="image/png" href="logo.png?v=20261122-7" />
   <title>Green Mile Construction RD — Maquinaria en República Dominicana</title>
   <meta name="description" content="App móvil y plataforma web para alquilar maquinaria pesada, publicar licitaciones de obra y firmar contratos digitales con NCF en República Dominicana." />
   <link rel="manifest" href="./manifest.json" />
@@ -1323,7 +1323,7 @@
     <header class="app-header">
       <div class="nav-wrap">
         <div class="brand" onclick="switchTab('catalog')">
-          <img id="brandLogo" alt="Green Mile Construction RD" src="logo.png?v=20261122-6" width="94" height="76" />
+          <img id="brandLogo" alt="Green Mile Construction RD" src="logo.png?v=20261122-7" width="94" height="76" />
         </div>
 
         <div class="desktop-tabs">
@@ -1546,6 +1546,14 @@
               <button class="btn btn-ghost" style="padding:6px 12px; font-size:11px;" onclick="switchTab('requests')">Explorar Obras RD →</button>
             </div>
             <div id="profileBids"></div>
+          </div>
+
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+              <strong style="font-size:15px; color:var(--navy);">💬 Consultas y Mensajes de Ventas / Piezas</strong>
+              <button class="btn btn-ghost" style="padding:6px 12px; font-size:11px;" onclick="switchTab('catalog'); switchMarketMode('sale');">Ver Equipos en Venta →</button>
+            </div>
+            <div id="profileChats"></div>
           </div>
 
           <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
@@ -1886,7 +1894,7 @@
                 <label for="pubSalePrice">Precio de Venta (RD$) <small style="color:var(--orange); font-weight:700;">* Obligatorio para Venta</small></label>
                 <div class="f-box">
                   <span class="f-prefix">RD$</span>
-                  <input type="number" id="pubSalePrice" placeholder="4250000" min="50000" step="10000">
+                  <input type="number" id="pubSalePrice" placeholder="4250000" min="50000" step="1">
                 </div>
               </div>
               <div class="f-field" id="pubRentDayWrap">
@@ -2290,7 +2298,7 @@
               <label for="partPrice">Precio de Venta (RD$) <small>* Obligatorio</small></label>
               <div class="f-box">
                 <span class="f-prefix">RD$</span>
-                <input type="number" id="partPrice" min="100" step="50" placeholder="24500" required>
+                <input type="number" id="partPrice" min="100" step="1" placeholder="24500" required>
               </div>
             </div>
 
@@ -2362,29 +2370,6 @@
         <div class="sheet-foot" style="gap:8px;">
           <button type="button" class="btn btn-ghost" onclick="closeSheet('publishPartSheet')">Cancelar</button>
           <button type="submit" class="btn btn-primary" style="flex:1;">Publicar Pieza en el Catálogo</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- =========================================================
-       BOTTOM SHEET 3B: DETALLE Y ORDEN DE COMPRA (VENTAS Y PIEZAS)
-       ========================================================= -->
-  <div class="sheet-backdrop" id="marketBuySheet" onclick="if(event.target===this)closeSheet('marketBuySheet')">
-    <div class="sheet" style="max-width:600px;">
-      <div class="sheet-handle"></div>
-      <div class="sheet-head">
-        <div>
-          <h3 id="buySheetTitle">Detalle y Compra Segura</h3>
-          <p id="buySheetSub">Compra gestionada en Green Mile RD • e-NCF y garantía de entrega</p>
-        </div>
-        <button type="button" class="close-x" onclick="closeSheet('marketBuySheet')">&times;</button>
-      </div>
-      <form id="marketBuyForm" onsubmit="submitMarketBuyOrder(event)" style="display:flex; flex-direction:column; overflow:hidden; flex:1;">
-        <div class="sheet-body" id="marketBuyBody"></div>
-        <div class="sheet-foot" style="gap:8px;">
-          <button type="button" class="btn btn-ghost" onclick="closeSheet('marketBuySheet')">Cerrar</button>
-          <button type="submit" class="btn btn-primary" id="marketBuySubmitBtn" style="flex:1;">Confirmar Orden de Compra</button>
         </div>
       </form>
     </div>
@@ -2463,13 +2448,13 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
-  <script src="js/catalog-data.js?v=20261122-6"></script>
-  <script src="js/firebase-config.js?v=20261122-6"></script>
-  <script src="js/native-bridge.js?v=20261122-6"></script>
-  <script src="js/dgii-validator.js?v=20261122-6"></script>
-  <script src="js/billing-engine.js?v=20261122-6"></script>
-  <script src="js/geo-map.js?v=20261122-6"></script>
-  <script src="js/reviews.js?v=20261122-6"></script>
+  <script src="js/catalog-data.js?v=20261122-7"></script>
+  <script src="js/firebase-config.js?v=20261122-7"></script>
+  <script src="js/native-bridge.js?v=20261122-7"></script>
+  <script src="js/dgii-validator.js?v=20261122-7"></script>
+  <script src="js/billing-engine.js?v=20261122-7"></script>
+  <script src="js/geo-map.js?v=20261122-7"></script>
+  <script src="js/reviews.js?v=20261122-7"></script>
   <script>
     const GM = window.GM_CATALOG;
     const LOGO_URI = document.getElementById('brandLogo').src;
@@ -2497,9 +2482,11 @@
     let orders = (window.GM_FIREBASE && window.GM_FIREBASE.getLocalOrders)
       ? window.GM_FIREBASE.getLocalOrders()
       : [];
+    let productChats = (window.GM_FIREBASE && window.GM_FIREBASE.getLocalProductChats)
+      ? window.GM_FIREBASE.getLocalProductChats()
+      : [];
 
     let activeBidReqId = null;
-    let activeBuyContext = null;
     let allCloudReviews = {};
     let allTrackingMap = {};
     let pubPatioPicker = null;
@@ -2954,8 +2941,9 @@
     function saleCardHTML(item) {
       const isNew = String(item.condition || 'usada').toLowerCase() === 'nueva';
       const photoCount = Array.isArray(item.images) ? item.images.length : 0;
+      const url = `./producto.html?kind=sale&id=${encodeURIComponent(item.id)}`;
       return `
-        <article class="eq-card" onclick="openMarketBuySheet('sale', '${escHtml(item.id)}')">
+        <article class="eq-card" onclick="window.location.href='${url}'">
           <div class="eq-media">
             <img src="${item.img || defaultCover(item.category)}" alt="${escHtml(item.title)}" loading="lazy" onerror="this.onerror=null;this.src=defaultCover('${String(item.category || '').replace(/'/g, "\\'")}')">
             <span class="pill-city">${escHtml(item.city)}${photoCount > 1 ? ` • 📷 ${photoCount}` : ''}</span>
@@ -2964,14 +2952,14 @@
           </div>
           <div class="eq-body">
             <div class="eq-cat">${escHtml(item.category)}${item.hoursUsed ? ' • ' + escHtml(item.hoursUsed) : ''}</div>
-            <div class="eq-title" style="color:var(--navy);">${escHtml(item.title)}</div>
+            <div class="eq-title"><a href="${url}" onclick="event.stopPropagation()" style="color:var(--navy); text-decoration:none;">${escHtml(item.title)}</a></div>
             <div class="eq-owner">
               <span style="font-weight:700; color:#065F46;">✓ ${escHtml(item.owner || 'Propietario Verificado')}</span>
               <span>${escHtml(item.year || '')}</span>
             </div>
             <div class="eq-foot">
               <div class="eq-price">${fmtRD(item.salePrice || 0)} <small>venta</small></div>
-              <button type="button" class="btn btn-primary" onclick="event.stopPropagation(); openMarketBuySheet('sale', '${escHtml(item.id)}')" style="padding:8px 13px; font-size:12px;">Ver / Comprar</button>
+              <a class="btn btn-primary" href="${url}" onclick="event.stopPropagation()" style="padding:8px 13px; font-size:12px; text-decoration:none;">Ver / Comprar</a>
             </div>
           </div>
         </article>
@@ -2982,8 +2970,9 @@
       const isNew = String(part.condition || 'nueva').toLowerCase() === 'nueva';
       const cover = part.img || getPartCategoryCover(part.category);
       const stockNum = Number(part.stock) || 1;
+      const url = `./producto.html?kind=part&id=${encodeURIComponent(part.id)}`;
       return `
-        <article class="eq-card" onclick="openMarketBuySheet('part', '${escHtml(part.id)}')">
+        <article class="eq-card" onclick="window.location.href='${url}'">
           <div class="eq-media">
             <img src="${cover}" alt="${escHtml(part.title)}" loading="lazy" onerror="this.onerror=null;this.src='${getPartCategoryCover(part.category)}'">
             <span class="pill-city">${escHtml(part.city || 'Santo Domingo')}</span>
@@ -2992,14 +2981,14 @@
           </div>
           <div class="eq-body">
             <div class="eq-cat">${escHtml(part.category)}${part.partNumber ? ' • ' + escHtml(part.partNumber) : ''}</div>
-            <div class="eq-title" style="color:var(--navy);">${escHtml(part.title)}</div>
+            <div class="eq-title"><a href="${url}" onclick="event.stopPropagation()" style="color:var(--navy); text-decoration:none;">${escHtml(part.title)}</a></div>
             <div class="eq-owner" style="flex-direction:column; align-items:flex-start; gap:2px;">
               <span style="font-size:11.5px; color:var(--text-muted);">${escHtml(part.compatibleWith || part.brand || 'Maquinaria Pesada RD')}</span>
               <span style="font-size:11px; font-weight:700; color:#065F46;">✓ ${escHtml(part.owner || 'Vendedor Verificado')}</span>
             </div>
             <div class="eq-foot">
               <div class="eq-price">${fmtRD(part.price || 0)} <small>c/u</small></div>
-              <button type="button" class="btn btn-navy" onclick="event.stopPropagation(); openMarketBuySheet('part', '${escHtml(part.id)}')" style="padding:8px 13px; font-size:12px;">Ver / Comprar</button>
+              <a class="btn btn-navy" href="${url}" onclick="event.stopPropagation()" style="padding:8px 13px; font-size:12px; text-decoration:none;">Ver / Comprar</a>
             </div>
           </div>
         </article>
@@ -3143,213 +3132,76 @@
     }
 
     /* =========================================================
-       IN-APP BUY SHEET FOR MACHINERY SALES & SPARE PARTS
+       DEDICATED PRODUCT PAGE NAVIGATION & IN-APP SELLER CHAT
        ========================================================= */
     function openMarketBuySheet(kind, id) {
-      const isPart = kind === 'part';
-      const item = isPart
-        ? partsCatalog.find(p => String(p.id) === String(id))
-        : getCombinedSaleMachines().find(s => String(s.id) === String(id));
-      if (!item) return;
-
-      activeBuyContext = { kind, item };
-      const isNew = String(item.condition || (isPart ? 'nueva' : 'usada')).toLowerCase() === 'nueva';
-      const unitPrice = isPart ? Number(item.price || 0) : Number(item.salePrice || 0);
-      const maxStock = isPart ? Math.max(1, Number(item.stock || 1)) : 1;
-      const cover = item.img || (isPart ? getPartCategoryCover(item.category) : defaultCover(item.category));
-
-      document.getElementById('buySheetTitle').textContent = isPart ? 'Comprar Pieza / Repuesto' : 'Comprar Maquinaria en Green Mile';
-      document.getElementById('buySheetSub').textContent = isPart
-        ? `${item.category} • Compra verificada con factura e-NCF`
-        : `${item.category} • Inspección, traspaso y factura e-NCF`;
-
-      document.getElementById('marketBuyBody').innerHTML = `
-        <div style="display:grid; grid-template-columns:130px 1fr; gap:12px; align-items:start; background:var(--navy-soft); border:1px solid #DCE5F0; border-radius:14px; padding:12px; margin-bottom:14px;">
-          <img src="${cover}" alt="${escHtml(item.title)}" style="width:130px; height:98px; object-fit:cover; border-radius:10px; display:block;" />
-          <div>
-            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:5px;">
-              <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:${isNew ? '#059669' : '#D97706'}; color:#fff; text-transform:uppercase;">${isNew ? '✨ Nueva' : '🔧 Usada'}</span>
-              <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:#fff; color:var(--navy); border:1px solid var(--border);">${escHtml(item.city || 'RD')}</span>
-              ${isPart && item.partNumber ? `<span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:#fff; color:var(--orange); font-family:monospace;">${escHtml(item.partNumber)}</span>` : ''}
-            </div>
-            <strong style="font-size:15px; color:var(--navy); display:block; line-height:1.25;">${escHtml(item.title)}</strong>
-            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">
-              ${isPart
-                ? `<strong>Compatible:</strong> ${escHtml(item.compatibleWith || 'Maquinaria Pesada')}`
-                : `<strong>Año / Uso:</strong> ${escHtml(item.year || 'N/D')} • ${escHtml(item.hoursUsed || item.power || '')}`}
-            </div>
-            <div style="font-size:11.5px; color:#065F46; font-weight:700; margin-top:4px;">✓ Vendedor: ${escHtml(item.owner || 'Verificado DGII')} • ${escHtml(item.warranty || 'Respaldo Green Mile RD')}</div>
-          </div>
-        </div>
-
-        <p style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:14px;">${escHtml(item.desc || '')}</p>
-
-        <div class="f-grid">
-          ${isPart ? `
-            <div class="f-field">
-              <label for="buyQty">Cantidad (Disp: ${maxStock})</label>
-              <div class="f-box">
-                <input type="number" id="buyQty" min="1" max="${maxStock}" value="1" oninput="updateMarketBuyReceipt()" required>
-              </div>
-            </div>
-          ` : `<input type="hidden" id="buyQty" value="1">`}
-
-          <div class="f-field ${isPart ? '' : 'full'}">
-            <label for="buyDelivery">Entrega / Inspección</label>
-            <div class="f-box">
-              <select id="buyDelivery" onchange="updateMarketBuyReceipt()">
-                <option value="pickup">🏢 Retiro / Inspección en patio (${escHtml(item.city || 'RD')})</option>
-                <option value="shipping">${isPart ? '📦 Envío por mensajería / carga en RD' : '🚛 Coordinar traslado en Lowboy en RD'}</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="f-field">
-            <label for="buyNcfType">Comprobante Fiscal (e-NCF)</label>
-            <div class="f-box">
-              <select id="buyNcfType">
-                <option value="E31">E31 • Crédito Fiscal (Empresa)</option>
-                <option value="E32">E32 • Consumo (Personal)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="f-field">
-            <label for="buyPayment">Método de Pago</label>
-            <div class="f-box">
-              <select id="buyPayment">
-                <option value="transfer">🏦 Transferencia Bancaria (Popular / BHD / Banreservas)</option>
-                <option value="inspection">🤝 Reserva con Inspección Previa en Patio</option>
-                <option value="card">💳 Tarjeta Corporativa / Financiamiento</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="f-field">
-            <label for="buyBuyerName">Tu Nombre o Empresa <small>* Obligatorio</small></label>
-            <div class="f-box">
-              <input type="text" id="buyBuyerName" value="${escHtml(currentOwner ? currentOwner.name : '')}" placeholder="Ej. Constructora del Este, S.R.L." required>
-            </div>
-          </div>
-
-          <div class="f-field">
-            <label for="buyBuyerRnc">RNC / Cédula <small>* Para e-NCF</small></label>
-            <div class="f-box">
-              <input type="text" id="buyBuyerRnc" value="${escHtml(currentOwner ? (currentOwner.rncFormatted || '') : '')}" placeholder="Ej. 1-31-00000-1" required>
-            </div>
-          </div>
-
-          <div class="f-field full">
-            <label for="buyBuyerPhone">Teléfono / Contacto en RD <small>* Confidencial</small></label>
-            <div class="f-box">
-              <span class="f-prefix">🇩🇴 +1</span>
-              <input type="tel" id="buyBuyerPhone" value="${escHtml(currentOwner ? (currentOwner.phone || '') : '')}" placeholder="809-555-0199" required>
-            </div>
-          </div>
-
-          <div class="f-field full">
-            <label for="buyNotes">Notas / Dirección de entrega (Opcional)</label>
-            <div class="f-box">
-              <textarea id="buyNotes" rows="2" placeholder="Ej. Necesito despacho a obra en Santiago o agendar inspección mecánica mañana..."></textarea>
-            </div>
-          </div>
-
-          <div class="f-field full">
-            <div id="marketBuyReceipt" class="receipt" style="margin-top:0;"></div>
-          </div>
-        </div>
-      `;
-
-      document.getElementById('marketBuySubmitBtn').textContent = isPart
-        ? `Confirmar Compra (${fmtRD(Math.round(unitPrice * 1.18))})`
-        : `Solicitar Compra / Inspección (${fmtRD(Math.round(unitPrice * 1.18))})`;
-
-      updateMarketBuyReceipt();
-      openSheet('marketBuySheet');
+      const safeKind = kind === 'sale' ? 'sale' : 'part';
+      window.location.href = `./producto.html?kind=${safeKind}&id=${encodeURIComponent(id)}`;
     }
 
-    function updateMarketBuyReceipt() {
-      if (!activeBuyContext) return;
-      const { kind, item } = activeBuyContext;
-      const isPart = kind === 'part';
-      const unitPrice = isPart ? Number(item.price || 0) : Number(item.salePrice || 0);
-      const qty = Math.max(1, Number(document.getElementById('buyQty')?.value || 1));
-      const subtotal = unitPrice * qty;
-      const itbis = Math.round(subtotal * 0.18);
-      const total = subtotal + itbis;
-
-      const box = document.getElementById('marketBuyReceipt');
-      if (box) {
-        box.innerHTML = `
-          <div class="r-row"><span>${isPart ? `Precio unitario × ${qty}` : 'Precio de venta acordado'}</span><strong>${fmtRD(subtotal)}</strong></div>
-          <div class="r-row"><span>ITBIS (18% DGII • e-NCF)</span><span>${fmtRD(itbis)}</span></div>
-          <div class="r-total"><span>Total Estimado (RD$)</span><span>${fmtRD(total)}</span></div>
-        `;
+    function isOwnerOfMarketItem(kind, itemId, sampleMsg) {
+      if (!currentOwner) return false;
+      const myRnc = digitsOnly(currentOwner.rncDigits || currentOwner.rncFormatted);
+      const list = kind === 'sale' ? getCombinedSaleMachines() : partsCatalog;
+      const item = list.find(x => String(x.id) === String(itemId));
+      if (item) {
+        if (item.ownerId && String(item.ownerId) === String(currentOwner.id)) return true;
+        if (myRnc && digitsOnly(item.rnc) === myRnc) return true;
       }
-      const btn = document.getElementById('marketBuySubmitBtn');
-      if (btn) {
-        btn.textContent = isPart
-          ? `Confirmar Orden de Compra (${fmtRD(total)})`
-          : `Reservar Compra / Inspección (${fmtRD(total)})`;
+      if (sampleMsg) {
+        if (sampleMsg.sellerOwnerId && String(sampleMsg.sellerOwnerId) === String(currentOwner.id)) return true;
+        if (myRnc && digitsOnly(sampleMsg.sellerRnc) === myRnc) return true;
       }
+      return false;
     }
 
-    async function submitMarketBuyOrder(e) {
+    async function replyToProductChat(e, kind, itemId) {
       e.preventDefault();
-      if (!activeBuyContext) return;
-      const { kind, item } = activeBuyContext;
-      const isPart = kind === 'part';
-      const unitPrice = isPart ? Number(item.price || 0) : Number(item.salePrice || 0);
-      const qty = Math.max(1, Number(document.getElementById('buyQty')?.value || 1));
-      const subtotal = unitPrice * qty;
-      const itbis = Math.round(subtotal * 0.18);
-      const total = subtotal + itbis;
-
-      const buyerName = document.getElementById('buyBuyerName')?.value.trim() || '';
-      const buyerRnc = document.getElementById('buyBuyerRnc')?.value.trim() || '';
-      const buyerPhone = document.getElementById('buyBuyerPhone')?.value.trim() || '';
-      if (!buyerName || !buyerRnc || buyerPhone.replace(/\D/g, '').length < 7) {
-        toast('Completa tu nombre/empresa, RNC/Cédula y teléfono de contacto');
+      if (!currentOwner) {
+        promptLoginFor({ type: 'tab', payload: 'profile' }, 'Inicia sesión para responder consultas');
+        return;
+      }
+      const form = e.target;
+      const msgInput = form.querySelector('input[name="replyMsg"]');
+      const offerInput = form.querySelector('input[name="replyOffer"]');
+      const rawMsg = (msgInput?.value || '').trim();
+      const offerVal = Number(offerInput?.value || 0);
+      if (rawMsg.length < 2) {
+        toast('Escribe una respuesta antes de enviar');
+        if (msgInput) msgInput.focus();
         return;
       }
 
-      const orderId = Date.now();
-      const orderRec = {
-        id: orderId,
-        orderCode: `ORD-${String(orderId).slice(-5)}`,
+      const list = kind === 'sale' ? getCombinedSaleMachines() : partsCatalog;
+      const item = list.find(x => String(x.id) === String(itemId));
+      const existing = productChats.find(m => String(m.itemId) === String(itemId) && (m.kind || 'part') === kind);
+      const actingAsSeller = isOwnerOfMarketItem(kind, itemId, existing);
+
+      const record = {
+        id: Date.now(),
+        itemId: String(itemId),
         kind,
-        itemId: item.id,
-        itemTitle: item.title,
-        category: item.category,
-        condition: item.condition || (isPart ? 'nueva' : 'usada'),
-        partNumber: item.partNumber || '',
-        sellerName: item.owner || 'Vendedor Verificado',
-        sellerCity: item.city || 'RD',
-        qty,
-        unitPrice,
-        subtotal,
-        itbis,
-        total,
-        deliveryMode: document.getElementById('buyDelivery')?.value || 'pickup',
-        ncfType: document.getElementById('buyNcfType')?.value || 'E31',
-        paymentMethod: document.getElementById('buyPayment')?.value || 'transfer',
-        buyerId: currentOwner ? currentOwner.id : null,
-        buyerName,
-        buyerRnc,
-        buyerPhone,
-        notes: document.getElementById('buyNotes')?.value.trim() || '',
-        status: 'en_revision',
+        itemTitle: item ? item.title : (existing?.itemTitle || 'Publicación Green Mile RD'),
+        sellerName: item ? (item.owner || 'Vendedor Verificado') : (existing?.sellerName || 'Vendedor Verificado'),
+        sellerRnc: item ? (item.rnc || '') : (existing?.sellerRnc || ''),
+        sellerOwnerId: item ? (item.ownerId || '') : (existing?.sellerOwnerId || ''),
+        senderRole: actingAsSeller ? 'seller' : 'buyer',
+        senderId: currentOwner.id,
+        senderName: currentOwner.name,
+        message: rawMsg,
+        offerPrice: offerVal > 0 ? offerVal : 0,
         createdAtIso: new Date().toISOString()
       };
 
-      orders = [orderRec, ...orders.filter(o => String(o.id) !== String(orderRec.id))];
-      if (window.GM_FIREBASE && window.GM_FIREBASE.saveOrder) {
-        window.GM_FIREBASE.saveOrder(orderRec).catch(() => {});
-      }
+      productChats = [...productChats, record];
+      if (msgInput) msgInput.value = '';
+      if (offerInput) offerInput.value = '';
+      renderProfile();
 
-      closeSheet('marketBuySheet');
-      renderCurrentTab();
-      toast(`✓ Orden ${orderRec.orderCode} registrada en Green Mile RD`);
+      if (window.GM_FIREBASE && window.GM_FIREBASE.sendProductChatMessage) {
+        await window.GM_FIREBASE.sendProductChatMessage(record).catch(() => {});
+      }
+      toast(actingAsSeller ? '✓ Respuesta de vendedor enviada al cliente' : '✓ Mensaje enviado en la conversación');
     }
 
     /* =========================================================
@@ -4096,13 +3948,77 @@
         }
       }
 
+      // 2B. Product Chat & Offer Negotiations (Buyer <-> Seller)
+      const chBox = document.getElementById('profileChats');
+      if (chBox) {
+        const grouped = new Map();
+        productChats.forEach(m => {
+          const kind = m.kind === 'sale' ? 'sale' : 'part';
+          const key = `${kind}:${m.itemId}`;
+          if (!grouped.has(key)) grouped.set(key, { kind, itemId: String(m.itemId), itemTitle: m.itemTitle || 'Publicación', sellerName: m.sellerName || '', msgs: [] });
+          grouped.get(key).msgs.push(m);
+        });
+        const threads = Array.from(grouped.values()).map(t => {
+          t.msgs.sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+          t.lastAt = Number(t.msgs[t.msgs.length - 1]?.id || 0);
+          return t;
+        }).sort((a, b) => b.lastAt - a.lastAt);
+
+        if (threads.length === 0) {
+          chBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Aún no tienes conversaciones de venta o piezas. Entra a cualquier equipo en venta o repuesto y usa <strong>💬 Hablar / Ofertar</strong> para negociar directo con el vendedor.</p>`;
+        } else {
+          chBox.innerHTML = threads.map(t => {
+            const href = `./producto.html?kind=${t.kind}&id=${encodeURIComponent(t.itemId)}`;
+            const isMine = isOwnerOfMarketItem(t.kind, t.itemId, t.msgs[0]);
+            const latestOffer = [...t.msgs].reverse().find(m => Number(m.offerPrice) > 0);
+            const recent = t.msgs.slice(-3);
+            const bubblesHtml = recent.map(m => {
+              const isSellerMsg = m.senderRole === 'seller';
+              return `
+                <div style="border-radius:10px; padding:7px 10px; font-size:12px; line-height:1.4; max-width:94%; align-self:${isSellerMsg ? 'flex-start' : 'flex-end'}; background:${isSellerMsg ? '#ECFDF5' : '#0D223A'}; color:${isSellerMsg ? '#065F46' : '#fff'}; border:${isSellerMsg ? '1px solid #A7F3D0' : 'none'};">
+                  <div style="font-size:10px; font-weight:700; opacity:0.82; margin-bottom:2px;">${isSellerMsg ? '🏢 ' + escHtml(m.senderName || 'Vendedor') : '👤 ' + escHtml(m.senderName || 'Cliente')}</div>
+                  <div>${escHtml(m.message)}</div>
+                  ${Number(m.offerPrice) > 0 ? `<div style="display:inline-block; margin-top:4px; padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:800; background:rgba(184,90,39,0.95); color:#fff;">💰 Oferta: ${fmtRD(Number(m.offerPrice))}</div>` : ''}
+                </div>
+              `;
+            }).join('');
+
+            return `
+              <div style="border:1px solid var(--border); border-left:3px solid ${isMine ? '#059669' : 'var(--navy)'}; border-radius:12px; padding:12px; margin-bottom:10px; background:#fff;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+                  <div>
+                    <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap; margin-bottom:3px;">
+                      <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${t.kind === 'sale' ? 'var(--orange-soft)' : '#EFF6FF'}; color:${t.kind === 'sale' ? 'var(--orange)' : '#1E40AF'};">${t.kind === 'sale' ? '🏷️ Venta Equipo' : '⚙️ Pieza / Repuesto'}</span>
+                      <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${isMine ? '#ECFDF5' : '#F1F5F9'}; color:${isMine ? '#059669' : '#475569'};">${isMine ? '🏢 Tu Anuncio' : '💬 Tu Consulta'} • ${t.msgs.length} msg</span>
+                      ${latestOffer ? `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#FEF3C7; color:#92400E;">💰 Oferta ${fmtRD(Number(latestOffer.offerPrice))}</span>` : ''}
+                    </div>
+                    <a href="${href}" style="font-size:14px; font-weight:800; color:var(--navy); text-decoration:none; display:block;">${escHtml(t.itemTitle)}</a>
+                  </div>
+                  <a class="btn btn-navy" href="${href}" style="padding:5px 10px; font-size:11px; text-decoration:none;">Ver Producto →</a>
+                </div>
+                <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:10px; padding:9px; display:flex; flex-direction:column; gap:6px; margin-bottom:9px;">
+                  ${bubblesHtml}
+                </div>
+                <form onsubmit="replyToProductChat(event, '${t.kind}', '${escHtml(t.itemId)}')" style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <input type="text" name="replyMsg" placeholder="${isMine ? 'Responder al cliente (disponibilidad, cita en patio, contraoferta)...' : 'Escribir mensaje de seguimiento al vendedor...'}" style="flex:1; min-width:170px; border:1.5px solid var(--border); border-radius:10px; padding:8px 10px; font-size:12.5px; font-family:inherit; color:var(--navy);" required />
+                  <input type="number" name="replyOffer" min="1" step="1" placeholder="Oferta RD$ (opc.)" style="width:165px; border:1.5px solid var(--border); border-radius:10px; padding:8px 10px; font-size:12px; font-family:inherit; color:var(--navy);" />
+                  <button type="submit" class="btn btn-primary" style="padding:8px 13px; font-size:12px;">Enviar</button>
+                </form>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
       // 3. Purchase Orders (Machinery Sales & Spare Parts)
       const oBox = document.getElementById('profileOrders');
       if (oBox) {
         if (orders.length === 0) {
           oBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">No tienes órdenes de compra de equipos o repuestos todavía.</p>`;
         } else {
-          oBox.innerHTML = orders.map(o => `
+          oBox.innerHTML = orders.map(o => {
+            const href = `./producto.html?kind=${o.kind === 'sale' ? 'sale' : 'part'}&id=${encodeURIComponent(o.itemId)}`;
+            return `
             <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
               <div>
                 <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:4px;">
@@ -4110,12 +4026,13 @@
                   <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:${o.condition === 'nueva' ? '#ECFDF5' : '#FEF3C7'}; color:${o.condition === 'nueva' ? '#059669' : '#92400E'};">${o.condition === 'nueva' ? '✨ Nueva' : '🔧 Usada'}</span>
                   <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:#EFF6FF; color:#1E40AF;">${escHtml(o.ncfType || 'E31')}</span>
                 </div>
-                <strong style="font-size:14px; color:var(--navy); display:block;">${escHtml(o.itemTitle)} ${o.qty > 1 ? `× ${o.qty}` : ''}</strong>
+                <a href="${href}" style="font-size:14px; font-weight:800; color:var(--navy); text-decoration:none; display:block;">${escHtml(o.itemTitle)} ${o.qty > 1 ? `× ${o.qty}` : ''}</a>
                 <span style="font-size:11.5px; color:var(--text-muted);">Total con ITBIS: <strong>${fmtRD(o.total)}</strong> • Vendedor: ${escHtml(o.sellerName || '')} (${escHtml(o.sellerCity || '')})</span>
               </div>
               <span style="font-size:11px; font-weight:800; color:#065F46; background:#ECFDF5; padding:4px 10px; border-radius:99px;">✓ En Coordinación</span>
             </div>
-          `).join('');
+          `;
+          }).join('');
         }
       }
 
@@ -4126,22 +4043,25 @@
         if (myParts.length === 0) {
           pBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">Aún no has publicado repuestos en venta. Toca <strong>+ Publicar Pieza</strong> para vender piezas nuevas o usadas de tu taller o inventario.</p>`;
         } else {
-          pBox.innerHTML = myParts.map(p => `
+          pBox.innerHTML = myParts.map(p => {
+            const pHref = `./producto.html?kind=part&id=${encodeURIComponent(p.id)}`;
+            return `
             <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
               <div>
                 <div style="display:flex; gap:5px; margin-bottom:3px;">
                   <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${p.condition === 'nueva' ? '#ECFDF5' : '#FEF3C7'}; color:${p.condition === 'nueva' ? '#059669' : '#92400E'};">${p.condition === 'nueva' ? '✨ Nueva' : '🔧 Usada'}</span>
                   <span style="font-size:10px; font-weight:700; color:var(--text-muted);">${escHtml(p.category)}</span>
                 </div>
-                <strong style="font-size:14px; color:var(--navy); display:block;">${escHtml(p.title)}</strong>
+                <a href="${pHref}" style="font-size:14px; font-weight:800; color:var(--navy); text-decoration:none; display:block;">${escHtml(p.title)}</a>
                 <span style="font-size:11.5px; color:var(--text-muted);">${escHtml(p.city)} • ${fmtRD(p.price)} • Stock: ${p.stock || 1}</span>
               </div>
               <div style="display:flex; gap:6px;">
-                <button class="btn btn-navy" style="padding:6px 10px; font-size:11px;" onclick="openMarketBuySheet('part', '${escHtml(p.id)}')">Ver</button>
+                <a class="btn btn-navy" style="padding:6px 10px; font-size:11px; text-decoration:none;" href="${pHref}">Ver</a>
                 <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px; color:#DC2626;" onclick="removePart('${escHtml(p.id)}')">Borrar</button>
               </div>
             </div>
-          `).join('');
+          `;
+          }).join('');
         }
       }
 
@@ -4153,7 +4073,7 @@
       } else {
         fBox.innerHTML = myFleet.map(e => {
           const isSaleOnly = e.listingType === 'sale';
-          const url = GM.getEquipmentPath(e, '');
+          const url = isSaleOnly ? `./producto.html?kind=sale&id=${encodeURIComponent(e.id)}` : GM.getEquipmentPath(e, '');
           const countImgs = Array.isArray(e.images) && e.images.length ? e.images.length : 1;
           const modePill = e.listingType === 'sale' ? '🏷️ Venta' : (e.listingType === 'both' ? '🚜 Alquiler y Venta' : '🚜 Alquiler');
           const priceSummary = e.listingType === 'sale'
@@ -4163,15 +4083,13 @@
             <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
               <div>
                 <span style="font-size:10px; font-weight:800; color:var(--orange); background:var(--orange-soft); padding:2px 7px; border-radius:99px;">${modePill}</span>
-                ${isSaleOnly
-                  ? `<strong style="font-size:14px; color:var(--navy); display:block; margin-top:3px;">${escHtml(e.title)}</strong>`
-                  : `<a href="${url}" style="font-size:14px; font-weight:800; color:var(--navy); display:block; margin-top:3px; text-decoration:none;">${escHtml(e.title)}</a>`}
+                <a href="${url}" style="font-size:14px; font-weight:800; color:var(--navy); display:block; margin-top:3px; text-decoration:none;">${escHtml(e.title)}</a>
                 <span style="font-size:11px; color:var(--text-muted);">${escHtml(e.city)} • ${priceSummary} • 📷 ${countImgs} foto(s)</span>
               </div>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
                 ${isSaleOnly
-                  ? `<button class="btn btn-navy" style="padding:6px 10px; font-size:11px;" onclick="openMarketBuySheet('sale', '${escHtml(e.id)}')">Ver</button>`
-                  : `<a class="btn btn-navy" style="padding:6px 10px; font-size:11px;" href="${url}">Ver</a>
+                  ? `<a class="btn btn-navy" style="padding:6px 10px; font-size:11px; text-decoration:none;" href="${url}">Ver</a>`
+                  : `<a class="btn btn-navy" style="padding:6px 10px; font-size:11px; text-decoration:none;" href="${url}">Ver</a>
                      <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="shareCard(event, ${e.id})">Compartir</button>
                      <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="flipBusy(${e.id})">${e.busy ? 'Liberar' : 'Ocupar'}</button>`}
                 <button class="btn btn-ghost" style="padding:6px 10px; font-size:11px; color:#DC2626;" onclick="removeEq(${e.id})">Borrar</button>
@@ -4630,7 +4548,7 @@
     }
 
     function exportBackup() {
-      const blob = new Blob([JSON.stringify({ equipment, salesCatalog, partsCatalog, requests, proposals, bookings, orders }, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify({ equipment, salesCatalog, partsCatalog, requests, proposals, bookings, orders, productChats }, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'green-mile-app-rd.json';
@@ -4725,6 +4643,13 @@
     if (window.GM_FIREBASE && window.GM_FIREBASE.subscribeOrders) {
       window.GM_FIREBASE.subscribeOrders((list) => {
         orders = Array.isArray(list) ? list : [];
+        if (activeTab === 'profile') renderProfile();
+      });
+    }
+
+    if (window.GM_FIREBASE && window.GM_FIREBASE.subscribeAllProductChats) {
+      window.GM_FIREBASE.subscribeAllProductChats((list) => {
+        productChats = Array.isArray(list) ? list : [];
         if (activeTab === 'profile') renderProfile();
       });
     }

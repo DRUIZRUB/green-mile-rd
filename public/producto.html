@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0D223A" />
+  <link rel="icon" type="image/png" href="./logo.png?v=20261122-7" />
+  <title>Detalle de Venta / Repuesto | Green Mile Construction RD</title>
+  <meta name="description" content="Compra segura de maquinaria pesada (nueva y usada) y piezas o repuestos con e-NCF en Green Mile Construction RD." />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/equipo.css?v=20261122-7" />
+
+  <style>
+    .prod-hero-media {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #E2E8F0;
+      aspect-ratio: 4 / 3;
+    }
+    .prod-hero-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .prod-badge-tl {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(13, 34, 58, 0.88);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: 999px;
+      backdrop-filter: blur(6px);
+    }
+    .prod-badge-bl {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+    }
+    .prod-badge-br {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      background: rgba(13, 34, 58, 0.92);
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 999px;
+    }
+    .prod-thumbs {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .prod-thumb {
+      width: 78px;
+      height: 58px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+      background: #E2E8F0;
+    }
+    .prod-thumb.active { border-color: var(--orange); }
+    .prod-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .prod-spec-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .prod-spec-cell {
+      background: var(--bg, #F4F6F9);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 13px;
+    }
+    .prod-spec-cell small {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 3px;
+    }
+    .prod-spec-cell strong {
+      font-size: 13.5px;
+      color: var(--navy);
+      line-height: 1.3;
+      display: block;
+    }
+
+    .buy-panel-sticky {
+      position: sticky;
+      top: 106px;
+    }
+    .buy-price-head {
+      background: linear-gradient(135deg, #0D223A 0%, #173456 100%);
+      color: #fff;
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+    }
+    .buy-price-head .eyebrow {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #FDBA74;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .buy-price-head .big-price {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .buy-price-head .big-price small {
+      font-size: 13px;
+      font-weight: 600;
+      color: #CBD5E1;
+    }
+    .buy-price-head .sub-note {
+      font-size: 12px;
+      color: #CBD5E1;
+      margin-top: 6px;
+      display: block;
+    }
+
+    .prod-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 11px;
+    }
+    .prod-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .prod-field.full { grid-column: 1 / -1; }
+    .prod-field label {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--navy);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .prod-field label small { color: var(--orange); font-weight: 700; }
+    .prod-input-box {
+      display: flex;
+      align-items: center;
+      border: 1.5px solid var(--border);
+      border-radius: 11px;
+      background: #fff;
+      padding: 0 11px;
+      min-height: 44px;
+      transition: border-color 0.15s;
+    }
+    .prod-input-box:focus-within { border-color: var(--orange); }
+    .prod-input-box input,
+    .prod-input-box select,
+    .prod-input-box textarea {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--navy);
+      padding: 9px 0;
+    }
+    .prod-input-box textarea { resize: vertical; min-height: 60px; }
+    .prod-prefix {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-muted);
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+
+    .prod-receipt {
+      background: var(--navy-soft, #EEF3F8);
+      border: 1px solid #DCE5F0;
+      border-radius: 14px;
+      padding: 13px 15px;
+      margin: 14px 0;
+    }
+    .prod-r-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+    .prod-r-total {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #CBD5E1;
+      margin-top: 8px;
+      padding-top: 8px;
+      font-size: 16.5px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .order-confirm-card {
+      background: #ECFDF5;
+      border: 1.5px solid #A7F3D0;
+      border-radius: 16px;
+      padding: 20px 18px;
+      text-align: left;
+    }
+
+    /* 2-Tab Action Switcher (Hablar con Vendedor / Comprar con e-NCF) */
+    .action-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      background: var(--bg, #F4F6F9);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 4px;
+      margin-bottom: 14px;
+    }
+    .action-tab {
+      border: none;
+      background: transparent;
+      border-radius: 9px;
+      padding: 9px 8px;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .action-tab.active {
+      background: #fff;
+      color: var(--navy);
+      box-shadow: 0 2px 8px rgba(13, 34, 58, 0.1);
+    }
+
+    /* In-App Buyer <-> Seller Live Chat Thread */
+    .chat-thread {
+      max-height: 250px;
+      overflow-y: auto;
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin-bottom: 12px;
+    }
+    .chat-empty {
+      text-align: center;
+      padding: 16px 10px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .chat-bubble {
+      border-radius: 12px;
+      padding: 9px 11px;
+      font-size: 13px;
+      line-height: 1.45;
+      max-width: 92%;
+    }
+    .chat-bubble.buyer {
+      align-self: flex-end;
+      background: #0D223A;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-bubble.seller {
+      align-self: flex-start;
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: #065F46;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-meta {
+      font-size: 10.5px;
+      font-weight: 700;
+      opacity: 0.8;
+      margin-bottom: 3px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .chat-offer-pill {
+      display: inline-block;
+      margin-top: 5px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      background: rgba(184, 90, 39, 0.92);
+      color: #fff;
+    }
+    .quick-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .quick-chip {
+      border: 1px solid #CBD5E1;
+      background: #fff;
+      color: var(--navy);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.14s;
+    }
+    .quick-chip:hover {
+      background: var(--orange-soft, #FEF4EE);
+      border-color: var(--orange);
+      color: var(--orange);
+    }
+
+    .related-prod-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .rel-prod-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .rel-prod-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(13, 34, 58, 0.09);
+    }
+    .rel-prod-media {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      background: #E2E8F0;
+    }
+    .rel-prod-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .rel-prod-body { padding: 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+
+    @media (max-width: 960px) {
+      .buy-panel-sticky { position: static; }
+      .related-prod-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .prod-spec-grid, .prod-form-grid { grid-template-columns: 1fr; }
+      .related-prod-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      .detail-header, .detail-footer, .no-print, .related-section { display: none !important; }
+      body { background: #fff !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="detail-header no-print">
+    <div class="header-inner">
+      <div class="header-left">
+        <a class="back-link" id="backCatalogLink" href="./index.html?mode=parts" aria-label="Volver al Catálogo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+          <span class="back-label" id="backCatalogLabel">Catálogo</span>
+        </a>
+      </div>
+      <a class="brand-logo-link brand-mini" href="./index.html" aria-label="Green Mile Construction RD — Inicio">
+        <img src="./logo.png?v=20261122-7" width="97" height="78" alt="Green Mile Construction RD" />
+      </a>
+      <div class="header-actions">
+        <button type="button" class="btn btn-primary btn-share-hdr" onclick="window.GM_PRODUCT_PAGE && window.GM_PRODUCT_PAGE.shareListing()" aria-label="Compartir anuncio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span class="btn-label">Compartir</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-wrap" id="productPageContent">
+    <div class="panel not-found">
+      <p>Cargando detalle del producto…</p>
+    </div>
+  </main>
+
+  <footer class="detail-footer no-print">
+    <div class="detail-footer-inner">
+      <a class="footer-brand" href="./index.html" aria-label="Green Mile Construction RD">
+        <img src="./logo.png?v=20261122-7" width="67" height="54" alt="Green Mile Construction RD" />
+      </a>
+      <nav class="detail-footer-links" aria-label="Enlaces institucionales">
+        <a href="./index.html">Catálogo RD</a>
+        <a href="./index.html?mode=sale">Venta Equipos</a>
+        <a href="./index.html?mode=parts">Piezas y Repuestos</a>
+        <a href="./acerca-de.html">Acerca de</a>
+        <a href="./terminos.html">Términos</a>
+        <a href="./privacidad.html">Privacidad</a>
+      </nav>
+      <div class="detail-footer-copy">© 2026 Green Mile Construction RD · Ventas, Alquiler y Repuestos con e-NCF</div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="./js/catalog-data.js?v=20261122-7"></script>
+  <script src="./js/firebase-config.js?v=20261122-7"></script>
+  <script src="./js/dgii-validator.js?v=20261122-7"></script>
+  <script src="./js/producto-page.js?v=20261122-7"></script>
+</body>
+</html>

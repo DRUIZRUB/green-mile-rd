@@ -23,7 +23,7 @@ function escAttr(str) {
     .replace(/"/g, '&quot;');
 }
 
-const ASSET_VER = '20261122-6';
+const ASSET_VER = '20261122-7';
 
 function buildHtml({ basePrefix, equipmentId, title, description, canonicalUrl, ogImageUrl }) {
   const logoSrc = `${basePrefix}logo.png?v=${ASSET_VER}`;

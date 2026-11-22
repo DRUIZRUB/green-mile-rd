@@ -1205,7 +1205,7 @@
       owner: 'Equipos y Talleres Cibao, S.R.L.',
       rnc: '1-30-99142-3',
       desc: 'Cilindro original usado en excelente estado, vástago cromado sin rayaduras y empaquetadura nueva recién instalada. Listo para montar.',
-      img: 'img/parts/part_hydraulics.jpg'
+      img: 'img/parts/part_4002_cylinder.jpg'
     },
     {
       id: 4003,
@@ -1239,7 +1239,7 @@
       owner: 'Maquinarias y Motores Valle Real',
       rnc: '1-31-70543-9',
       desc: 'Turbo original retirado de equipo de bajas horas en RD. Inspeccionado en taller especializado, caracol intacto y compresor balanceado.',
-      img: 'img/parts/part_engine_filters.jpg'
+      img: 'img/parts/part_4004_turbo.jpg'
     },
     {
       id: 4005,
@@ -1273,7 +1273,7 @@
       owner: 'Constructora y Flota Sur, S.R.L.',
       rnc: '1-30-62118-7',
       desc: 'Lote de rodillos inferiores y ruedas motrices (sprockets) originales con muy poco desgaste. Sellos dúo-cono secos sin fugas de aceite.',
-      img: 'img/parts/part_undercarriage.jpg'
+      img: 'img/parts/part_4006_rollers.jpg'
     },
     {
       id: 4007,
@@ -1307,7 +1307,7 @@
       owner: 'Repuestos Pesados Ozama, S.R.L.',
       rnc: '1-31-48291-5',
       desc: 'Caja de 10 puntas tipo roca (Rock Chisel) J350 con pasadores y retenedores incluidos. Alta resistencia al desgaste en canteras y excavación.',
-      img: 'img/parts/part_attachments.jpg'
+      img: 'img/parts/part_4008_bucket_teeth.jpg'
     },
     {
       id: 4009,
@@ -1341,7 +1341,7 @@
       owner: 'Equipos Pesados Este & Romana',
       rnc: '1-31-40912-8',
       desc: 'Par de gomas radiales E3/L3 con 75% de cocada uniforme, sin cortes ni vulcanizaciones estructurales. Precio por el par.',
-      img: 'img/parts/part_tires_otr.jpg'
+      img: 'img/parts/part_4010_loader_tires.jpg'
     },
     {
       id: 4011,
@@ -1375,7 +1375,7 @@
       owner: 'Equipos y Talleres Cibao, S.R.L.',
       rnc: '1-30-99142-3',
       desc: 'Ramal eléctrico completo con conectores Deutsch sellados intactos y 2 sensores de presión principal de bomba probados.',
-      img: 'img/parts/part_electrical.jpg'
+      img: 'img/parts/part_4012_harness.jpg'
     },
     {
       id: 4013,
@@ -1392,7 +1392,7 @@
       owner: 'Repuestos Pesados Ozama, S.R.L.',
       rnc: '1-31-48291-5',
       desc: 'Juego completo de discos de fricción sinterizados y platos separadores de acero para ejes Carraro. Incluye sellos de pistón.',
-      img: 'img/parts/part_transmission.jpg'
+      img: 'img/parts/part_4013_brake_discs.jpg'
     },
     {
       id: 4014,
@@ -1443,7 +1443,7 @@
       owner: 'Maquinaria Costa Norte, S.R.L.',
       rnc: '1-30-88415-2',
       desc: 'Vidrio frontal templado original desmontado de cabina operativa, incluye goma perimetral y seguros superiores.',
-      img: 'img/parts/part_cabin_controls.jpg'
+      img: 'img/parts/part_4016_windshield.jpg'
     }
   ];
 
