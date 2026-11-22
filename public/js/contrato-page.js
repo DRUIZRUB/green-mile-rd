@@ -5,7 +5,7 @@
   const GM = window.GM_CATALOG;
   const FB = window.GM_FIREBASE;
   const BILL = window.GM_BILLING;
-  const LOGO_SRC = './logo.png?v=20261122-5';
+  const LOGO_SRC = './logo.png?v=20261122-6';
 
   let currentBooking = null;
   let activeDocTab = 'contract';
