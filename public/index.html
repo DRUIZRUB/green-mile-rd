@@ -1673,20 +1673,23 @@
               <div class="f-box"><span class="f-prefix">+1</span><input type="tel" id="rPhone" placeholder="829-555-0122" required></div>
             </div>
             <div class="f-field full">
-              <label>Permisos y Accesos de la Obra (RD)</label>
-              <div class="permit-chips" id="reqPermitChips">
-                <button type="button" class="permit-chip" data-permit="Ayuntamiento" onclick="toggleReqPermit(this)">🏛️ Ayuntamiento</button>
-                <button type="button" class="permit-chip" data-permit="INTRANT / DIGESETT" onclick="toggleReqPermit(this)">🚧 INTRANT / DIGESETT</button>
-                <button type="button" class="permit-chip" data-permit="Medio Ambiente" onclick="toggleReqPermit(this)">🌿 Medio Ambiente</button>
-                <button type="button" class="permit-chip" data-permit="Residencial / Plaza" onclick="toggleReqPermit(this)">🏘️ Residencial / Plaza</button>
-                <button type="button" class="permit-chip" data-permit="Salud Pública / Ruido" onclick="toggleReqPermit(this)">🏥 Salud Pública</button>
-                <button type="button" class="permit-chip" data-permit="Zona Franca / Hotel" onclick="toggleReqPermit(this)">🏭 Zona Franca / Hotel</button>
-                <button type="button" class="permit-chip selected" data-permit="Terreno privado libre" onclick="toggleReqPermit(this)">✅ Terreno privado libre</button>
+              <label for="rPlaceType">Tipo de Lugar de la Obra <small style="color:var(--orange); font-weight:700;">Define permisos RD</small></label>
+              <div class="f-box">
+                <select id="rPlaceType" onchange="onReqPlaceTypeChange()" required>
+                  <option value="" disabled selected>Selecciona el tipo de lugar donde operará el equipo...</option>
+                  <option value="via_publica">🛣️ Vía Pública / Calle / Carretera</option>
+                  <option value="residencial">🏘️ Residencial / Condominio / Torre</option>
+                  <option value="comercial">🏬 Plaza Comercial / Edificio Corporativo</option>
+                  <option value="zona_franca_hotel">🏭 Zona Franca / Hotel / Puerto / Resort</option>
+                  <option value="obra_publica">🏛️ Obra Pública / Institución del Estado</option>
+                  <option value="solar_privado">🏗️ Solar / Terreno Privado Libre</option>
+                </select>
               </div>
+              <div id="reqDynamicPermitsBox" style="margin-top:8px;"></div>
             </div>
             <div class="f-field full">
-              <label>Urgencia y detalles de obra</label>
-              <div class="f-box"><textarea id="rNotes" placeholder="Para iniciar este lunes, terreno compacto..."></textarea></div>
+              <label>Referencia de acceso y detalles de obra</label>
+              <div class="f-box"><textarea id="rNotes" placeholder="Ej. Portón 2 de carga, terreno compacto, iniciar este lunes..."></textarea></div>
             </div>
             <div class="f-field full">
               <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-muted); text-transform:none; letter-spacing:0;">
@@ -1797,8 +1800,8 @@
   <script src="js/firebase-config.js"></script>
   <script src="js/native-bridge.js"></script>
   <script src="js/dgii-validator.js"></script>
-  <script src="js/billing-engine.js"></script>
-  <script src="js/geo-map.js?v=20261122-3"></script>
+  <script src="js/billing-engine.js?v=20261122-4"></script>
+  <script src="js/geo-map.js?v=20261122-4"></script>
   <script src="js/reviews.js"></script>
   <script>
     const GM = window.GM_CATALOG;
@@ -2097,6 +2100,9 @@
       box.innerHTML = list.map(r => {
         const refCode = `OBRA-${String(r.id).slice(-4)}`;
         const msg = encodeURIComponent(`Hola Green Mile RD, tengo equipo disponible para la solicitud ${refCode}: "${r.title}" en ${r.city} (Presupuesto ${fmtRD(r.budget)}/día). Quiero postular mi equipo.`);
+        const placeBadgeHTML = r.placeTypeLabel
+          ? `<div style="display:inline-flex; align-items:center; align-self:flex-start; font-size:11px; font-weight:800; background:var(--orange-soft); color:var(--orange); padding:3px 9px; border-radius:999px;">${r.placeTypeLabel}</div>`
+          : '';
         const permitsHTML = Array.isArray(r.permits) && r.permits.length
           ? `<div style="display:flex; flex-wrap:wrap; gap:5px;">${r.permits.map(p => `<span style="font-size:10.5px; font-weight:700; background:var(--navy-soft); color:var(--navy); padding:2px 7px; border-radius:999px;">📋 ${p}</span>`).join('')}</div>`
           : '';
@@ -2104,6 +2110,7 @@
           <div style="background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--orange); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow-sm);">
             <div style="font-size:11px; font-weight:800; color:var(--orange); text-transform:uppercase;">${r.city} • Presupuesto ${fmtRD(r.budget)}/día</div>
             <strong style="font-size:16px; color:var(--navy);">${r.title}</strong>
+            ${placeBadgeHTML}
             <p style="font-size:13px; color:var(--text-muted);">${r.notes || 'Disponibilidad inmediata requerida.'}</p>
             ${permitsHTML}
             <div style="display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid var(--border); margin-top:auto; gap:8px;">
@@ -2691,24 +2698,42 @@
       }
     }
 
-    function toggleReqPermit(btn) {
-      if (!btn) return;
-      const isPrivate = btn.dataset.permit === 'Terreno privado libre';
-      const all = document.querySelectorAll('#reqPermitChips .permit-chip');
-      if (isPrivate) {
-        const next = !btn.classList.contains('selected');
-        all.forEach(b => b.classList.remove('selected'));
-        if (next) btn.classList.add('selected');
-      } else {
-        all.forEach(b => { if (b.dataset.permit === 'Terreno privado libre') b.classList.remove('selected'); });
-        btn.classList.toggle('selected');
-      }
+    function onReqPlaceTypeChange() {
+      const sel = document.getElementById('rPlaceType');
+      const box = document.getElementById('reqDynamicPermitsBox');
+      if (!sel || !box || !window.GM_GEO || !window.GM_GEO.getPermitsForPlaceType) return;
+      const pid = sel.value;
+      if (!pid) { box.innerHTML = ''; return; }
+      const info = window.GM_GEO.getPermitsForPlaceType(pid, '');
+      const reqItems = info.required.map(p => `
+        <label style="display:flex; align-items:flex-start; gap:8px; padding:7px 9px; border-radius:9px; background:#ECFDF5; border:1px solid #A7F3D0; font-size:11.5px; color:#065F46; cursor:pointer;">
+          <input type="checkbox" class="req-dyn-permit-cb" value="${p.label.replace(/"/g, '&quot;')}" checked style="margin-top:2px; accent-color:#059669;">
+          <span><strong>${p.label}</strong> <small style="display:block; color:#047857;">${p.entity} · Requerido</small></span>
+        </label>
+      `).join('');
+      const optItems = info.optional.map(p => `
+        <label style="display:flex; align-items:flex-start; gap:8px; padding:6px 9px; border-radius:9px; background:#F8FAFC; border:1px solid var(--border); font-size:11.5px; color:var(--navy); cursor:pointer;">
+          <input type="checkbox" class="req-dyn-permit-cb" value="${p.label.replace(/"/g, '&quot;')}" style="margin-top:2px; accent-color:var(--orange);">
+          <span><strong>${p.label}</strong> <small style="display:block; color:var(--text-muted);">${p.entity} · Opcional</small></span>
+        </label>
+      `).join('');
+      box.innerHTML = `
+        <div style="background:#FFFFFF; border:1.5px solid #DCE5F0; border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:11px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:0.4px;">Permisos requeridos para ${info.place.icon} ${info.place.label}</div>
+          ${reqItems}
+          ${optItems}
+          <div style="font-size:11px; color:var(--text-muted); background:var(--navy-soft); border-radius:8px; padding:6px 9px;">💡 ${info.guidance}</div>
+        </div>
+      `;
     }
 
     function submitReq(e) {
       e.preventDefault();
       if (!document.getElementById('reqTerms').checked) { toast('Debes aceptar las políticas de Green Mile RD'); return; }
-      const reqPermits = Array.from(document.querySelectorAll('#reqPermitChips .permit-chip.selected')).map(b => b.dataset.permit).filter(Boolean);
+      const placeId = document.getElementById('rPlaceType')?.value || '';
+      if (!placeId) { toast('Selecciona el tipo de lugar de la obra'); return; }
+      const placeMeta = window.GM_GEO && window.GM_GEO.getPlaceTypeMeta ? window.GM_GEO.getPlaceTypeMeta(placeId) : null;
+      const reqPermits = Array.from(document.querySelectorAll('#reqDynamicPermitsBox .req-dyn-permit-cb:checked')).map(cb => cb.value).filter(Boolean);
       const newReq = {
         id: Date.now(),
         title: document.getElementById('rTitle').value.trim(),
@@ -2716,6 +2741,8 @@
         budget: Number(document.getElementById('rBudget').value) || 0,
         author: document.getElementById('rAuthor').value.trim(),
         phone: document.getElementById('rPhone').value.trim(),
+        placeType: placeId,
+        placeTypeLabel: placeMeta ? `${placeMeta.icon} ${placeMeta.label}` : '',
         permits: reqPermits,
         notes: document.getElementById('rNotes').value.trim()
       };
@@ -2725,6 +2752,8 @@
       }
       syncCounters();
       e.target.reset();
+      const box = document.getElementById('reqDynamicPermitsBox');
+      if (box) box.innerHTML = '';
       closeSheet('reqSheet');
       switchTab('requests');
       toast('☁️ Solicitud publicada y sincronizada en Obras RD');

@@ -220,6 +220,9 @@
     if (autoSwitchPay) {
       if (code === 'E45') {
         selectPaymentMethod('gov_po');
+        if (!selectedPlaceTypeId && window.GM_GEO && window.GM_GEO.getPlaceTypeMeta('obra_publica')) {
+          selectWorksitePlaceType('obra_publica');
+        }
       } else if (selectedPaymentMethod === 'gov_po') {
         selectPaymentMethod('card');
       }
@@ -1044,38 +1047,171 @@
   }
 
   /* =========================================================
-     PERMISOS DE OBRA RD Y CLÁUSULA STANDBY
+     REFERENCIA DE OBRA, TIPO DE LUGAR Y PERMISOS DINÁMICOS (RD)
      ========================================================= */
-  function getPermitHintForCategory(cat) {
-    const c = String(cat || '');
-    if (c.includes('Izaje')) return '💡 Para grúas y brazos articulados en zonas urbanas suele requerirse permiso de Ayuntamiento e INTRANT / DIGESETT.';
-    if (c.includes('Movimiento')) return '💡 En excavaciones, corte o bote de material recuerda verificar permiso de Medio Ambiente y Ayuntamiento.';
-    if (c.includes('Energía')) return '💡 Para plantas eléctricas en zonas urbanas, hoteles o residenciales verifica control de ruido (Salud Pública / Residencial).';
-    if (c.includes('Transporte')) return '💡 Verifica horarios permitidos de circulación pesada (INTRANT) y autorización de acceso en residenciales o plazas.';
-    return '💡 Indica qué permisos o autorizaciones aplican a esta obra para evitar retrasos, multas o viajes en vacío.';
+  let selectedPlaceTypeId = '';
+  let checkedPermitIds = new Set();
+  let permitsDeclChecked = false;
+
+  function selectWorksitePlaceType(placeId) {
+    if (!window.GM_GEO || !window.GM_GEO.getPlaceTypeMeta) return;
+    const meta = window.GM_GEO.getPlaceTypeMeta(placeId);
+    if (!meta) return;
+
+    selectedPlaceTypeId = placeId;
+    checkedPermitIds = new Set();
+
+    document.querySelectorAll('#qPlaceTypeGrid .place-type-card').forEach((btn) => {
+      const isActive = btn.dataset.place === placeId;
+      btn.classList.toggle('selected', isActive);
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+
+    renderDynamicPermitsPanel();
   }
 
-  function toggleWorksitePermit(btn) {
+  function toggleDynamicPermit(permitId, checkboxEl) {
+    if (!permitId) return;
+    const isChecked = checkboxEl ? Boolean(checkboxEl.checked) : !checkedPermitIds.has(permitId);
+    if (isChecked) checkedPermitIds.add(permitId);
+    else checkedPermitIds.delete(permitId);
+
+    // Actualizar estilos visuales del contenedor padre
+    if (checkboxEl && checkboxEl.closest) {
+      const row = checkboxEl.closest('.req-permit-row');
+      if (row) row.classList.toggle('checked', isChecked);
+    }
+    syncConfirmAllPermitsBtn();
+  }
+
+  function toggleOptionalPermitChip(btn) {
     if (!btn) return;
-    const val = btn.dataset.permit || '';
-    const isPrivate = val === 'Terreno privado sin restricciones';
-    const allBtns = document.querySelectorAll('#qPermitChips .permit-chip');
-    if (isPrivate) {
-      const willSelect = !btn.classList.contains('selected');
-      allBtns.forEach((b) => b.classList.remove('selected'));
-      if (willSelect) btn.classList.add('selected');
+    const pid = btn.dataset.permitId || '';
+    if (!pid) return;
+    if (checkedPermitIds.has(pid)) {
+      checkedPermitIds.delete(pid);
+      btn.classList.remove('selected');
     } else {
-      allBtns.forEach((b) => {
-        if (b.dataset.permit === 'Terreno privado sin restricciones') b.classList.remove('selected');
-      });
-      btn.classList.toggle('selected');
+      checkedPermitIds.add(pid);
+      btn.classList.add('selected');
     }
   }
 
+  function confirmAllRequiredPermits() {
+    if (!selectedPlaceTypeId || !window.GM_GEO || !currentItem) return;
+    const info = window.GM_GEO.getPermitsForPlaceType(selectedPlaceTypeId, currentItem.category);
+    info.required.forEach((p) => checkedPermitIds.add(p.id));
+    permitsDeclChecked = true;
+    renderDynamicPermitsPanel();
+  }
+
+  function onPermitsDeclChange(cb) {
+    permitsDeclChecked = Boolean(cb && cb.checked);
+  }
+
+  function syncConfirmAllPermitsBtn() {
+    if (!selectedPlaceTypeId || !window.GM_GEO || !currentItem) return;
+    const info = window.GM_GEO.getPermitsForPlaceType(selectedPlaceTypeId, currentItem.category);
+    const allReqDone = info.required.length > 0 && info.required.every((p) => checkedPermitIds.has(p.id));
+    const btn = document.getElementById('qConfirmAllPermitsBtn');
+    if (btn) {
+      btn.textContent = allReqDone ? '✓ Requeridos confirmados' : '✓ Confirmar todos';
+      btn.classList.toggle('done', allReqDone);
+    }
+  }
+
+  function renderDynamicPermitsPanel() {
+    const box = document.getElementById('qDynamicPermitsBox');
+    if (!box || !window.GM_GEO || !currentItem) return;
+
+    if (!selectedPlaceTypeId) {
+      box.innerHTML = `
+        <div class="permits-empty-prompt">
+          <span>👆</span>
+          <div>
+            <strong>Selecciona el tipo de lugar de tu obra</strong>
+            <p>Te mostraremos exactamente qué permisos exige República Dominicana para operar <em>${esc(currentItem.category)}</em> en ese emplazamiento.</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const info = window.GM_GEO.getPermitsForPlaceType(selectedPlaceTypeId, currentItem.category);
+    const allReqDone = info.required.length > 0 && info.required.every((p) => checkedPermitIds.has(p.id));
+
+    const reqRowsHtml = info.required.map((p) => {
+      const checked = checkedPermitIds.has(p.id);
+      const badgeLabel = p.reason && p.reason !== 'Lugar de obra'
+        ? `Requerido · ${esc(p.reason)}`
+        : 'Requerido';
+      return `
+        <label class="req-permit-row${checked ? ' checked' : ''}">
+          <input type="checkbox" data-req-permit="${esc(p.id)}" ${checked ? 'checked' : ''} onchange="window.GM_DETAIL.toggleDynamicPermit('${esc(p.id)}', this)">
+          <span class="req-permit-body">
+            <span class="req-permit-top">
+              <strong>${esc(p.label)}</strong>
+              <span class="req-permit-tag">${badgeLabel}</span>
+            </span>
+            <small>${esc(p.entity)}</small>
+          </span>
+        </label>
+      `;
+    }).join('');
+
+    const optHtml = info.optional.length
+      ? `
+        <div class="opt-permits-wrap">
+          <div class="opt-permits-lbl">Permisos adicionales (marca solo si aplica a tu frente de obra):</div>
+          <div class="permit-chips">
+            ${info.optional.map((p) => {
+              const sel = checkedPermitIds.has(p.id) ? ' selected' : '';
+              return `<button type="button" class="permit-chip${sel}" data-permit-id="${esc(p.id)}" title="${esc(p.entity)}" onclick="window.GM_DETAIL.toggleOptionalPermitChip(this)">+ ${esc(p.label)}</button>`;
+            }).join('')}
+          </div>
+        </div>
+      `
+      : '';
+
+    box.innerHTML = `
+      <div class="req-permits-panel">
+        <div class="req-permits-head">
+          <div>
+            <strong>Permisos requeridos · ${info.place.icon} ${esc(info.place.label)}</strong>
+            <span>Reglas RD para ${esc(currentItem.category)}</span>
+          </div>
+          <button type="button" id="qConfirmAllPermitsBtn" class="req-confirm-all${allReqDone ? ' done' : ''}" onclick="window.GM_DETAIL.confirmAllRequiredPermits()">
+            ${allReqDone ? '✓ Requeridos confirmados' : '✓ Confirmar todos'}
+          </button>
+        </div>
+
+        <div class="req-permits-list">
+          ${reqRowsHtml}
+        </div>
+
+        ${optHtml}
+
+        <div class="permit-hint">💡 ${esc(info.guidance)}</div>
+
+        <label class="permit-decl">
+          <input type="checkbox" id="qPermitsDecl" ${permitsDeclChecked ? 'checked' : ''} onchange="window.GM_DETAIL.onPermitsDeclChange(this)">
+          <span>Confirmo que la obra cuenta con los permisos vigentes marcados antes de la llegada del equipo. En caso de espera (<em>standby</em>), retención o viaje en vacío por falta de permisos o acceso, el contratista asume dichos costos.</span>
+        </label>
+      </div>
+    `;
+  }
+
   function getSelectedWorksitePermits() {
-    return Array.from(document.querySelectorAll('#qPermitChips .permit-chip.selected'))
-      .map((b) => b.dataset.permit)
-      .filter(Boolean);
+    if (!selectedPlaceTypeId || !window.GM_GEO || !currentItem) return [];
+    const info = window.GM_GEO.getPermitsForPlaceType(selectedPlaceTypeId, currentItem.category);
+    const all = [...info.required, ...info.optional];
+    return all.filter((p) => checkedPermitIds.has(p.id)).map((p) => p.label);
+  }
+
+  function getMissingRequiredPermits() {
+    if (!selectedPlaceTypeId || !window.GM_GEO || !currentItem) return [];
+    const info = window.GM_GEO.getPermitsForPlaceType(selectedPlaceTypeId, currentItem.category);
+    return info.required.filter((p) => !checkedPermitIds.has(p.id));
   }
 
   function stepQty(delta) {
@@ -1128,12 +1264,20 @@
       return;
     }
 
-    const worksitePermits = getSelectedWorksitePermits();
-    if (worksitePermits.length === 0) {
-      toast('Selecciona los permisos o tipo de acceso de la obra');
-      document.getElementById('qPermitChips')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!selectedPlaceTypeId) {
+      toast('Selecciona el tipo de lugar de la obra para verificar los permisos requeridos');
+      document.getElementById('qPlaceTypeGrid')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
+
+    const missingPermits = getMissingRequiredPermits();
+    if (missingPermits.length > 0) {
+      toast(`Confirma los ${missingPermits.length} permiso(s) requerido(s) para este tipo de lugar`);
+      document.getElementById('qDynamicPermitsBox')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    const worksitePermits = getSelectedWorksitePermits();
     if (!document.getElementById('qPermitsDecl')?.checked) {
       toast('Confirma la declaración de permisos vigentes de la obra');
       document.getElementById('qPermitsDecl')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1239,6 +1383,11 @@
       worksiteLng: geoState.lng,
       distanceKm: geoState.distanceKm,
       durationMin: geoState.durationMin,
+      worksitePlaceType: selectedPlaceTypeId,
+      worksitePlaceTypeLabel: (window.GM_GEO && window.GM_GEO.getPlaceTypeMeta(selectedPlaceTypeId))
+        ? window.GM_GEO.getPlaceTypeMeta(selectedPlaceTypeId).label
+        : '',
+      worksiteRef: (document.getElementById('qWorksiteRef')?.value || '').trim(),
       worksitePermits,
       permitsDeclared: true,
       startDate: calState.start,
@@ -1814,25 +1963,33 @@
                       </div>
                     </div>
                     <div id="qGeoStatus" class="geo-status-card"></div>
-                  </div>
 
-                  <!-- PERMISOS DE OBRA RD -->
-                  <div class="f-field full">
-                    <label>Permisos y Accesos de Obra (RD) <small class="req-tag">Obligatorio</small></label>
-                    <div class="permit-chips" id="qPermitChips">
-                      <button type="button" class="permit-chip" data-permit="Ayuntamiento / Vía pública" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🏛️ Ayuntamiento</button>
-                      <button type="button" class="permit-chip" data-permit="INTRANT / DIGESETT" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🚧 INTRANT / DIGESETT</button>
-                      <button type="button" class="permit-chip" data-permit="Medio Ambiente" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🌿 Medio Ambiente</button>
-                      <button type="button" class="permit-chip" data-permit="Residencial / Condominio / Plaza" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🏘️ Residencial / Plaza</button>
-                      <button type="button" class="permit-chip" data-permit="Salud Pública / Control de ruido" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🏥 Salud Pública / Ruido</button>
-                      <button type="button" class="permit-chip" data-permit="Zona Franca / Hotel / Puerto" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">🏭 Zona Franca / Hotel</button>
-                      <button type="button" class="permit-chip" data-permit="Terreno privado sin restricciones" onclick="window.GM_DETAIL.toggleWorksitePermit(this)">✅ Terreno privado libre</button>
+                    <!-- REFERENCIA DE LA OBRA Y TIPO DE LUGAR (DETERMINA PERMISOS REQUERIDOS EN RD) -->
+                    <div class="worksite-ref-box">
+                      <div class="f-field full" style="margin-bottom:10px;">
+                        <label for="qWorksiteRef">Referencia de Acceso / Indicaciones <small style="font-weight:600; color:var(--text-muted);">Opcional</small></label>
+                        <div class="f-box">
+                          <input type="text" id="qWorksiteRef" placeholder="Ej. Portón 2 de carga, Torre Blue, preguntar por Ing. Morales">
+                        </div>
+                      </div>
+
+                      <div class="f-field full">
+                        <label>Tipo de Lugar de la Obra <small class="req-tag">Define permisos RD</small></label>
+                        <div class="place-type-grid" id="qPlaceTypeGrid" role="group" aria-label="Tipo de lugar de la obra">
+                          ${(window.GM_GEO && Array.isArray(window.GM_GEO.WORKSITE_PLACE_TYPES) ? window.GM_GEO.WORKSITE_PLACE_TYPES : []).map((pt) => `
+                            <button type="button" class="place-type-card" data-place="${esc(pt.id)}" aria-pressed="false" onclick="window.GM_DETAIL.selectWorksitePlaceType('${esc(pt.id)}')">
+                              <span class="pt-icon">${pt.icon}</span>
+                              <span class="pt-meta">
+                                <strong>${esc(pt.label)}</strong>
+                                <small>${esc(pt.shortDesc)}</small>
+                              </span>
+                            </button>
+                          `).join('')}
+                        </div>
+                      </div>
+
+                      <div id="qDynamicPermitsBox" style="margin-top:10px;"></div>
                     </div>
-                    <div class="permit-hint">${getPermitHintForCategory(it.category)}</div>
-                    <label class="permit-decl">
-                      <input type="checkbox" id="qPermitsDecl" required>
-                      <span>Confirmo que la obra cuenta con los permisos y accesos vigentes seleccionados antes de la llegada del equipo. En caso de espera (<em>standby</em>), retención o viaje en vacío por falta de permisos, el contratista asume dichos costos.</span>
-                    </label>
                   </div>
 
                   <!-- MODO DE FACTURACIÓN ELECTRÓNICA (e-CF / DGII) -->
@@ -2061,6 +2218,7 @@
     selectPaymentMethod(selectedPaymentMethod);
     calcReceipt();
     initWorksiteMap();
+    renderDynamicPermitsPanel();
     renderReviewsSection();
 
     if (window.GM_DGII && window.GM_DGII.attachPair) {
@@ -2116,7 +2274,11 @@
     useMyLocation,
     setReviewStars,
     submitReview,
-    toggleWorksitePermit
+    selectWorksitePlaceType,
+    toggleDynamicPermit,
+    toggleOptionalPermitChip,
+    confirmAllRequiredPermits,
+    onPermitsDeclChange
   };
 
   async function initPage() {
