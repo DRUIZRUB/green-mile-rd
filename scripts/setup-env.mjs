@@ -402,10 +402,24 @@ function cmdCheck() {
     console.log(`  ${C.yellow}🟡 WhatsApp Cloud API:${C.reset} no configurado aún (opcional)`);
   }
 
-  // 4. Seguridad Admin & Webhooks
-  console.log(`\n${C.bold}4. Seguridad Backend:${C.reset}`);
+  // 4. Seguridad Admin & Webhooks + Firebase Admin SDK
+  console.log(`\n${C.bold}4. Seguridad Backend y Firebase Admin SDK:${C.reset}`);
   console.log(`  ${get('ADMIN_API_SECRET') ? `${C.green}✓ ADMIN_API_SECRET configurado` : `${C.yellow}🟡 ADMIN_API_SECRET vacío (usará PIN de Firestore)`}${C.reset}`);
   console.log(`  ${get('PAYMENT_WEBHOOK_SECRET') ? `${C.green}✓ PAYMENT_WEBHOOK_SECRET configurado` : `${C.yellow}🟡 PAYMENT_WEBHOOK_SECRET vacío`}${C.reset}`);
+  const saFile = resolveFileIfExists(get('FIREBASE_SERVICE_ACCOUNT_PATH') || './certs/firebase-adminsdk.json');
+  if (saFile) {
+    try {
+      const sa = JSON.parse(fs.readFileSync(saFile, 'utf8'));
+      const saIgnored = verifyGitIgnored(path.relative(ROOT_DIR, saFile));
+      console.log(`  ${C.green}✓ Firebase Admin SDK JSON:${C.reset} proyecto ${sa.project_id} (${sa.client_email}) — Git protegido: ${saIgnored ? 'SÍ' : 'REVISAR'}`);
+      if (!saIgnored) errors++;
+    } catch (err) {
+      console.log(`  ${C.red}✗ Firebase Admin SDK JSON inválido:${C.reset} ${err.message}`);
+      errors++;
+    }
+  } else {
+    console.log(`  ${C.yellow}🟡 Firebase Admin SDK JSON local:${C.reset} opcional (en Cloud Functions se usa ADC automáticamente)`);
+  }
 
   console.log('');
   if (errors > 0) {

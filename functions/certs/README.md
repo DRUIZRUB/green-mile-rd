@@ -2,6 +2,7 @@
 
 Coloca aquí tus certificados digitales locales cuando estén disponibles — **nunca** serán subidos a Git ni al paquete de código de Firebase (están bloqueados en `.gitignore` y `firebase.json`):
 
+- **Cuenta de Servicio Firebase Admin SDK (uso local/scripts):** `functions/certs/firebase-adminsdk.json`
 - **Certificado Digital DGII (INDOTEL / Viafirma / Cámara):** `functions/certs/dgii.p12`
 - **Certificado mTLS Azul (Banco Popular):** `functions/certs/azul.crt` (o `azul.pem`) y `functions/certs/azul.key`
 

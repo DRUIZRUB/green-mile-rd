@@ -64,6 +64,12 @@ deploy_all() {
   log_info "Regenerando páginas del catálogo..."
   npm --prefix "$ROOT_DIR" run build:pages
 
+  local sa_file="$ROOT_DIR/functions/certs/firebase-adminsdk.json"
+  if [[ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" && -f "$sa_file" ]]; then
+    export GOOGLE_APPLICATION_CREDENTIALS="$sa_file"
+    log_info "Usando cuenta de servicio local ($sa_file) para autenticación Firebase..."
+  fi
+
   log_info "Desplegando Cloud Functions v2 (inyectando variables desde functions/.env), Reglas Firestore y Hosting al proyecto $FIREBASE_PROJECT..."
   (cd "$ROOT_DIR" && npx --yes firebase-tools deploy --only functions,firestore:rules,hosting --project "$FIREBASE_PROJECT")
 

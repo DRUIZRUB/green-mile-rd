@@ -10,6 +10,7 @@
     "env:sync-certs": "node scripts/setup-env.mjs sync-certs",
     "env:check": "node scripts/setup-env.mjs check",
     "env:deploy": "bash scripts/configure-secrets.sh --deploy",
+    "firebase:init-db": "node scripts/init-firestore.mjs",
     "functions:install": "npm --prefix functions install",
     "functions:test": "node functions/test/smoke.test.js",
     "cap:sync": "npm run build:pages && npx cap sync",

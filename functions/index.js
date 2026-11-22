@@ -1,5 +1,7 @@
 'use strict';
 
+const fs = require('node:fs');
+const path = require('node:path');
 const { onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const { getConfig, getPublicHealthStatus } = require('./src/config');
@@ -8,7 +10,21 @@ const { issueEcfForBooking, queryDgiiTrackStatus } = require('./src/dgii/ecf-ser
 const { notifyInvoiceIssued, notifyOwnerSettlement } = require('./src/notifications');
 
 if (!admin.apps.length) {
-  admin.initializeApp();
+  const isCloudRuntime = Boolean(process.env.K_SERVICE || process.env.FUNCTION_TARGET);
+  const localSaRel = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || '';
+  let initialized = false;
+  if (!isCloudRuntime && localSaRel) {
+    const resolvedSa = path.isAbsolute(localSaRel) ? localSaRel : path.resolve(__dirname, localSaRel);
+    if (fs.existsSync(resolvedSa)) {
+      admin.initializeApp({
+        credential: admin.credential.cert(require(resolvedSa))
+      });
+      initialized = true;
+    }
+  }
+  if (!initialized) {
+    admin.initializeApp();
+  }
 }
 const db = admin.firestore();
 

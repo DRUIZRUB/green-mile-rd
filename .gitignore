@@ -24,7 +24,10 @@ functions/.env.*
 *.pem
 *.key
 *.crt
+*firebase-adminsdk*.json
+*service-account*.json
 functions/certs/*
 !functions/certs/README.md
+
 
 
