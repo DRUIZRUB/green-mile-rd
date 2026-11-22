@@ -1022,8 +1022,170 @@
     };
   }
 
+  /* =========================================================
+     TIPOS DE LUGAR DE OBRA Y PERMISOS REQUERIDOS DINÁMICOS (RD)
+     ========================================================= */
+  const WORKSITE_PLACE_TYPES = [
+    {
+      id: 'via_publica',
+      icon: '🛣️',
+      label: 'Vía Pública / Calle',
+      shortDesc: 'Avenida, acera, zanja o cierre vial',
+      guidance: 'Al operar en calle o vía pública en RD, el contratista debe gestionar la ocupación de vía y coordinación de tránsito antes de movilizar el equipo.',
+      requiredPermits: [
+        { id: 'ayuntamiento_via', label: 'Permiso de Ayuntamiento (Uso de Vía Pública)', entity: 'Alcaldía / ADN / Ayuntamiento local' },
+        { id: 'intrant_digesett', label: 'Permiso INTRANT / Coordinación DIGESETT', entity: 'Cierre o desvío vial y paso de carga pesada' }
+      ],
+      optionalPermits: [
+        { id: 'medio_ambiente', label: 'Permiso / No Objeción de Medio Ambiente', entity: 'MIMARENA (excavación o bote de escombros)' },
+        { id: 'salud_ruido', label: 'Control de Ruido / Horario Nocturno', entity: 'Ayuntamiento / Salud Pública' }
+      ]
+    },
+    {
+      id: 'residencial',
+      icon: '🏘️',
+      label: 'Residencial / Condominio',
+      shortDesc: 'Proyecto cerrado, torre o urbanización',
+      guidance: 'Los residenciales y torres en RD exigen carta de acceso previa, registro de operador/placa y respeto estricto al horario permitido.',
+      requiredPermits: [
+        { id: 'carta_condominio', label: 'Carta de Acceso de Administración / Condominio', entity: 'Seguridad / Junta de Vecinos o Constructora' },
+        { id: 'horario_ruido', label: 'Autorización de Horario de Obra y Ruido', entity: 'Reglamento interno / Ayuntamiento' }
+      ],
+      optionalPermits: [
+        { id: 'intrant_urbano', label: 'Permiso INTRANT de Carga Pesada Urbana', entity: 'Paso de camión o lowboy en zona urbana' },
+        { id: 'ayuntamiento_via', label: 'Permiso de Ayuntamiento (si ocupa acera/calle)', entity: 'Alcaldía local' }
+      ]
+    },
+    {
+      id: 'comercial',
+      icon: '🏬',
+      label: 'Plaza / Edificio Comercial',
+      shortDesc: 'Centro comercial, local o torre corporativa',
+      guidance: 'Plazas y edificios en operación suelen exigir maniobras fuera de horario comercial, póliza RC y autorización escrita de administración.',
+      requiredPermits: [
+        { id: 'acceso_plaza', label: 'Autorización de Administración y Seguridad de Plaza', entity: 'Gerencia del centro comercial / edificio' },
+        { id: 'horario_nocturno', label: 'Permiso de Maniobra, Horario y Control de Ruido', entity: 'Administración / Salud Pública' }
+      ],
+      optionalPermits: [
+        { id: 'ayuntamiento_via', label: 'Permiso de Ayuntamiento / Ocupación Perimetral', entity: 'Si la grúa o bomba ocupa vía externa' },
+        { id: 'intrant_digesett', label: 'Permiso INTRANT / DIGESETT', entity: 'Si requiere estacionar lowboy en avenida' }
+      ]
+    },
+    {
+      id: 'zona_franca_hotel',
+      icon: '🏭',
+      label: 'Zona Franca / Hotel / Puerto',
+      shortDesc: 'Parque industrial, resort, marina o terminal',
+      guidance: 'Zonas francas, hoteles y puertos requieren pase previo de contratista, inducción HSE y validación documental del operador y equipo.',
+      requiredPermits: [
+        { id: 'pase_seguridad', label: 'Pase de Contratista e Inducción de Seguridad (HSE)', entity: 'Administración de Zona Franca / Hotel / Puerto' },
+        { id: 'acreditacion_rc', label: 'Validación de Seguro RC y Documentación del Equipo', entity: 'Green Mile RD suministra póliza y ficha' }
+      ],
+      optionalPermits: [
+        { id: 'medio_ambiente', label: 'Licencia / Cumplimiento Ambiental (MIMARENA)', entity: 'Zonas costeras, marinas o parques industriales' },
+        { id: 'salud_ruido', label: 'Control de Ruido en Área Turística', entity: 'Regulación hotelera / Salud Pública' }
+      ]
+    },
+    {
+      id: 'obra_publica',
+      icon: '🏛️',
+      label: 'Obra Pública / Estado',
+      shortDesc: 'MOPC, INAPA, MINERD, Hospital o Alcaldía',
+      guidance: 'En proyectos estatales la entidad contratante emite la orden de inicio y coordina permisos sectoriales y seguridad vial en el frente de obra.',
+      requiredPermits: [
+        { id: 'orden_entidad', label: 'Orden de Inicio / Autorización de Entidad Contratante', entity: 'MOPC, INAPA, MINERD, Ayuntamiento u organismo' },
+        { id: 'intrant_digesett', label: 'Señalización Vial / Coordinación INTRANT-DIGESETT', entity: 'Seguridad vial en frente de obra pública' }
+      ],
+      optionalPermits: [
+        { id: 'medio_ambiente', label: 'Permiso Ambiental (MIMARENA)', entity: 'Obras viales, movimiento de tierra o demolición' }
+      ]
+    },
+    {
+      id: 'solar_privado',
+      icon: '🏗️',
+      label: 'Solar / Terreno Privado',
+      shortDesc: 'Lote cercado o finca sin ocupar vía pública',
+      guidance: 'Terreno privado con acceso directo sin cierre de calles. Solo verifica entrada despejada y terreno firme para descarga del lowboy.',
+      requiredPermits: [
+        { id: 'acceso_privado', label: 'Acceso Privado Habilitado y Espacio para Descarga', entity: 'Propietario / Maestro de obra en sitio' }
+      ],
+      optionalPermits: [
+        { id: 'medio_ambiente', label: 'Permiso de Medio Ambiente (Excavación / Bote)', entity: 'Si implica desmonte, corte o bote de tierra' },
+        { id: 'ayuntamiento_obra', label: 'Licencia de Construcción / Uso de Suelo', entity: 'MIVED / Ayuntamiento local' }
+      ]
+    }
+  ];
+
+  function getPlaceTypeMeta(placeId) {
+    return WORKSITE_PLACE_TYPES.find((p) => p.id === placeId) || null;
+  }
+
+  /**
+   * Devuelve los permisos requeridos y opcionales según el Tipo de Lugar de la obra
+   * y la categoría de maquinaria (promoviendo automáticamente permisos clave por tipo de equipo).
+   */
+  function getPermitsForPlaceType(placeId, equipmentCategory) {
+    const meta = getPlaceTypeMeta(placeId);
+    if (!meta) return { place: null, required: [], optional: [], guidance: '' };
+
+    const cat = String(equipmentCategory || '');
+    const required = meta.requiredPermits.map((p) => ({ ...p, required: true, reason: 'Lugar de obra' }));
+    let optional = meta.optionalPermits.map((p) => ({ ...p, required: false }));
+
+    const promoteOrAdd = (id, fallbackObj, reason) => {
+      if (required.some((p) => p.id === id)) return;
+      const optIdx = optional.findIndex((p) => p.id === id);
+      if (optIdx >= 0) {
+        const [item] = optional.splice(optIdx, 1);
+        required.push({ ...item, required: true, reason });
+      } else if (fallbackObj) {
+        required.push({ ...fallbackObj, required: true, reason });
+      }
+    };
+
+    // Reglas dinámicas según la categoría del equipo + lugar seleccionado
+    if (cat.includes('Izaje') && (placeId === 'residencial' || placeId === 'comercial')) {
+      promoteOrAdd(
+        'ayuntamiento_via',
+        { id: 'ayuntamiento_via', label: 'Permiso de Maniobra / Ayuntamiento', entity: 'Alcaldía / Seguridad perimetral de izaje' },
+        'Equipo de Izaje'
+      );
+    }
+    if (cat.includes('Movimiento') && (placeId === 'via_publica' || placeId === 'obra_publica')) {
+      promoteOrAdd(
+        'medio_ambiente',
+        { id: 'medio_ambiente', label: 'Permiso / No Objeción de Medio Ambiente (MIMARENA)', entity: 'Excavación, corte o bote de material' },
+        'Movimiento de Tierra'
+      );
+    }
+    if (cat.includes('Energía') && (placeId === 'zona_franca_hotel' || placeId === 'comercial' || placeId === 'residencial')) {
+      promoteOrAdd(
+        'salud_ruido',
+        { id: 'salud_ruido', label: 'Control de Ruido y Emisiones (Salud Pública / Sitio)', entity: 'Límites de decibeles para plantas eléctricas' },
+        'Planta Eléctrica'
+      );
+    }
+    if (cat.includes('Transporte') && (placeId === 'residencial' || placeId === 'comercial')) {
+      promoteOrAdd(
+        'intrant_urbano',
+        { id: 'intrant_urbano', label: 'Permiso INTRANT de Circulación Pesada Urbana', entity: 'Horarios y rutas de camiones pesados en RD' },
+        'Transporte Pesado'
+      );
+    }
+
+    return {
+      place: meta,
+      required,
+      optional,
+      guidance: meta.guidance
+    };
+  }
+
   global.GM_GEO = {
     DR_CITY_COORDS,
+    WORKSITE_PLACE_TYPES,
+    getPlaceTypeMeta,
+    getPermitsForPlaceType,
     getCityCoords,
     getEquipmentOrigin,
     haversineKm,

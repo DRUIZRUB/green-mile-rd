@@ -595,10 +595,16 @@
     const distLine = b.distanceKm
       ? `<div><strong>Logística / Traslado Lowboy:</strong> ${esc(b.distanceKm)} km desde ${esc(b.city)} ${b.transportCost > 0 ? `(${fmtRD(b.transportCost)})` : '(Retiro en patio)'}</div>`
       : '';
+    const placeTypeLine = b.worksitePlaceTypeLabel
+      ? `<strong>Tipo de Lugar de Obra:</strong> ${esc(b.worksitePlaceTypeLabel)}<br>`
+      : '';
+    const refLine = b.worksiteRef
+      ? `<br>Ref. Acceso: ${esc(b.worksiteRef)}`
+      : '';
     const permitsBlock = Array.isArray(b.worksitePermits) && b.worksitePermits.length
       ? `<div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:10px 12px; font-size:11.5px; color:#78350F; margin-bottom:12px;">
-          <strong>Permisos y Accesos de Obra RD:</strong> ${b.worksitePermits.map(esc).join(' • ')}<br>
-          <span style="font-size:10.5px;">El contratista declara contar con estos permisos vigentes antes de la llegada del equipo y asume costos de standby, retención o viaje en vacío por falta de permisos.</span>
+          ${placeTypeLine}<strong>Permisos Confirmados (RD):</strong> ${b.worksitePermits.map(esc).join(' • ')}<br>
+          <span style="font-size:10.5px;">El contratista declara contar con estos permisos vigentes antes de la llegada del equipo y asume costos de standby, retención o viaje en vacío por falta de permisos o acceso.</span>
         </div>`
       : '';
 
@@ -610,7 +616,7 @@
             <div style="font-size:11px; color:#475569;">RNC: ${esc(cfg.rnc)} • RPE Estado: ${esc(cfg.rpeNumber)}</div>
             <div style="font-size:11.5px; font-weight:800; color:#B85A27; margin-top:2px;">CONTRATO DIGITAL #GM-${String(b.id).slice(-6)}</div>
           </div>
-          ${logoSrc ? `<img src="${esc(logoSrc)}" style="height:54px; object-fit:contain;" alt="Green Mile RD">` : ''}
+          ${logoSrc ? `<img src="${esc(logoSrc)}" style="height:60px; width:auto; object-fit:contain;" alt="Green Mile Construction RD">` : ''}
         </div>
 
         <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
@@ -631,7 +637,7 @@
             <strong style="color:#0D223A; display:block; margin-bottom:3px;">${ncfMeta.isGov ? 'ENTIDAD CONTRATANTE (ESTADO)' : 'CONTRATISTA / CLIENTE'}</strong>
             ${esc(b.renter)}<br>
             RNC/Cédula: ${esc(b.renterRnc)}<br>
-            Obra: ${esc(b.address)}${gpsLine}
+            Obra: ${esc(b.address)}${refLine}${gpsLine}
             ${b.exemptionCode ? `<br>Res. Exención DGII: <strong>${esc(b.exemptionCode)}</strong>` : ''}
           </div>
         </div>
