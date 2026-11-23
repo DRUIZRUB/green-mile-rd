@@ -795,13 +795,26 @@
     });
   }
 
+  function ensureDefaultImportParts(list, defaultParts = []) {
+    if (!Array.isArray(defaultParts) || !defaultParts.length) return list;
+    const out = Array.isArray(list) ? list.slice() : [];
+    const seen = new Set(out.map((p) => String(p && p.id)));
+    defaultParts.forEach((dp) => {
+      if (dp && (dp.fulfillment === 'import_air' || dp.fulfillment === 'import_sea') && !seen.has(String(dp.id))) {
+        out.push(Object.assign({}, dp));
+        seen.add(String(dp.id));
+      }
+    });
+    return out;
+  }
+
   function getLocalParts(defaultParts = []) {
     try {
       const raw = localStorage.getItem(LOCAL_PARTS_KEY);
       if (raw) {
         const list = JSON.parse(raw);
         if (Array.isArray(list) && list.length) {
-          return applyDefaultPartImages(list, defaultParts);
+          return ensureDefaultImportParts(applyDefaultPartImages(list, defaultParts), defaultParts);
         }
       }
     } catch (_) {}
@@ -835,6 +848,12 @@
         });
         if (cloudMap.size === 0 && Array.isArray(defaultParts)) {
           defaultParts.forEach((p) => cloudMap.set(String(p.id), Object.assign({}, p)));
+        } else if (Array.isArray(defaultParts)) {
+          defaultParts.forEach((p) => {
+            if ((p.fulfillment === 'import_air' || p.fulfillment === 'import_sea') && !cloudMap.has(String(p.id))) {
+              cloudMap.set(String(p.id), Object.assign({}, p));
+            }
+          });
         }
         getLocalParts([]).forEach((lp) => {
           if (lp && lp.cloudSynced === false && !cloudMap.has(String(lp.id))) {
@@ -1135,6 +1154,114 @@
     }
   }
 
+  const LOCAL_IMPORTS_KEY = 'gm_rd_import_requests_v1';
+
+  function getLocalImportRequests() {
+    try {
+      const list = JSON.parse(localStorage.getItem(LOCAL_IMPORTS_KEY) || '[]');
+      return Array.isArray(list) ? list : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveLocalImportRequests(list) {
+    try {
+      localStorage.setItem(LOCAL_IMPORTS_KEY, JSON.stringify(Array.isArray(list) ? list : []));
+    } catch (_) {}
+  }
+
+  function subscribeImportRequests(onData) {
+    setTimeout(() => onData(getLocalImportRequests()), 0);
+    if (!db) return () => {};
+    return db.collection('import_requests').onSnapshot(
+      (snap) => {
+        const cloudMap = new Map();
+        snap.forEach((doc) => {
+          const d = Object.assign({}, doc.data(), { id: doc.data().id ?? doc.id, cloudSynced: true });
+          cloudMap.set(String(d.id), d);
+        });
+        getLocalImportRequests().forEach((li) => {
+          if (li && li.cloudSynced === false && !cloudMap.has(String(li.id))) {
+            cloudMap.set(String(li.id), li);
+          }
+        });
+        const merged = Array.from(cloudMap.values()).sort((a, b) => Number(b.id) - Number(a.id));
+        saveLocalImportRequests(merged);
+        onData(merged);
+      },
+      (err) => console.warn('[Green Mile Firebase] Import requests listener error:', err.message)
+    );
+  }
+
+  async function saveImportRequest(reqObj) {
+    if (!reqObj || reqObj.id == null) return reqObj;
+    const localRec = Object.assign({}, reqObj, { cloudSynced: false });
+    const next = getLocalImportRequests().filter((r) => String(r.id) !== String(reqObj.id));
+    next.unshift(localRec);
+    saveLocalImportRequests(next);
+
+    if (!db) return localRec;
+    try {
+      await db.collection('import_requests').doc(String(reqObj.id)).set(
+        Object.assign({}, reqObj, {
+          cloudSynced: true,
+          createdAt: global.firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: global.firebase.firestore.FieldValue.serverTimestamp()
+        }),
+        { merge: true }
+      );
+      const synced = Object.assign({}, reqObj, { cloudSynced: true });
+      saveLocalImportRequests(getLocalImportRequests().map((r) => (String(r.id) === String(reqObj.id) ? synced : r)));
+      return synced;
+    } catch (err) {
+      console.warn('[Green Mile Firebase] saveImportRequest local fallback:', err.message);
+      return localRec;
+    }
+  }
+
+  async function updateImportRequest(reqId, patch) {
+    if (reqId == null) return patch;
+    const list = getLocalImportRequests();
+    let updatedLocal = null;
+    const next = list.map((r) => {
+      if (String(r.id) !== String(reqId)) return r;
+      updatedLocal = Object.assign({}, r, patch || {}, { updatedAtIso: new Date().toISOString() });
+      return updatedLocal;
+    });
+    if (!updatedLocal && patch && patch.id != null) {
+      updatedLocal = Object.assign({}, patch, { updatedAtIso: new Date().toISOString() });
+      next.unshift(updatedLocal);
+    }
+    saveLocalImportRequests(next);
+
+    if (!db) return updatedLocal || patch;
+    try {
+      const payload = Object.assign({}, updatedLocal || patch || {}, {
+        cloudSynced: true,
+        updatedAt: global.firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await db.collection('import_requests').doc(String(reqId)).set(payload, { merge: true });
+      const synced = Object.assign({}, updatedLocal || patch || {}, { cloudSynced: true });
+      saveLocalImportRequests(getLocalImportRequests().map((r) => (String(r.id) === String(reqId) ? synced : r)));
+      return synced;
+    } catch (err) {
+      console.warn('[Green Mile Firebase] updateImportRequest local fallback:', err.message);
+      return updatedLocal || patch;
+    }
+  }
+
+  async function deleteImportRequest(reqId) {
+    if (reqId == null) return;
+    saveLocalImportRequests(getLocalImportRequests().filter((r) => String(r.id) !== String(reqId)));
+    if (!db) return;
+    try {
+      await db.collection('import_requests').doc(String(reqId)).delete();
+    } catch (err) {
+      console.warn('[Green Mile Firebase] deleteImportRequest warning:', err.message);
+    }
+  }
+
   global.GM_FIREBASE = {
     isReady,
     compressImageFile,
@@ -1195,6 +1322,11 @@
     getLocalProductChats,
     subscribeProductChats,
     subscribeAllProductChats,
-    sendProductChatMessage
+    sendProductChatMessage,
+    getLocalImportRequests,
+    subscribeImportRequests,
+    saveImportRequest,
+    updateImportRequest,
+    deleteImportRequest
   };
 })(window);

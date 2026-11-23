@@ -142,6 +142,21 @@
     cardItbisRetentionPct: 2.0,
     govIsrRetentionPct: 5.0,
     adminPin: '2026',
+    importConfig: {
+      usdToDop: 60.5,
+      airRateUsdPerLb: 7.5,
+      airMinUsd: 35,
+      seaRateUsdPerLb: 2.25,
+      seaMinUsd: 85,
+      originPickupUsd: 25,
+      insurancePct: 1.8,
+      caftaTariffPct: 0,
+      nonCaftaTariffPct: 8,
+      customsBrokerUsd: 95,
+      managementFeePct: 12,
+      localDeliveryRD: 2500,
+      depositPct: 70
+    },
     sequences: {
       E31: { prefix: 'E31', label: 'Crédito Fiscal Electrónico', next: 101, max: 5000, expires: '2027-12-31' },
       E32: { prefix: 'E32', label: 'Factura de Consumo Electrónica', next: 101, max: 5000, expires: '2027-12-31' },

@@ -56,6 +56,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /import_requests/{reqId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.partTitle is string
+                            && request.resource.data.machineBrand is string
+                            && request.resource.data.requesterName is string;
+      allow delete: if true;
+    }
+
     match /product_chats/{msgId} {
       allow read: if true;
       allow create: if request.resource.data.itemId != null

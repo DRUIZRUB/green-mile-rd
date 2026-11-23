@@ -386,13 +386,23 @@
     const maxStock = isPart ? Math.max(1, Number(item.stock || 1)) : 1;
     const imgs = getImages(item, isPart);
     const authOwner = (FB && FB.getCurrentOwner) ? FB.getCurrentOwner() : null;
+    const IMP = window.GM_IMPORT || null;
+    const fulfill = isPart && IMP ? IMP.getFulfillmentMeta(item) : { isImport: false, badgeText: maxStock > 1 ? `Stock: ${maxStock}` : '1 disponible', pillBg: '#0D223A', pillColor: '#fff', originCountry: 'República Dominicana', leadTimeDays: '24–48 horas', longLabel: 'Disponible en Inventario RD' };
+    const isIntlPart = Boolean(isPart && fulfill.isImport);
     const quickPrompts = isPart
-      ? [
-          '¿Sigue disponible en inventario?',
-          '¿Es compatible con mi modelo de equipo?',
-          '¿Hacen envío hoy mismo dentro de RD?',
-          '¿Aceptan oferta por compra directa?'
-        ]
+      ? (isIntlPart
+          ? [
+              '¿Confirman compatibilidad con el serial/PIN de mi máquina?',
+              '¿El precio incluye flete, aduanas DGA e ITBIS?',
+              '¿Tienen versión OEM y también Aftermarket?',
+              '¿En cuántos días exactos llega a Santo Domingo / obra?'
+            ]
+          : [
+              '¿Sigue disponible en inventario?',
+              '¿Es compatible con mi modelo de equipo?',
+              '¿Hacen envío hoy mismo dentro de RD?',
+              '¿Aceptan oferta por compra directa?'
+            ])
       : [
           '¿Sigue disponible para inspección en patio?',
           '¿La matrícula y papeles están al día para traspaso?',
@@ -412,12 +422,12 @@
     const specs = isPart
       ? [
           { k: 'Condición', v: isNew ? '✨ Nueva (Sellada / OEM)' : '🔧 Usada (Operativa / Revisada)' },
-          { k: 'Categoría', v: item.category || 'Repuestos Pesados' },
+          { k: 'Disponibilidad / Modalidad', v: fulfill.longLabel },
+          { k: 'Origen / Despacho', v: isIntlPart ? `🌍 ${fulfill.originCountry} → RD (${fulfill.leadTimeDays})` : `📍 ${item.city || 'Santo Domingo'}, República Dominicana` },
           { k: 'Número de Parte / OEM', v: item.partNumber || 'Consultar ficha' },
           { k: 'Marca', v: item.brand || 'OEM Heavy Duty' },
           { k: 'Equipos Compatibles', v: item.compatibleWith || 'Maquinaria Pesada RD' },
-          { k: 'Disponibilidad / Stock', v: `${maxStock} unidad${maxStock > 1 ? 'es' : ''} disponible${maxStock > 1 ? 's' : ''}` },
-          { k: 'Ubicación', v: `${item.city || 'Santo Domingo'}, República Dominicana` },
+          ...(isIntlPart && item.fobUsd ? [{ k: 'Ref. FOB Exterior / Peso', v: `US$ ${Number(item.fobUsd).toLocaleString('en-US')} • ~${item.weightLb || 10} lb (DR-CAFTA/DGA incl.)` }] : [{ k: 'Unidades en Stock', v: `${maxStock} unidad${maxStock > 1 ? 'es' : ''} disponible${maxStock > 1 ? 's' : ''}` }]),
           { k: 'Garantía / Respaldo', v: item.warranty || 'Factura con e-NCF en Green Mile RD' }
         ]
       : [
@@ -430,6 +440,8 @@
           { k: 'Garantía / Documentos', v: item.warranty || 'Matrícula y documentación al día' },
           { k: 'Facturación Fiscal', v: 'Comprobante Electrónico e-NCF (E31 / E32)' }
         ];
+
+    const customImportHref = `./index.html?mode=parts&action=import&q=${encodeURIComponent(item.partNumber || item.title || '')}`;
 
     root.innerHTML = `
       <nav class="crumbs no-print" aria-label="Ruta de navegación" style="margin-bottom:14px; font-size:12.5px; color:var(--text-muted); display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
@@ -446,9 +458,9 @@
           <section class="panel" style="padding:18px;">
             <div class="prod-hero-media">
               <img id="prodHeroImg" src="${imgs[0]}" alt="${esc(item.title)}" />
-              <span class="prod-badge-tl">📍 ${esc(item.city || 'Santo Domingo')}</span>
+              <span class="prod-badge-tl">${isIntlPart ? `🌍 ${esc(fulfill.originCountry)}` : `📍 ${esc(item.city || 'Santo Domingo')}`}</span>
               <span class="prod-badge-bl" style="background:${isNew ? '#059669' : '#D97706'};">${isNew ? '✨ Nueva' : '🔧 Usada'}</span>
-              <span class="prod-badge-br">${isPart ? (maxStock > 1 ? `Stock: ${maxStock}` : '1 disponible') : 'EN VENTA'}</span>
+              <span class="prod-badge-br" style="background:${fulfill.pillBg}; color:${fulfill.pillColor};">${isPart ? esc(fulfill.badgeText) : 'EN VENTA'}</span>
             </div>
             ${thumbsHtml}
 
@@ -456,22 +468,23 @@
               <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:6px;">
                 <span style="font-size:11px; font-weight:800; color:var(--orange); text-transform:uppercase; letter-spacing:0.04em;">${esc(item.category)}</span>
                 ${isPart && item.partNumber ? `<span style="font-size:11px; font-family:monospace; font-weight:800; background:var(--navy-soft); color:var(--navy); padding:2px 8px; border-radius:6px;">${esc(item.partNumber)}</span>` : ''}
+                ${isIntlPart ? `<span style="font-size:11px; font-weight:800; background:${fulfill.softBg}; color:${fulfill.softColor}; padding:2px 9px; border-radius:999px;">${esc(fulfill.badgeText)} • DGA + e-NCF Incluidos</span>` : ''}
               </div>
               <h1 style="font-size:24px; font-weight:800; color:var(--navy); line-height:1.22; margin-bottom:10px;">${esc(item.title)}</h1>
 
-              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; background:#ECFDF5; border:1px solid #A7F3D0; border-radius:12px; padding:11px 14px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; background:${isIntlPart ? '#EFF6FF' : '#ECFDF5'}; border:1px solid ${isIntlPart ? '#BFDBFE' : '#A7F3D0'}; border-radius:12px; padding:11px 14px;">
                 <div>
-                  <strong style="font-size:13.5px; color:#065F46; display:block;">✓ ${esc(item.owner || 'Propietario Verificado DGII')}</strong>
-                  <span style="font-size:12px; color:#047857;">Vendedor verificado en Green Mile RD • ${esc(item.city || 'RD')} • Chat directo en la app</span>
+                  <strong style="font-size:13.5px; color:${isIntlPart ? '#1E3A8A' : '#065F46'}; display:block;">✓ ${esc(item.owner || 'Propietario Verificado DGII')}</strong>
+                  <span style="font-size:12px; color:${isIntlPart ? '#1D4ED8' : '#047857'};">${isIntlPart ? `Importación gestionada desde ${esc(fulfill.originCountry)} • Desaduanaje DGA + e-NCF local` : `Vendedor verificado en Green Mile RD • ${esc(item.city || 'RD')} • Chat directo en la app`}</span>
                 </div>
-                <span style="font-size:11px; font-weight:800; background:#059669; color:#fff; padding:4px 10px; border-radius:999px;">Compra Protegida</span>
+                <span style="font-size:11px; font-weight:800; background:${isIntlPart ? '#0369A1' : '#059669'}; color:#fff; padding:4px 10px; border-radius:999px;">${isIntlPart ? '🌍 Puesto en RD' : 'Compra Protegida'}</span>
               </div>
             </div>
           </section>
 
           <section class="panel" style="padding:20px;">
             <h2 style="font-size:17px; color:var(--navy); margin-bottom:4px;">Ficha Técnica y Condición</h2>
-            <p style="font-size:12.5px; color:var(--text-muted);">Información declarada por el propietario y validada para venta en República Dominicana</p>
+            <p style="font-size:12.5px; color:var(--text-muted);">${isIntlPart ? 'Importación gestionada llave en mano: validamos tu número de serie (PIN) antes de embarcar' : 'Información declarada por el propietario y validada para venta en República Dominicana'}</p>
             <div class="prod-spec-grid">
               ${specs.map((s) => `
                 <div class="prod-spec-cell">
@@ -486,8 +499,19 @@
             <h2 style="font-size:17px; color:var(--navy); margin-bottom:8px;">Descripción y Garantía</h2>
             <p style="font-size:14px; color:var(--text-muted); line-height:1.65;">${esc(item.desc || 'Disponible para entrega o inspección coordinada en República Dominicana a través de Green Mile RD.')}</p>
             <div style="margin-top:14px; background:var(--navy-soft); border:1px solid #DCE5F0; border-left:4px solid var(--orange); border-radius:12px; padding:12px 14px; font-size:12.5px; color:var(--navy); line-height:1.5;">
-              <strong>🛡️ Cierre Seguro en Green Mile RD:</strong> Habla directamente con el vendedor aquí para confirmar compatibilidad, acordar precio o agendar inspección en patio. Cuando estén listos, cierra la compra con <strong>factura electrónica e-NCF</strong> y respaldo de entrega.
+              ${isIntlPart
+                ? '<strong>🌍 Importación Llave en Mano (DGA + DGII):</strong> Green Mile Construction RD compra en origen, gestiona flete internacional, desaduanaje DGA (aplicando DR-CAFTA cuando corresponde) y te emite <strong>factura fiscal local e-CF</strong> deducible.'
+                : '<strong>🛡️ Cierre Seguro en Green Mile RD:</strong> Habla directamente con el vendedor aquí para confirmar compatibilidad, acordar precio o agendar inspección en patio. Cuando estén listos, cierra la compra con <strong>factura electrónica e-NCF</strong> y respaldo de entrega.'}
             </div>
+            ${isPart ? `
+              <div class="no-print" style="margin-top:12px; background:linear-gradient(135deg, #0D223A 0%, #163558 100%); color:#fff; border-radius:13px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:200px;">
+                  <strong style="font-size:13.5px; display:block; margin-bottom:2px;">✈️ ¿Necesitas otro número de parte o importarla de otro país?</strong>
+                  <span style="font-size:12px; color:#CBD5E1;">Envíanos el Part Number o serial de tu máquina y te cotizamos puesto en obra RD (EE. UU., Europa o Asia).</span>
+                </div>
+                <a class="btn btn-primary" href="${customImportHref}" style="padding:9px 14px; font-size:12px; text-decoration:none; white-space:nowrap;">🌍 Solicitar Importación →</a>
+              </div>
+            ` : ''}
           </section>
         </div>
 
@@ -495,14 +519,14 @@
         <aside class="detail-right">
           <div class="panel buy-panel-sticky" style="padding:20px;">
             <div class="buy-price-head">
-              <span class="eyebrow">${isPart ? 'Repuesto en Venta' : 'Maquinaria en Venta'} • ${isNew ? 'Nueva' : 'Usada'}</span>
-              <div class="big-price">${GM.fmtRD(unitPrice)} <small>${isPart ? '/ unidad' : '+ ITBIS'}</small></div>
-              <span class="sub-note">✓ Negocia directo con el vendedor • Cierre con e-NCF protegido</span>
+              <span class="eyebrow">${isIntlPart ? `Importación Gestionada • ${esc(fulfill.leadTimeDays)}` : `${isPart ? 'Repuesto en Venta' : 'Maquinaria en Venta'} • ${isNew ? 'Nueva' : 'Usada'}`}</span>
+              <div class="big-price">${GM.fmtRD(unitPrice)} <small>${isIntlPart ? 'puesto en RD' : (isPart ? '/ unidad' : '+ ITBIS')}</small></div>
+              <span class="sub-note">${isIntlPart ? `✓ Flete ${fulfill.mode === 'sea' ? 'marítimo LCL' : 'aéreo express'} + Aduanas DGA + e-NCF local` : '✓ Negocia directo con el vendedor • Cierre con e-NCF protegido'}</span>
             </div>
 
             <div class="action-tabs no-print" role="tablist">
               <button type="button" class="action-tab active" id="tabBtnChat" onclick="window.GM_PRODUCT_PAGE.switchRightTab('chat')">💬 Hablar / Ofertar</button>
-              <button type="button" class="action-tab" id="tabBtnBuy" onclick="window.GM_PRODUCT_PAGE.switchRightTab('buy')">🛒 Comprar / Reservar</button>
+              <button type="button" class="action-tab" id="tabBtnBuy" onclick="window.GM_PRODUCT_PAGE.switchRightTab('buy')">${isIntlPart ? '✈️ Encargar / Comprar' : '🛒 Comprar / Reservar'}</button>
             </div>
 
             <!-- TAB 1: DIRECT IN-APP CHAT & OFFER NEGOTIATION WITH SELLER -->
@@ -533,7 +557,7 @@
                   <div class="prod-field full">
                     <label for="chatMsgInput">Mensaje directo al vendedor <small>*</small></label>
                     <div class="prod-input-box">
-                      <textarea id="chatMsgInput" rows="2" placeholder="${isPart ? 'Pregunta por compatibilidad, medidas, serie o envío en RD...' : 'Pregunta por historial, agenda inspección en patio o negocia precio...'}" required></textarea>
+                      <textarea id="chatMsgInput" rows="2" placeholder="${isIntlPart ? 'Indica el número de serie (PIN) de tu máquina y ciudad de entrega para confirmar plazo exacto...' : (isPart ? 'Pregunta por compatibilidad, medidas, serie o envío en RD...' : 'Pregunta por historial, agenda inspección en patio o negocia precio...')}" required></textarea>
                     </div>
                   </div>
                 </div>
@@ -544,7 +568,7 @@
 
               <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
                 <span style="font-size:11.5px; color:var(--text-muted);">¿Ya confirmaste todo y deseas asegurarla?</span>
-                <button type="button" class="btn btn-navy" style="padding:7px 12px; font-size:11.5px;" onclick="window.GM_PRODUCT_PAGE.switchRightTab('buy')">🛒 Reservar con e-NCF →</button>
+                <button type="button" class="btn btn-navy" style="padding:7px 12px; font-size:11.5px;" onclick="window.GM_PRODUCT_PAGE.switchRightTab('buy')">${isIntlPart ? '✈️ Encargar con e-NCF →' : '🛒 Reservar con e-NCF →'}</button>
               </div>
             </div>
 
@@ -562,11 +586,14 @@
                   ` : `<input type="hidden" id="buyQty" value="1" />`}
 
                   <div class="prod-field ${isPart ? '' : 'full'}">
-                    <label for="buyDelivery">Entrega / Inspección</label>
+                    <label for="buyDelivery">Entrega / Logística</label>
                     <div class="prod-input-box">
                       <select id="buyDelivery" onchange="window.GM_PRODUCT_PAGE.updateReceipt()">
-                        <option value="pickup">🏢 Retiro / Inspección en patio (${esc(item.city || 'RD')})</option>
-                        <option value="shipping">${isPart ? '📦 Envío por mensajería / carga en RD' : '🚛 Coordinar traslado en Lowboy en RD'}</option>
+                        ${isIntlPart
+                          ? `<option value="shipping">${fulfill.mode === 'sea' ? '🚢 Importación Marítima LCL → Obra/Almacén RD' : '✈️ Importación Aérea Express → Obra/Almacén RD'}</option>
+                             <option value="pickup">🏢 Retirar en almacén Green Mile Santo Domingo</option>`
+                          : `<option value="pickup">🏢 Retiro / Inspección en patio (${esc(item.city || 'RD')})</option>
+                             <option value="shipping">${isPart ? '📦 Envío por mensajería / carga en RD' : '🚛 Coordinar traslado en Lowboy en RD'}</option>`}
                       </select>
                     </div>
                   </div>
@@ -586,7 +613,7 @@
                     <div class="prod-input-box">
                       <select id="buyPayment">
                         <option value="transfer">🏦 Transferencia Bancaria</option>
-                        <option value="inspection">🤝 Inspección Previa en Patio</option>
+                        ${isIntlPart ? '<option value="deposit_70_30">📦 Anticipo 70% al pedir / 30% al llegar a RD</option>' : '<option value="inspection">🤝 Inspección Previa en Patio</option>'}
                         <option value="card">💳 Tarjeta / Financiamiento</option>
                       </select>
                     </div>
@@ -617,9 +644,9 @@
                   </div>
 
                   <div class="prod-field full">
-                    <label for="buyNotes">Notas / Dirección de entrega (Opcional)</label>
+                    <label for="buyNotes">${isIntlPart ? 'Número de Serie (PIN) de tu máquina y dirección de obra *' : 'Notas / Dirección de entrega (Opcional)'}</label>
                     <div class="prod-input-box">
-                      <textarea id="buyNotes" rows="2" placeholder="${isPart ? 'Ej. Despachar a taller en Santiago o confirmar compatibilidad...' : 'Ej. Deseo agendar inspección mecánica esta semana...'}"></textarea>
+                      <textarea id="buyNotes" rows="2" placeholder="${isIntlPart ? 'Ej. Serial CAT0320DK... • Entregar en obra Punta Cana' : (isPart ? 'Ej. Despachar a taller en Santiago o confirmar compatibilidad...' : 'Ej. Deseo agendar inspección mecánica esta semana...')}" ${isIntlPart ? 'required' : ''}></textarea>
                     </div>
                   </div>
                 </div>
@@ -627,7 +654,7 @@
                 <div class="prod-receipt" id="prodReceiptBox"></div>
 
                 <button type="submit" class="btn btn-primary" id="prodSubmitBtn" style="width:100%; min-height:48px; font-size:14.5px;">
-                  Confirmar Orden de Compra
+                  ${isIntlPart ? '✈️ Confirmar Pedido de Importación' : 'Confirmar Orden de Compra'}
                 </button>
               </form>
             </div>

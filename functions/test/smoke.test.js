@@ -182,7 +182,40 @@ async function run() {
   );
   assert.strictEqual(verifyWebhookSignature(stripePayload, `t=${nowSec},v1=deadbeef`, { isStripe: true, nowSec }).verified, false);
 
-  console.log('✅ ALL CLOUD FUNCTIONS BACKEND TESTS PASSED (CORS + Payments + Real PKCS#12 XMLDSig e-CF + QR + HMAC/Stripe Webhooks)!');
+  console.log('5. Verificando motor de Importación Internacional de Repuestos (DGA <= US$200, DR-CAFTA, Marítimo LCL)...');
+  const imp = require('../../public/js/import-engine.js');
+  // Caso A: Courier aéreo <= US$ 200 FOB -> Exento DGA (Decreto 402-05)
+  const smallAir = imp.calculateLandedCost({ fobUsd: 150, qty: 1, weightLb: 3, origin: 'usa_miami', shippingMode: 'air' });
+  assert.strictEqual(smallAir.deMinimisExempt, true);
+  assert.strictEqual(smallAir.tariffUsd, 0);
+  assert.strictEqual(smallAir.dgaItbisUsd, 0);
+  assert.strictEqual(smallAir.customsBrokerUsd, 0);
+  assert.strictEqual(smallAir.depositPct, 100);
+  assert(smallAir.totalRD > 0, 'Total RD$ must be positive');
+
+  // Caso B: > US$ 200 FOB desde EE. UU. (DR-CAFTA 0% arancel + 18% ITBIS + corredor + anticipo 70%)
+  const usaCafta = imp.calculateLandedCost({ fobUsd: 1200, qty: 1, weightLb: 10, origin: 'usa_miami', shippingMode: 'air', applyCafta: true });
+  assert.strictEqual(usaCafta.deMinimisExempt, false);
+  assert.strictEqual(usaCafta.caftaApplied, true);
+  assert.strictEqual(usaCafta.tariffPct, 0);
+  assert.strictEqual(usaCafta.tariffUsd, 0);
+  assert(usaCafta.dgaItbisUsd > 0, 'ITBIS 18% DGA must apply over US$200');
+  assert.strictEqual(usaCafta.depositPct, 70);
+  assert.strictEqual(usaCafta.depositRD + usaCafta.balanceRD, usaCafta.totalRD);
+
+  // Caso C: Europa / Asia Marítimo LCL -> aplica arancel no-CAFTA (8%) + flete marítimo más económico en carga pesada
+  const asiaSea = imp.calculateLandedCost({ fobUsd: 2000, qty: 1, weightLb: 400, origin: 'asia', shippingMode: 'sea', applyCafta: true });
+  const asiaAir = imp.calculateLandedCost({ fobUsd: 2000, qty: 1, weightLb: 400, origin: 'asia', shippingMode: 'air', applyCafta: true });
+  assert.strictEqual(asiaSea.caftaApplied, false);
+  assert.strictEqual(asiaSea.tariffPct, 8);
+  assert(asiaSea.freightUsd < asiaAir.freightUsd, 'Sea freight must be cheaper than air for 400 lb heavy part');
+
+  // Badges híbridos
+  assert.strictEqual(imp.getFulfillmentMeta({ fulfillment: 'local_rd', stock: 3 }).isImport, false);
+  assert.strictEqual(imp.getFulfillmentMeta({ fulfillment: 'import_air', originCountry: 'EE. UU.' }).isImport, true);
+  assert.strictEqual(imp.getFulfillmentMeta({ fulfillment: 'import_sea', originCountry: 'Asia' }).mode, 'sea');
+
+  console.log('✅ ALL BACKEND & IMPORT ENGINE TESTS PASSED (CORS + Payments + XMLDSig e-CF + Webhooks + Landed Cost DGA)!');
 }
 
 run().catch((err) => {
