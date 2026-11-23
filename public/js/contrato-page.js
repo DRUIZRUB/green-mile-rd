@@ -5,7 +5,7 @@
   const GM = window.GM_CATALOG;
   const FB = window.GM_FIREBASE;
   const BILL = window.GM_BILLING;
-  const LOGO_SRC = './logo.png?v=20261122-7';
+  const LOGO_SRC = './logo.png?v=20261122-8';
 
   let currentBooking = null;
   let activeDocTab = 'contract';
@@ -161,6 +161,21 @@
       `;
 
     const owner = getAuthenticatedOwner();
+    const myRncDigits = owner ? String(owner.rncDigits || owner.rncFormatted || '').replace(/\D/g, '') : '';
+    const eqOwnerRncDigits = String(b.ownerRnc || '').replace(/\D/g, '');
+    const isViewingAsOwner = Boolean(myRncDigits && eqOwnerRncDigits && myRncDigits === eqOwnerRncDigits);
+    let reviewCtaHtml = '';
+    if (b.equipmentId && !isViewingAsOwner) {
+      const stateEq = GM ? (GM.loadState().equipment || []) : [];
+      const eqObj = stateEq.find((x) => String(x.id) === String(b.equipmentId)) ||
+        ((GM && GM.DEFAULT_EQUIPMENT) ? GM.DEFAULT_EQUIPMENT.find((x) => String(x.id) === String(b.equipmentId)) : null);
+      const eqHref = (eqObj && GM && GM.getEquipmentPath)
+        ? GM.getEquipmentPath(eqObj, '')
+        : `./equipo.html?id=${encodeURIComponent(b.equipmentId)}`;
+      const reviewHref = `${eqHref}${eqHref.includes('?') ? '&' : '?'}reviewBooking=${encodeURIComponent(b.id)}#reviewsSection`;
+      reviewCtaHtml = `<a class="btn btn-ghost" style="color:#B45309; border-color:#FCD34D; background:#FFFBEB;" href="${reviewHref}">★ Calificar Equipo</a>`;
+    }
+
     const createdBannerHtml = isNewlyCreated
       ? `
         <div class="created-banner no-print" style="display:flex;">
@@ -214,6 +229,7 @@
           <div class="doc-toolbar-group">
             <button type="button" class="btn btn-navy" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
             <button type="button" class="btn btn-ghost" onclick="window.GM_CONTRACT_PAGE.copyDocumentLink()">🔗 Copiar Enlace</button>
+            ${reviewCtaHtml}
           </div>
           <div class="doc-toolbar-group">
             ${owner ? `<a class="btn btn-ghost" href="./index.html?tab=profile">← Volver a Mi Panel</a>` : `<a class="btn btn-ghost" href="./index.html">← Explorar Catálogo</a>`}

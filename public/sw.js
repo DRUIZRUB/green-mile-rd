@@ -1,22 +1,22 @@
 /* Green Mile RD — Service Worker (PWA Shell + Network-First Freshness) */
-const CACHE_NAME = 'green-mile-rd-v9';
+const CACHE_NAME = 'green-mile-rd-v11';
 const CORE_ASSETS = [
   './',
   './index.html',
   './contrato.html',
   './producto.html',
   './tracking.html',
-  './css/tracking.css?v=20261122-9',
-  './css/equipo.css?v=20261122-9',
-  './js/catalog-data.js?v=20261122-9',
-  './js/firebase-config.js?v=20261122-9',
-  './js/import-engine.js?v=20261122-9',
-  './js/geo-map.js?v=20261122-9',
-  './js/native-bridge.js?v=20261122-9',
-  './js/contrato-page.js?v=20261122-9',
-  './js/producto-page.js?v=20261122-9',
-  './js/tracking-page.js?v=20261122-9',
-  './logo.png?v=20261122-9',
+  './css/tracking.css?v=20261122-11',
+  './css/equipo.css?v=20261122-11',
+  './js/catalog-data.js?v=20261122-11',
+  './js/firebase-config.js?v=20261122-11',
+  './js/import-engine.js?v=20261122-11',
+  './js/geo-map.js?v=20261122-11',
+  './js/native-bridge.js?v=20261122-11',
+  './js/contrato-page.js?v=20261122-11',
+  './js/producto-page.js?v=20261122-11',
+  './js/tracking-page.js?v=20261122-11',
+  './logo.png?v=20261122-11',
   './manifest.json'
 ];
 

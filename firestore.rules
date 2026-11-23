@@ -95,6 +95,9 @@ service cloud.firestore {
     match /reviews/{reviewId} {
       allow read: if true;
       allow create: if request.resource.data.equipmentId is string
+                    && request.resource.data.bookingId is string
+                    && request.resource.data.bookingId.size() > 0
+                    && request.resource.data.verified == true
                     && request.resource.data.author is string
                     && request.resource.data.comment is string
                     && request.resource.data.rating is number
