@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0D223A" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="icon" type="image/png" href="logo.png?v=20261122-7" />
+  <link rel="icon" type="image/png" href="logo.png?v=20261122-8" />
   <title>Green Mile Construction RD — Maquinaria en República Dominicana</title>
   <meta name="description" content="App móvil y plataforma web para alquilar maquinaria pesada, publicar licitaciones de obra y firmar contratos digitales con NCF en República Dominicana." />
   <link rel="manifest" href="./manifest.json" />
@@ -1323,7 +1323,7 @@
     <header class="app-header">
       <div class="nav-wrap">
         <div class="brand" onclick="switchTab('catalog')">
-          <img id="brandLogo" alt="Green Mile Construction RD" src="logo.png?v=20261122-7" width="94" height="76" />
+          <img id="brandLogo" alt="Green Mile Construction RD" src="logo.png?v=20261122-8" width="94" height="76" />
         </div>
 
         <div class="desktop-tabs">
@@ -2448,13 +2448,13 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
-  <script src="js/catalog-data.js?v=20261122-7"></script>
-  <script src="js/firebase-config.js?v=20261122-7"></script>
-  <script src="js/native-bridge.js?v=20261122-7"></script>
-  <script src="js/dgii-validator.js?v=20261122-7"></script>
-  <script src="js/billing-engine.js?v=20261122-7"></script>
-  <script src="js/geo-map.js?v=20261122-7"></script>
-  <script src="js/reviews.js?v=20261122-7"></script>
+  <script src="js/catalog-data.js?v=20261122-8"></script>
+  <script src="js/firebase-config.js?v=20261122-8"></script>
+  <script src="js/native-bridge.js?v=20261122-8"></script>
+  <script src="js/dgii-validator.js?v=20261122-8"></script>
+  <script src="js/billing-engine.js?v=20261122-8"></script>
+  <script src="js/geo-map.js?v=20261122-8"></script>
+  <script src="js/reviews.js?v=20261122-8"></script>
   <script>
     const GM = window.GM_CATALOG;
     const LOGO_URI = document.getElementById('brandLogo').src;
@@ -3903,6 +3903,32 @@
           }
           const invoiceHref = `./contrato.html?booking=${encodeURIComponent(b.id)}&doc=invoice`;
           const contractHref = `./contrato.html?booking=${encodeURIComponent(b.id)}&doc=contract`;
+          const eqMatch = equipment.find(e => String(e.id) === String(b.equipmentId)) || DEFAULT_EQUIPMENT.find(e => String(e.id) === String(b.equipmentId));
+          const myRnc = currentOwner ? digitsOnly(currentOwner.rncDigits || currentOwner.rncFormatted) : '';
+          const isRenterForBooking = Boolean(
+            currentOwner && (
+              (b.contractorId && String(b.contractorId) === String(currentOwner.id)) ||
+              (b.accountId && String(b.accountId) === String(currentOwner.id)) ||
+              (myRnc && digitsOnly(b.renterRnc) === myRnc)
+            )
+          );
+          const isOwnerForBooking = Boolean(
+            currentOwner && (
+              (eqMatch && eqMatch.ownerId && String(eqMatch.ownerId) === String(currentOwner.id)) ||
+              (myRnc && digitsOnly(b.ownerRnc || (eqMatch && eqMatch.rnc)) === myRnc)
+            )
+          );
+          const alreadyReviewed = Boolean(
+            b.equipmentId && window.GM_REVIEWS && window.GM_REVIEWS.hasReviewedBooking &&
+            window.GM_REVIEWS.hasReviewedBooking(b.equipmentId, b.id, allCloudReviews[String(b.equipmentId)] || [])
+          );
+          const reviewEqPath = eqMatch
+            ? GM.getEquipmentPath(eqMatch, '')
+            : (b.equipmentId ? `./equipo.html?id=${encodeURIComponent(b.equipmentId)}` : '');
+          const reviewHref = reviewEqPath
+            ? `${reviewEqPath}${reviewEqPath.includes('?') ? '&' : '?'}reviewBooking=${encodeURIComponent(b.id)}#reviewsSection`
+            : '';
+          const canRateNow = Boolean(isRenterForBooking && !isOwnerForBooking && reviewHref && !alreadyReviewed);
           return `
             <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
               <div>
@@ -3910,12 +3936,14 @@
                   <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${b.ncfType === 'E45' ? '#EFF6FF' : '#0D223A'}; color:${b.ncfType === 'E45' ? '#1E40AF' : '#fff'};">${escHtml(b.ncfType || 'E31')}</span>
                   <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:${pBadge.bg}; color:${pBadge.color};">${escHtml(pBadge.text)}</span>
                   ${trackBadgeHtml}
+                  ${alreadyReviewed ? `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; background:#ECFDF5; color:#047857;">★ Calificado</span>` : ''}
                   ${b.encfNumber ? `<span style="font-size:10px; font-family:monospace; font-weight:800; color:var(--orange);">${escHtml(b.encfNumber)}</span>` : ''}
                 </div>
                 <a href="${contractHref}" style="font-size:14px; font-weight:800; color:var(--navy); display:block; text-decoration:none;">${escHtml(b.title)}</a>
                 <span style="font-size:11px; color:var(--text-muted);">${escHtml(b.renter)} • ${fmtRD(b.total)}</span>
               </div>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                ${canRateNow ? `<a class="btn btn-ghost" style="padding:7px 11px; font-size:11px; text-decoration:none; color:#B45309; border-color:#FCD34D; background:#FFFBEB;" href="${reviewHref}">★ Calificar</a>` : ''}
                 ${isDispatchReady ? `<a class="btn btn-primary" style="padding:7px 11px; font-size:11px; text-decoration:none;" href="./tracking.html?booking=${encodeURIComponent(b.id)}">🗺️ Tracking</a>` : ''}
                 <a class="btn btn-navy" style="padding:7px 11px; font-size:11px; text-decoration:none;" href="${invoiceHref}">🧾 Factura e-CF</a>
                 <a class="btn btn-ghost" style="padding:7px 11px; font-size:11px; text-decoration:none;" href="${contractHref}">📄 Contrato</a>

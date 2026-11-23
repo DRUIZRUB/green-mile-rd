@@ -577,7 +577,18 @@
   let dgiiController = null;
   let geoSuggestions = [];
   let cloudReviews = [];
+  let cloudBookings = [];
   let selectedReviewStars = 5;
+  let selectedReviewTags = new Set();
+  const requestedReviewBookingId = new URLSearchParams(window.location.search).get('reviewBooking') || '';
+
+  const REVIEW_ASPECT_TAGS = [
+    '⚡ Puntual en obra',
+    '🔧 Excelente estado',
+    '👷 Gran operador',
+    '📄 Facturación e-CF ágil',
+    '💬 Buena coordinación'
+  ];
 
   const STAR_LABELS = {
     1: '1 ★ — Deficiente',
@@ -953,8 +964,89 @@
   }
 
   /* =========================================================
-     VALORACIONES CON ESTRELLAS Y COMENTARIOS
+     VALORACIONES VERIFICADAS TIPO AIRBNB (SOLO QUIEN ALQUILA)
      ========================================================= */
+  function reviewDigitsOnly(v) {
+    return String(v || '').replace(/\D/g, '');
+  }
+
+  function getActiveReviewAccount() {
+    if (!window.GM_FIREBASE) return null;
+    if (typeof window.GM_FIREBASE.getCurrentAccount === 'function') return window.GM_FIREBASE.getCurrentAccount();
+    if (typeof window.GM_FIREBASE.getCurrentOwner === 'function') return window.GM_FIREBASE.getCurrentOwner();
+    return null;
+  }
+
+  function getMergedBookingsForReviews() {
+    const byId = new Map();
+    const localList = Array.isArray(state.bookings) ? state.bookings : [];
+    const cloudList = Array.isArray(cloudBookings) ? cloudBookings : [];
+    // Local first, then cloud overrides with fresher status
+    localList.forEach((b) => { if (b && b.id != null) byId.set(String(b.id), b); });
+    cloudList.forEach((b) => { if (b && b.id != null) byId.set(String(b.id), b); });
+    return Array.from(byId.values()).sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+  }
+
+  function isCurrentUserOwnerOfEquipment(item, acc) {
+    if (!item || !acc) return false;
+    if (item.ownerId && String(item.ownerId) === String(acc.id)) return true;
+    const accRnc = reviewDigitsOnly(acc.rncDigits || acc.rncFormatted);
+    const eqRnc = reviewDigitsOnly(item.rnc);
+    if (accRnc && eqRnc && accRnc === eqRnc) return true;
+    return false;
+  }
+
+  function getReviewEligibility() {
+    const acc = getActiveReviewAccount();
+    if (!currentItem) {
+      return { status: 'ineligible', acc, pendingBookings: [], reviewedBookings: [] };
+    }
+    if (isCurrentUserOwnerOfEquipment(currentItem, acc)) {
+      return { status: 'owner', acc, pendingBookings: [], reviewedBookings: [] };
+    }
+
+    const accRnc = acc ? reviewDigitsOnly(acc.rncDigits || acc.rncFormatted) : '';
+    const guestIds = new Set(
+      ((window.GM_FIREBASE && typeof window.GM_FIREBASE.getGuestBookingIds === 'function')
+        ? window.GM_FIREBASE.getGuestBookingIds()
+        : []).map(String)
+    );
+
+    const myBookingsForEq = getMergedBookingsForReviews().filter((b) => {
+      if (!b || b.id == null) return false;
+      if (String(b.equipmentId) !== String(currentItem.id)) return false;
+      if (b.stage === 'cancelled' || b.status === 'cancelled') return false;
+
+      const matchesAcc = Boolean(
+        acc && (
+          (b.contractorId && String(b.contractorId) === String(acc.id)) ||
+          (b.accountId && String(b.accountId) === String(acc.id)) ||
+          (accRnc && reviewDigitsOnly(b.renterRnc) === accRnc)
+        )
+      );
+      const matchesGuest = guestIds.has(String(b.id));
+      return matchesAcc || matchesGuest;
+    });
+
+    const pendingBookings = [];
+    const reviewedBookings = [];
+    myBookingsForEq.forEach((b) => {
+      const already = window.GM_REVIEWS && window.GM_REVIEWS.hasReviewedBooking
+        ? window.GM_REVIEWS.hasReviewedBooking(currentItem.id, b.id, cloudReviews)
+        : false;
+      if (already) reviewedBookings.push(b);
+      else pendingBookings.push(b);
+    });
+
+    if (pendingBookings.length > 0) {
+      return { status: 'eligible', acc, pendingBookings, reviewedBookings };
+    }
+    if (reviewedBookings.length > 0) {
+      return { status: 'already_reviewed', acc, pendingBookings: [], reviewedBookings };
+    }
+    return { status: 'ineligible', acc, pendingBookings: [], reviewedBookings: [] };
+  }
+
   function setReviewStars(n) {
     selectedReviewStars = Math.min(5, Math.max(1, Number(n) || 5));
     document.querySelectorAll('#revStarPicker .star-pick-btn').forEach((btn) => {
@@ -963,6 +1055,140 @@
     });
     const lbl = document.getElementById('revStarLabel');
     if (lbl) lbl.textContent = STAR_LABELS[selectedReviewStars] || '';
+  }
+
+  function toggleReviewTag(tag) {
+    if (!tag) return;
+    if (selectedReviewTags.has(tag)) selectedReviewTags.delete(tag);
+    else selectedReviewTags.add(tag);
+    document.querySelectorAll('#revTagChips .review-tag-chip').forEach((btn) => {
+      btn.classList.toggle('selected', selectedReviewTags.has(btn.dataset.tag));
+    });
+  }
+
+  function scrollToBookingBox() {
+    const el = document.getElementById('bookingBox');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderReviewComposer(eligibility) {
+    const box = document.getElementById('reviewComposerBox');
+    if (!box) return;
+
+    if (eligibility.status === 'owner') {
+      box.innerHTML = `
+        <div class="review-gate-card is-owner" id="reviewOwnerNotice">
+          <div class="review-gate-head">🏢 Eres el propietario de este equipo</div>
+          <p class="review-gate-copy">
+            Al igual que en Airbnb, las calificaciones con estrellas están reservadas exclusivamente para los clientes que solicitan y confirman un alquiler de esta máquina en <strong>Green Mile RD</strong>.
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    if (eligibility.status === 'already_reviewed') {
+      const lastB = eligibility.reviewedBookings[0];
+      const code = lastB ? `#GM-${String(lastB.id).slice(-6)}` : '';
+      box.innerHTML = `
+        <div class="review-gate-card is-done" id="reviewDoneNotice">
+          <div class="review-gate-head" style="color:#065F46;">✓ Ya calificaste tu alquiler verificado ${esc(code)}</div>
+          <p class="review-gate-copy" style="color:#047857;">
+            ¡Gracias por compartir tu experiencia en obra! Se permite 1 valoración verificada por cada contrato de alquiler completado o confirmado.
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    if (eligibility.status !== 'eligible') {
+      const loginHref = `${BASE}index.html?login=1&next=profile`;
+      const panelHref = `${BASE}index.html?tab=profile`;
+      box.innerHTML = `
+        <div class="review-gate-card" id="reviewLockedNotice">
+          <div class="review-gate-head">🔒 Solo clientes que alquilaron este equipo pueden calificar</div>
+          <p class="review-gate-copy">
+            Para garantizar reseñas 100% reales (tipo Airbnb), únicamente el contratista o cliente que solicitó y confirmó un alquiler de esta máquina en <strong>Green Mile RD</strong> puede dejar estrellas y comentarios.
+          </p>
+          <div class="review-gate-actions">
+            ${!eligibility.acc
+              ? `<a class="btn btn-navy" href="${loginHref}" style="padding:8px 13px; font-size:12px; text-decoration:none;">👤 Iniciar sesión para verificar mis alquileres</a>`
+              : `<a class="btn btn-ghost" href="${panelHref}" style="padding:8px 13px; font-size:12px; text-decoration:none;">📄 Ver mis contratos en Mi Panel</a>`}
+            <button type="button" class="btn btn-primary" onclick="window.GM_DETAIL.scrollToBookingBox()" style="padding:8px 13px; font-size:12px;">🚜 Cotizar / Alquilar este Equipo</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Eligible renter! Pre-select ?reviewBooking if matching, else newest pending booking
+    const pending = eligibility.pendingBookings;
+    const preselected = pending.find((b) => String(b.id) === String(requestedReviewBookingId)) || pending[0];
+    const verifiedName = (preselected && preselected.renter) || (eligibility.acc && eligibility.acc.name) || 'Cliente Verificado';
+    const bookingCode = `#GM-${String(preselected.id).slice(-6)}`;
+
+    const prevComment = document.getElementById('revComment')?.value || '';
+
+    const bookingPickerHtml = pending.length > 1
+      ? `
+        <div class="f-field full">
+          <label for="revBookingId">Contrato de alquiler a calificar</label>
+          <div class="f-box">
+            <select id="revBookingId">
+              ${pending.map((b) => {
+                const c = `#GM-${String(b.id).slice(-6)}`;
+                const dates = b.startDate ? ` • ${b.startDate}` : '';
+                return `<option value="${esc(b.id)}" ${String(b.id) === String(preselected.id) ? 'selected' : ''}>${esc(c)} — ${esc(b.renter || 'Cliente')}${esc(dates)}</option>`;
+              }).join('')}
+            </select>
+          </div>
+        </div>
+      `
+      : `<input type="hidden" id="revBookingId" value="${esc(preselected.id)}" />`;
+
+    const tagButtonsHtml = REVIEW_ASPECT_TAGS.map((tag) => `
+      <button type="button" class="review-tag-chip ${selectedReviewTags.has(tag) ? 'selected' : ''}" data-tag="${esc(tag)}" onclick="window.GM_DETAIL.toggleReviewTag('${tag.replace(/'/g, "\\'")}')">${esc(tag)}</button>
+    `).join('');
+
+    box.innerHTML = `
+      <form class="review-form-box" id="verifiedReviewForm" onsubmit="window.GM_DETAIL.submitReview(event)">
+        <div class="review-verified-banner">
+          <span><strong>✓ Alquiler Verificado (${esc(bookingCode)})</strong> — Puedes calificar tu experiencia con este equipo</span>
+          <span style="font-size:11px; font-weight:800; background:#fff; color:#047857; padding:2px 8px; border-radius:999px; border:1px solid #A7F3D0;">Cliente Confirmado</span>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+          <strong style="font-size:13.5px; color:var(--navy);">Califica este equipo</strong>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="star-picker" id="revStarPicker" role="radiogroup" aria-label="Puntuación en estrellas">
+              ${[1, 2, 3, 4, 5].map((n) => `
+                <button type="button" class="star-pick-btn ${n <= selectedReviewStars ? 'active' : ''}" data-star="${n}" onclick="window.GM_DETAIL.setReviewStars(${n})" aria-label="${n} ${n === 1 ? 'estrella' : 'estrellas'}">★</button>
+              `).join('')}
+            </div>
+            <span id="revStarLabel" style="font-size:11.5px; font-weight:700; color:var(--orange);">${esc(STAR_LABELS[selectedReviewStars] || '')}</span>
+          </div>
+        </div>
+
+        <div class="f-grid" style="gap:10px;">
+          ${bookingPickerHtml}
+          <div class="f-field full">
+            <label for="revAuthor">Publicando como cliente verificado</label>
+            <div class="f-box" style="background:#F8FAFC;">
+              <input type="text" id="revAuthor" value="${esc(verifiedName)}" readonly style="color:var(--navy); font-weight:700;" />
+            </div>
+          </div>
+          <div class="f-field full">
+            <label>Aspectos destacados (Opcional)</label>
+            <div class="review-tag-chips" id="revTagChips">${tagButtonsHtml}</div>
+          </div>
+          <div class="f-field full">
+            <label for="revComment">Comentario sobre rendimiento, estado o puntualidad</label>
+            <div class="f-box"><textarea id="revComment" rows="2" placeholder="Cuéntanos cómo se comportó esta máquina en tu obra..." required>${esc(prevComment)}</textarea></div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-navy" style="margin-top:10px; padding:9px 16px; font-size:12.5px;">★ Publicar Valoración Verificada</button>
+      </form>
+    `;
   }
 
   function renderReviewsSection() {
@@ -995,32 +1221,41 @@
         <div class="reviews-score-box">
           <div class="reviews-big-num">${stats.count > 0 ? stats.avg.toFixed(1) : '—'}</div>
           <div class="reviews-stars-row">${window.GM_REVIEWS.renderStarsHTML(stats.avg)}</div>
-          <div class="reviews-count-lbl">${stats.count} ${stats.count === 1 ? 'valoración' : 'valoraciones'}</div>
+          <div class="reviews-count-lbl">${stats.count} ${stats.count === 1 ? 'valoración verificada' : 'valoraciones verificadas'}</div>
         </div>
         <div class="reviews-bars">${barsHTML}</div>
       `;
     }
 
+    // Render Airbnb-style eligibility composer / lock gate
+    renderReviewComposer(getReviewEligibility());
+
     const listBox = document.getElementById('reviewsListBox');
     if (listBox) {
       if (!reviews.length) {
-        listBox.innerHTML = '<p style="font-size:13px; color:var(--text-muted);">Sé el primero en valorar este equipo.</p>';
+        listBox.innerHTML = '<p style="font-size:13px; color:var(--text-muted);">Aún no hay reseñas verificadas para este equipo.</p>';
       } else {
-        listBox.innerHTML = reviews.map((r) => `
-          <div class="review-card">
-            <div class="review-card-head">
-              <div>
-                <div class="review-author">${esc(r.author)}</div>
-                <div class="review-meta">
-                  <span>${esc(r.date || '')}</span>
-                  ${r.verified ? '<span class="review-verified">✓ Cliente Green Mile</span>' : ''}
+        listBox.innerHTML = reviews.map((r) => {
+          const tagsHtml = Array.isArray(r.tags) && r.tags.length
+            ? `<div class="review-card-tags">${r.tags.map((t) => `<span class="review-tag-pill">${esc(t)}</span>`).join('')}</div>`
+            : '';
+          return `
+            <div class="review-card">
+              <div class="review-card-head">
+                <div>
+                  <div class="review-author">${esc(r.author)}</div>
+                  <div class="review-meta">
+                    <span>${esc(r.date || '')}</span>
+                    ${r.verified ? `<span class="review-verified">✓ Alquiler Verificado${r.bookingCode ? ' • ' + esc(r.bookingCode) : ''}</span>` : ''}
+                  </div>
                 </div>
+                <div class="reviews-stars-row" style="font-size:14px; margin:0;">${window.GM_REVIEWS.renderStarsHTML(r.rating)}</div>
               </div>
-              <div class="reviews-stars-row" style="font-size:14px; margin:0;">${window.GM_REVIEWS.renderStarsHTML(r.rating)}</div>
+              <p class="review-text">${esc(r.comment)}</p>
+              ${tagsHtml}
             </div>
-            <p class="review-text">${esc(r.comment)}</p>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
     }
   }
@@ -1028,32 +1263,50 @@
   async function submitReview(e) {
     e.preventDefault();
     if (!currentItem || !window.GM_REVIEWS) return;
-    const authorEl = document.getElementById('revAuthor');
-    const commentEl = document.getElementById('revComment');
-    const author = (authorEl && authorEl.value.trim()) || '';
-    const comment = (commentEl && commentEl.value.trim()) || '';
-    if (author.length < 2) {
-      toast('Escribe tu nombre o empresa para publicar la reseña');
-      if (authorEl) authorEl.focus();
+
+    const eligibility = getReviewEligibility();
+    if (eligibility.status !== 'eligible' || !eligibility.pendingBookings.length) {
+      toast('Solo los clientes con un alquiler verificado de este equipo pueden calificarlo');
+      renderReviewsSection();
       return;
     }
+
+    const bookingIdEl = document.getElementById('revBookingId');
+    const chosenId = (bookingIdEl && bookingIdEl.value) || String(eligibility.pendingBookings[0].id);
+    const matchedBooking = eligibility.pendingBookings.find((b) => String(b.id) === String(chosenId)) || eligibility.pendingBookings[0];
+    if (!matchedBooking) {
+      toast('No encontramos un alquiler pendiente de calificar para tu cuenta');
+      return;
+    }
+
+    const commentEl = document.getElementById('revComment');
+    const comment = (commentEl && commentEl.value.trim()) || '';
     if (comment.length < 5) {
-      toast('Escribe un breve comentario sobre el equipo');
+      toast('Escribe un breve comentario sobre tu experiencia con el equipo');
       if (commentEl) commentEl.focus();
       return;
     }
+
+    const author = String(matchedBooking.renter || (eligibility.acc && eligibility.acc.name) || 'Cliente Verificado').trim();
+    const bookingCode = matchedBooking.encfNumber || `#GM-${String(matchedBooking.id).slice(-6)}`;
+
     try {
       await window.GM_REVIEWS.addReview(currentItem.id, {
+        bookingId: String(matchedBooking.id),
+        bookingCode,
+        reviewerAccountId: eligibility.acc ? eligibility.acc.id : null,
+        reviewerRnc: matchedBooking.renterRnc || (eligibility.acc ? eligibility.acc.rncFormatted : ''),
         author,
         rating: selectedReviewStars,
         comment,
-        verified: false
+        tags: Array.from(selectedReviewTags),
+        cloudReviews,
+        verified: true
       });
-      if (authorEl) authorEl.value = '';
-      if (commentEl) commentEl.value = '';
+      selectedReviewTags.clear();
       setReviewStars(5);
       renderReviewsSection();
-      toast('★ ¡Gracias! Tu valoración fue publicada');
+      toast('★ ¡Gracias! Tu valoración verificada fue publicada');
     } catch (err) {
       toast(err.message || 'No se pudo guardar la reseña');
     }
@@ -1797,37 +2050,12 @@
                 </div>
               </div>
 
-              <!-- VALORACIONES CON ESTRELLAS Y COMENTARIOS -->
+              <!-- VALORACIONES VERIFICADAS TIPO AIRBNB -->
               <section class="reviews-section" id="reviewsSection">
-                <h3 class="section-label" style="margin-top:0;">Valoraciones y Comentarios del Equipo</h3>
+                <h3 class="section-label" style="margin-top:0;">Valoraciones Verificadas del Equipo</h3>
                 <div class="reviews-overview" id="reviewsOverviewBox"></div>
 
-                <form class="review-form-box" onsubmit="window.GM_DETAIL.submitReview(event)">
-                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
-                    <strong style="font-size:13.5px; color:var(--navy);">Califica este equipo</strong>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                      <div class="star-picker" id="revStarPicker" role="radiogroup" aria-label="Puntuación en estrellas">
-                        <button type="button" class="star-pick-btn active" data-star="1" onclick="window.GM_DETAIL.setReviewStars(1)" aria-label="1 estrella">★</button>
-                        <button type="button" class="star-pick-btn active" data-star="2" onclick="window.GM_DETAIL.setReviewStars(2)" aria-label="2 estrellas">★</button>
-                        <button type="button" class="star-pick-btn active" data-star="3" onclick="window.GM_DETAIL.setReviewStars(3)" aria-label="3 estrellas">★</button>
-                        <button type="button" class="star-pick-btn active" data-star="4" onclick="window.GM_DETAIL.setReviewStars(4)" aria-label="4 estrellas">★</button>
-                        <button type="button" class="star-pick-btn active" data-star="5" onclick="window.GM_DETAIL.setReviewStars(5)" aria-label="5 estrellas">★</button>
-                      </div>
-                      <span id="revStarLabel" style="font-size:11.5px; font-weight:700; color:var(--orange);">5 ★ — Excelente</span>
-                    </div>
-                  </div>
-                  <div class="f-grid" style="gap:10px;">
-                    <div class="f-field full">
-                      <label>Tu Nombre o Constructora</label>
-                      <div class="f-box"><input type="text" id="revAuthor" placeholder="Ej. Ing. Pedro Martínez — Constructora Este" required></div>
-                    </div>
-                    <div class="f-field full">
-                      <label>Comentario sobre rendimiento, estado o puntualidad</label>
-                      <div class="f-box"><textarea id="revComment" rows="2" placeholder="Cuéntanos tu experiencia con esta máquina en obra..." required></textarea></div>
-                    </div>
-                  </div>
-                  <button type="submit" class="btn btn-navy" style="margin-top:10px; padding:9px 16px; font-size:12.5px;">Publicar Valoración</button>
-                </form>
+                <div id="reviewComposerBox"></div>
 
                 <div class="review-list" id="reviewsListBox"></div>
               </section>
@@ -2269,6 +2497,8 @@
     pickGeoSuggestion,
     useMyLocation,
     setReviewStars,
+    toggleReviewTag,
+    scrollToBookingBox,
     submitReview,
     selectWorksitePlaceType,
     toggleDynamicPermit,
@@ -2279,6 +2509,13 @@
 
   async function initPage() {
     renderPage();
+
+    if (requestedReviewBookingId) {
+      setTimeout(() => {
+        const revSec = document.getElementById('reviewsSection');
+        if (revSec) revSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 280);
+    }
 
     const params = new URLSearchParams(window.location.search);
     const rawId = CFG.equipmentId != null ? String(CFG.equipmentId) : params.get('id');
@@ -2307,6 +2544,12 @@
               pill.textContent = liveDoc.busy ? 'En Obra' : 'Disponible Hoy';
             }
           }
+        });
+      }
+      if (window.GM_FIREBASE.subscribeBookings) {
+        window.GM_FIREBASE.subscribeBookings((list) => {
+          cloudBookings = Array.isArray(list) ? list : [];
+          renderReviewsSection();
         });
       }
       if (window.GM_FIREBASE.subscribeReviews) {

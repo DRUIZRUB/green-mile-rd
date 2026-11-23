@@ -135,11 +135,28 @@
     return html;
   }
 
+  function hasReviewedBooking(equipmentId, bookingId, cloudReviews) {
+    if (bookingId == null || String(bookingId).trim() === '') return false;
+    const targetId = String(bookingId);
+    const list = mergeReviews(equipmentId, cloudReviews);
+    return list.some((r) => r && r.bookingId != null && String(r.bookingId) === targetId);
+  }
+
   async function addReview(equipmentId, payload) {
     const key = String(equipmentId);
     const rating = Math.min(5, Math.max(1, Math.round(Number(payload.rating) || 5)));
     const author = String(payload.author || '').trim();
     const comment = String(payload.comment || '').trim();
+    const bookingId = String(payload.bookingId || '').trim();
+    const bookingCode = String(payload.bookingCode || '').trim();
+    const tags = Array.isArray(payload.tags) ? payload.tags.map((t) => String(t).trim()).filter(Boolean).slice(0, 5) : [];
+
+    if (!bookingId) {
+      throw new Error('Solo clientes con un alquiler verificado pueden calificar este equipo.');
+    }
+    if (hasReviewedBooking(key, bookingId, payload.cloudReviews || [])) {
+      throw new Error('Ya enviaste una calificación verificada para este contrato de alquiler.');
+    }
     if (!author || !comment) {
       throw new Error('Completa tu nombre y comentario');
     }
@@ -147,12 +164,17 @@
     const review = {
       id: `rev_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
       equipmentId: key,
+      bookingId,
+      bookingCode: bookingCode || `#GM-${bookingId.slice(-6)}`,
+      reviewerAccountId: payload.reviewerAccountId ? String(payload.reviewerAccountId) : null,
+      reviewerRnc: payload.reviewerRnc ? String(payload.reviewerRnc) : '',
       author,
       rating,
       comment,
+      tags,
       date: new Date().toISOString().split('T')[0],
       createdAtMs: Date.now(),
-      verified: Boolean(payload.verified)
+      verified: true
     };
 
     const localMap = loadLocalMap();
@@ -175,6 +197,7 @@
     getStats,
     getEquipmentSummary,
     renderStarsHTML,
+    hasReviewedBooking,
     addReview
   };
 })(window);
