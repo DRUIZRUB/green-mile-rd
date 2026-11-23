@@ -6,9 +6,13 @@
     "androidScheme": "https",
     "iosScheme": "capacitor",
     "allowNavigation": [
+      "green-mile-rd.web.app",
+      "*.web.app",
       "*.firebaseapp.com",
+      "*.cloudfunctions.net",
       "*.googleapis.com",
       "*.gstatic.com",
+      "rnc.urbanstockpos.com",
       "router.project-osrm.org",
       "nominatim.openstreetmap.org",
       "*.tile.openstreetmap.org",

@@ -11,7 +11,7 @@ const forge = require('node-forge');
 const { SignedXml } = require('xml-crypto');
 const { DOMParser } = require('@xmldom/xmldom');
 
-const { getPublicHealthStatus } = require('../src/config');
+const { getPublicHealthStatus, isOriginAllowed } = require('../src/config');
 const { chargeCard, verifyWebhookSignature } = require('../src/payments');
 const { buildEcfXml, signXmlWithP12, buildDgiiQrUrl } = require('../src/dgii/ecf-xml');
 
@@ -37,11 +37,16 @@ function createTestP12(password) {
 }
 
 async function run() {
-  console.log('1. Verificando diagnóstico /api/health...');
+  console.log('1. Verificando diagnóstico /api/health y lista blanca CORS...');
   const health = getPublicHealthStatus();
   assert.strictEqual(health.ok, true);
   assert.strictEqual(health.payment.activeMode, 'sandbox');
   assert.strictEqual(health.dgii.activeMode, 'sandbox');
+  assert.strictEqual(health.security.corsRestricted, true);
+  assert.strictEqual(isOriginAllowed('https://green-mile-rd.web.app'), true);
+  assert.strictEqual(isOriginAllowed('capacitor://localhost'), true);
+  assert.strictEqual(isOriginAllowed('http://localhost:5000'), true);
+  assert.strictEqual(isOriginAllowed('https://evil.example.com'), false);
 
   console.log('2. Verificando pasarela de tarjetas (validación Luhn + aprobación + declinación 0002)...');
   const okPay = await chargeCard({
@@ -149,14 +154,68 @@ async function run() {
   assert(qrUrl.startsWith('https://ecf.dgii.gov.do/testecf/ConsultaTimbre?'));
   assert(qrUrl.includes('CodigoSeguridad=AB%2B12%2F'), 'Special characters in CodigoSeguridad must be URL-encoded');
 
-  // Webhook HMAC verification
-  process.env.PAYMENT_WEBHOOK_SECRET = 'test_webhook_secret_123';
+  console.log('4. Verificando seguridad de webhooks (fail-closed sin secreto, HMAC estándar y Stripe-Signature)...');
+  delete process.env.PAYMENT_WEBHOOK_SECRET;
+  delete process.env.STRIPE_WEBHOOK_SECRET;
   const rawBody = JSON.stringify({ CustomOrderId: 'GM-12345', IsoCode: '00' });
+  const noSecretCheck = verifyWebhookSignature(rawBody, 'anything');
+  assert.strictEqual(noSecretCheck.verified, false);
+  assert.strictEqual(noSecretCheck.reason, 'NO_SECRET_CONFIGURED');
+
+  // HMAC estándar (pasarelas locales)
+  process.env.PAYMENT_WEBHOOK_SECRET = 'test_webhook_secret_123';
   const validSig = crypto.createHmac('sha256', 'test_webhook_secret_123').update(rawBody).digest('hex');
   assert.strictEqual(verifyWebhookSignature(rawBody, validSig).verified, true);
+  assert.strictEqual(verifyWebhookSignature(rawBody, `sha256=${validSig}`).verified, true);
   assert.strictEqual(verifyWebhookSignature(rawBody, 'bad_sig').verified, false);
 
-  console.log('✅ ALL CLOUD FUNCTIONS BACKEND TESTS PASSED (Payments + Real PKCS#12 XMLDSig e-CF + QR + Webhooks)!');
+  // Firma oficial Stripe (t=<ts>,v1=<hex> + ventana anti-replay)
+  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_stripe_secret';
+  const nowSec = 1795377600;
+  const stripePayload = JSON.stringify({ type: 'payment_intent.succeeded', data: { object: { metadata: { orderId: '998877' } } } });
+  const stripeSig = crypto.createHmac('sha256', 'whsec_test_stripe_secret').update(`${nowSec}.${stripePayload}`).digest('hex');
+  const stripeHdr = `t=${nowSec},v1=${stripeSig}`;
+  assert.strictEqual(verifyWebhookSignature(stripePayload, stripeHdr, { isStripe: true, nowSec }).verified, true);
+  assert.strictEqual(
+    verifyWebhookSignature(stripePayload, stripeHdr, { isStripe: true, nowSec: nowSec + 600 }).reason,
+    'STRIPE_TIMESTAMP_OUT_OF_TOLERANCE'
+  );
+  assert.strictEqual(verifyWebhookSignature(stripePayload, `t=${nowSec},v1=deadbeef`, { isStripe: true, nowSec }).verified, false);
+
+  console.log('5. Verificando motor de Importación Internacional de Repuestos (DGA <= US$200, DR-CAFTA, Marítimo LCL)...');
+  const imp = require('../../public/js/import-engine.js');
+  // Caso A: Courier aéreo <= US$ 200 FOB -> Exento DGA (Decreto 402-05)
+  const smallAir = imp.calculateLandedCost({ fobUsd: 150, qty: 1, weightLb: 3, origin: 'usa_miami', shippingMode: 'air' });
+  assert.strictEqual(smallAir.deMinimisExempt, true);
+  assert.strictEqual(smallAir.tariffUsd, 0);
+  assert.strictEqual(smallAir.dgaItbisUsd, 0);
+  assert.strictEqual(smallAir.customsBrokerUsd, 0);
+  assert.strictEqual(smallAir.depositPct, 100);
+  assert(smallAir.totalRD > 0, 'Total RD$ must be positive');
+
+  // Caso B: > US$ 200 FOB desde EE. UU. (DR-CAFTA 0% arancel + 18% ITBIS + corredor + anticipo 70%)
+  const usaCafta = imp.calculateLandedCost({ fobUsd: 1200, qty: 1, weightLb: 10, origin: 'usa_miami', shippingMode: 'air', applyCafta: true });
+  assert.strictEqual(usaCafta.deMinimisExempt, false);
+  assert.strictEqual(usaCafta.caftaApplied, true);
+  assert.strictEqual(usaCafta.tariffPct, 0);
+  assert.strictEqual(usaCafta.tariffUsd, 0);
+  assert(usaCafta.dgaItbisUsd > 0, 'ITBIS 18% DGA must apply over US$200');
+  assert.strictEqual(usaCafta.depositPct, 70);
+  assert.strictEqual(usaCafta.depositRD + usaCafta.balanceRD, usaCafta.totalRD);
+
+  // Caso C: Europa / Asia Marítimo LCL -> aplica arancel no-CAFTA (8%) + flete marítimo más económico en carga pesada
+  const asiaSea = imp.calculateLandedCost({ fobUsd: 2000, qty: 1, weightLb: 400, origin: 'asia', shippingMode: 'sea', applyCafta: true });
+  const asiaAir = imp.calculateLandedCost({ fobUsd: 2000, qty: 1, weightLb: 400, origin: 'asia', shippingMode: 'air', applyCafta: true });
+  assert.strictEqual(asiaSea.caftaApplied, false);
+  assert.strictEqual(asiaSea.tariffPct, 8);
+  assert(asiaSea.freightUsd < asiaAir.freightUsd, 'Sea freight must be cheaper than air for 400 lb heavy part');
+
+  // Badges híbridos
+  assert.strictEqual(imp.getFulfillmentMeta({ fulfillment: 'local_rd', stock: 3 }).isImport, false);
+  assert.strictEqual(imp.getFulfillmentMeta({ fulfillment: 'import_air', originCountry: 'EE. UU.' }).isImport, true);
+  assert.strictEqual(imp.getFulfillmentMeta({ fulfillment: 'import_sea', originCountry: 'Asia' }).mode, 'sea');
+
+  console.log('✅ ALL BACKEND & IMPORT ENGINE TESTS PASSED (CORS + Payments + XMLDSig e-CF + Webhooks + Landed Cost DGA)!');
 }
 
 run().catch((err) => {

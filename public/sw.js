@@ -1,21 +1,22 @@
 /* Green Mile RD — Service Worker (PWA Shell + Network-First Freshness) */
-const CACHE_NAME = 'green-mile-rd-v10';
+const CACHE_NAME = 'green-mile-rd-v11';
 const CORE_ASSETS = [
   './',
   './index.html',
   './contrato.html',
   './producto.html',
   './tracking.html',
-  './css/tracking.css?v=20261122-8',
-  './css/equipo.css?v=20261122-8',
-  './js/catalog-data.js?v=20261122-8',
-  './js/firebase-config.js?v=20261122-8',
-  './js/geo-map.js?v=20261122-8',
-  './js/native-bridge.js?v=20261122-8',
-  './js/contrato-page.js?v=20261122-8',
-  './js/producto-page.js?v=20261122-8',
-  './js/tracking-page.js?v=20261122-8',
-  './logo.png?v=20261122-8',
+  './css/tracking.css?v=20261122-11',
+  './css/equipo.css?v=20261122-11',
+  './js/catalog-data.js?v=20261122-11',
+  './js/firebase-config.js?v=20261122-11',
+  './js/import-engine.js?v=20261122-11',
+  './js/geo-map.js?v=20261122-11',
+  './js/native-bridge.js?v=20261122-11',
+  './js/contrato-page.js?v=20261122-11',
+  './js/producto-page.js?v=20261122-11',
+  './js/tracking-page.js?v=20261122-11',
+  './logo.png?v=20261122-11',
   './manifest.json'
 ];
 
@@ -40,10 +41,11 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
-  // Never intercept Firebase, OSRM, Nominatim, or map tiles — always go straight to network
+  // Never intercept API endpoints, Firebase internals, OSRM, Nominatim, or map tiles — always go straight to network
   if (
     url.origin !== self.location.origin ||
-    url.pathname.startsWith('/__/')
+    url.pathname.startsWith('/__/') ||
+    url.pathname.startsWith('/api/')
   ) {
     return;
   }

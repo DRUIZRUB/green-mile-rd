@@ -63,14 +63,43 @@ function resolveCertBase64(base64Key, pathKey) {
   return '';
 }
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://green-mile-rd.web.app',
+  'https://green-mile-rd.firebaseapp.com',
+  'https://studio-8139121026-17b90.web.app',
+  'https://studio-8139121026-17b90.firebaseapp.com',
+  'capacitor://localhost',
+  'https://localhost',
+  'http://localhost'
+];
+
+function parseAllowedOrigins(appBaseUrl) {
+  const set = new Set(DEFAULT_ALLOWED_ORIGINS);
+  if (appBaseUrl) {
+    try {
+      set.add(new URL(appBaseUrl).origin);
+    } catch (_) {}
+  }
+  const extra = env('ALLOWED_ORIGINS', '');
+  if (extra) {
+    for (const raw of extra.split(',')) {
+      const cleaned = raw.trim().replace(/\/$/, '');
+      if (cleaned) set.add(cleaned);
+    }
+  }
+  return Array.from(set);
+}
+
 function getConfig() {
+  const appBaseUrl = env('APP_BASE_URL', 'https://green-mile-rd.web.app');
   const paymentProvider = env('PAYMENT_PROVIDER', 'sandbox').toLowerCase();
   const dgiiMode = env('DGII_ECF_MODE', 'sandbox').toLowerCase();
   const dgiiEnv = env('DGII_ENV', 'testecf').toLowerCase();
   const emailProvider = env('EMAIL_PROVIDER', 'none').toLowerCase();
 
   return {
-    appBaseUrl: env('APP_BASE_URL', 'https://green-mile-rd.web.app'),
+    appBaseUrl,
+    allowedOrigins: parseAllowedOrigins(appBaseUrl),
     adminApiSecret: env('ADMIN_API_SECRET', ''),
 
     payment: {
@@ -186,6 +215,15 @@ function isWhatsAppConfigured(cfg) {
   return Boolean(cfg.notifications.whatsapp.token && cfg.notifications.whatsapp.phoneNumberId);
 }
 
+function isOriginAllowed(origin, allowedOrigins) {
+  if (!origin) return false;
+  const clean = String(origin).trim().replace(/\/$/, '');
+  const list = Array.isArray(allowedOrigins) ? allowedOrigins : getConfig().allowedOrigins;
+  if (list.includes(clean)) return true;
+  if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(clean)) return true;
+  return false;
+}
+
 /**
  * Retorna estado seguro de diagnóstico (sin revelar ningún secreto ni API key).
  */
@@ -217,12 +255,18 @@ function getPublicHealthStatus() {
       emailProvider: cfg.notifications.emailProvider,
       emailReady: isEmailConfigured(cfg),
       whatsappReady: isWhatsAppConfigured(cfg)
+    },
+    security: {
+      webhookSecretConfigured: Boolean(cfg.payment.webhookSecret || cfg.payment.stripe.webhookSecret),
+      adminApiSecretConfigured: Boolean(cfg.adminApiSecret),
+      corsRestricted: true
     }
   };
 }
 
 module.exports = {
   getConfig,
+  isOriginAllowed,
   isPaymentLiveConfigured,
   isDgiiLiveConfigured,
   isEmailConfigured,

@@ -545,22 +545,63 @@ async function voidCardTransaction({ cardInfo }) {
   return { ok: true, mode: cardInfo.provider || 'sandbox', message: 'Anulación registrada.' };
 }
 
+function safeCompareHex(expectedHex, providedHex) {
+  const a = Buffer.from(String(expectedHex || '').toLowerCase(), 'utf8');
+  const b = Buffer.from(String(providedHex || '').toLowerCase(), 'utf8');
+  if (!a.length || a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
 /**
  * Verificación HMAC de webhooks entrantes de pasarelas de pago.
+ * Soporta tanto firmas HMAC-SHA256 directas (Azul/CardNET/Visanet) como el formato
+ * oficial de Stripe (`Stripe-Signature: t=<unix>,v1=<hex>` con ventana anti-replay de 5 min).
  */
-function verifyWebhookSignature(rawBody, signatureHeader) {
+function verifyWebhookSignature(rawBody, signatureHeader, options = {}) {
   const cfg = getConfig();
-  const secret = cfg.payment.webhookSecret || cfg.payment.stripe.webhookSecret;
-  if (!secret) return { verified: false, reason: 'NO_SECRET_CONFIGURED' };
-  if (!signatureHeader) return { verified: false, reason: 'MISSING_SIGNATURE_HEADER' };
+  const headerStr = String(signatureHeader || '').trim();
+  const looksLikeStripe = Boolean(options.isStripe) || (/(?:^|,)\s*t=\d+/.test(headerStr) && /(?:^|,)\s*v1=[a-f0-9]+/i.test(headerStr));
 
-  const expected = crypto.createHmac('sha256', secret).update(rawBody || '', 'utf8').digest('hex');
-  const provided = String(signatureHeader).replace(/^sha256=/i, '').trim();
-  const a = Buffer.from(expected, 'utf8');
-  const b = Buffer.from(provided, 'utf8');
-  if (a.length !== b.length) return { verified: false, reason: 'SIGNATURE_MISMATCH' };
-  const ok = crypto.timingSafeEqual(a, b);
-  return { verified: ok, reason: ok ? 'OK' : 'SIGNATURE_MISMATCH' };
+  const secret = looksLikeStripe
+    ? (cfg.payment.stripe.webhookSecret || cfg.payment.webhookSecret)
+    : (cfg.payment.webhookSecret || cfg.payment.stripe.webhookSecret);
+
+  if (!secret) return { verified: false, reason: 'NO_SECRET_CONFIGURED' };
+  if (!headerStr) return { verified: false, reason: 'MISSING_SIGNATURE_HEADER' };
+
+  const payload = rawBody || '';
+
+  if (looksLikeStripe) {
+    let timestamp = null;
+    const v1Sigs = [];
+    for (const part of headerStr.split(',')) {
+      const idx = part.indexOf('=');
+      if (idx <= 0) continue;
+      const k = part.slice(0, idx).trim();
+      const v = part.slice(idx + 1).trim();
+      if (k === 't') timestamp = Number(v);
+      else if (k === 'v1' && v) v1Sigs.push(v);
+    }
+    if (!Number.isFinite(timestamp) || !v1Sigs.length) {
+      return { verified: false, reason: 'INVALID_STRIPE_SIGNATURE_FORMAT' };
+    }
+    const toleranceSec = Number.isFinite(options.toleranceSec) ? options.toleranceSec : 300;
+    const nowSec = Number.isFinite(options.nowSec) ? options.nowSec : Math.floor(Date.now() / 1000);
+    if (toleranceSec > 0 && Math.abs(nowSec - timestamp) > toleranceSec) {
+      return { verified: false, reason: 'STRIPE_TIMESTAMP_OUT_OF_TOLERANCE' };
+    }
+    const expectedStripe = crypto
+      .createHmac('sha256', secret)
+      .update(`${timestamp}.${payload}`, 'utf8')
+      .digest('hex');
+    const matched = v1Sigs.some((sig) => safeCompareHex(expectedStripe, sig));
+    return { verified: matched, reason: matched ? 'OK' : 'SIGNATURE_MISMATCH', format: 'stripe' };
+  }
+
+  const expected = crypto.createHmac('sha256', secret).update(payload, 'utf8').digest('hex');
+  const provided = headerStr.replace(/^sha256=/i, '').trim();
+  const ok = safeCompareHex(expected, provided);
+  return { verified: ok, reason: ok ? 'OK' : 'SIGNATURE_MISMATCH', format: 'hmac' };
 }
 
 module.exports = {

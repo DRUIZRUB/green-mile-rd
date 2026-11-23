@@ -1,13 +1,17 @@
-name: Deploy Firebase Hosting & Firestore Rules
+name: Verify & Deploy Firebase Hosting & Firestore Rules
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  deploy_live:
+  verify:
+    name: Verify Build, Syntax & Backend Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -18,7 +22,39 @@ jobs:
         with:
           node-version: 22
 
-      - name: Build static equipment pages
+      - name: Validate JavaScript syntax
+        run: |
+          for f in public/js/*.js functions/index.js functions/src/*/*.js functions/src/*.js scripts/*.mjs; do
+            [ -f "$f" ] || continue
+            node --check "$f"
+          done
+
+      - name: Build static equipment pages & sitemap
+        run: |
+          npm run build:pages
+          test -s public/robots.txt
+          test -s public/sitemap.xml
+
+      - name: Install Cloud Functions dependencies & run smoke tests
+        run: |
+          npm --prefix functions ci --no-audit --no-fund
+          npm run functions:test
+
+  deploy_live:
+    name: Deploy to Firebase Production
+    needs: verify
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build static equipment pages & sitemap
         run: npm run build:pages
 
       - name: Prepare Firebase service account
@@ -42,7 +78,7 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
         run: |
-          npm --prefix functions ci --omit=dev
+          npm --prefix functions ci --omit=dev --no-audit --no-fund
           node scripts/deploy-firestore-rules.mjs
 
       - name: Clean up credentials

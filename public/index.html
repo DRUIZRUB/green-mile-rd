@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0D223A" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="icon" type="image/png" href="logo.png?v=20261122-8" />
+  <link rel="icon" type="image/png" href="logo.png?v=20261122-11" />
   <title>Green Mile Construction RD — Maquinaria en República Dominicana</title>
   <meta name="description" content="App móvil y plataforma web para alquilar maquinaria pesada, publicar licitaciones de obra y firmar contratos digitales con NCF en República Dominicana." />
   <link rel="manifest" href="./manifest.json" />
@@ -1395,7 +1395,7 @@
       <div class="app-hero-shell">
         <div class="hero-brand-col">
           <div class="brand" onclick="switchTab('catalog')" title="Green Mile Construction RD">
-            <img id="brandLogo" alt="Green Mile Construction RD" src="logo.png?v=20261122-9" width="97" height="78" />
+            <img id="brandLogo" alt="Green Mile Construction RD" src="logo.png?v=20261122-11" width="97" height="78" />
           </div>
           <div class="hero-mobile-actions">
             <button class="btn btn-hero-ghost" id="ownerHeaderBtnMobile" onclick="openOwnerAccountModal()">
@@ -1525,7 +1525,14 @@
           <button type="button" class="cond-pill" data-cond="usada" onclick="setMarketCondition('usada')">🔧 Usadas</button>
         </div>
 
+        <div class="cond-pills" id="partFulfillPills" style="display:none;">
+          <button type="button" class="cond-pill active" data-fulfill="all" onclick="setPartFulfillFilter('all')">Todo Origen</button>
+          <button type="button" class="cond-pill" data-fulfill="local" onclick="setPartFulfillFilter('local')">🟢 En Stock RD</button>
+          <button type="button" class="cond-pill" data-fulfill="import" onclick="setPartFulfillFilter('import')">🌍 Bajo Pedido Intl.</button>
+        </div>
+
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-navy" id="btnQuickImportPart" style="display:none; padding:6px 12px; font-size:11.5px;" onclick="openImportPartSheet()">🌍 Importar del Exterior</button>
           <button type="button" class="btn btn-primary" id="btnQuickSellPart" style="display:none; padding:6px 12px; font-size:11.5px;" onclick="openPublishPartSheet()">+ Vender Pieza</button>
           <button type="button" class="btn btn-primary" id="btnQuickSellMachine" style="display:none; padding:6px 12px; font-size:11.5px;" onclick="openPublishSheet('sale')">+ Vender Equipo</button>
           <select class="mini-toggle" id="fSort" onchange="renderCatalog()" style="outline:none;">
@@ -1533,6 +1540,23 @@
             <option value="asc">Menor RD$</option>
             <option value="desc">Mayor RD$</option>
           </select>
+        </div>
+      </div>
+
+      <!-- Banner de Importación Internacional de Repuestos (solo visible en modo Piezas) -->
+      <div id="partsImportBanner" style="display:none; max-width:1180px; margin:12px auto 0; padding:0 16px;">
+        <div style="background:linear-gradient(135deg, #0D223A 0%, #163A63 60%, #1E4E79 100%); color:#fff; border-radius:16px; padding:16px 18px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; box-shadow:0 8px 24px rgba(13,34,58,0.14);">
+          <div style="flex:1; min-width:230px;">
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:5px;">
+              <span style="font-size:10px; font-weight:800; background:rgba(249,115,22,0.22); color:#FDBA74; border:1px solid rgba(253,186,116,0.35); padding:2px 8px; border-radius:99px; letter-spacing:0.03em;">✈️ AÉREO 4–7 DÍAS · 🚢 MARÍTIMO LCL</span>
+              <span style="font-size:10px; font-weight:800; background:rgba(16,185,129,0.2); color:#6EE7B7; padding:2px 8px; border-radius:99px;">DGA + DR-CAFTA + e-NCF</span>
+            </div>
+            <strong style="font-size:15.5px; display:block; margin-bottom:3px;">🌍 ¿Tu repuesto no existe en RD? Lo importamos del exterior por ti</strong>
+            <span style="font-size:12.5px; color:#CBD5E1; line-height:1.45;">Envíanos el Part Number o Serial (PIN) de tu máquina. Compramos en EE. UU. (Miami), Europa o Asia, gestionamos aduanas DGA y te entregamos en obra con factura fiscal local e-CF.</span>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" style="padding:10px 15px; font-size:12.5px;" onclick="openImportPartSheet()">✈️ Solicitar Importación / Calcular Costo →</button>
+          </div>
         </div>
       </div>
 
@@ -1634,6 +1658,14 @@
               <button class="btn btn-ghost" style="padding:6px 12px; font-size:11px;" onclick="switchTab('catalog'); switchMarketMode('sale');">Ver Equipos en Venta →</button>
             </div>
             <div id="profileChats"></div>
+          </div>
+
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+              <strong style="font-size:15px; color:var(--navy);">🌍 Mis Importaciones Internacionales de Repuestos</strong>
+              <button class="btn btn-primary" style="padding:6px 12px; font-size:11px;" onclick="openImportPartSheet()">+ Solicitar Importación</button>
+            </div>
+            <div id="profileImports"></div>
           </div>
 
           <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
@@ -1755,6 +1787,13 @@
             <span>Publica bombas, filtros, orugas, martillos, gomas OTR y más</span>
           </div>
           <span style="font-weight:800; color:#059669;">→</span>
+        </button>
+        <button class="switch-row" style="text-align:left; width:100%; border-color:#BAE6FD; background:#F0F9FF;" onclick="closeSheet('chooserSheet'); openImportPartSheet();">
+          <div>
+            <strong>🌍 Importar Pieza del Extranjero (EE. UU. / Europa / Asia)</strong>
+            <span>Cotiza con Landed Cost DGA + DR-CAFTA y recíbela en obra con e-NCF</span>
+          </div>
+          <span style="font-weight:800; color:#0369A1;">→</span>
         </button>
         <button class="switch-row" style="text-align:left; width:100%;" onclick="closeSheet('chooserSheet'); openSheet('reqSheet');">
           <div>
@@ -2420,6 +2459,24 @@
               </div>
             </div>
 
+            <div class="f-field">
+              <label for="partFulfillment">Disponibilidad / Origen</label>
+              <div class="f-box">
+                <select id="partFulfillment" onchange="togglePartImportFields()">
+                  <option value="local_rd">🟢 En Stock RD (Entrega 24–48h)</option>
+                  <option value="import_air">✈️ Bajo Pedido Internacional Aéreo (4–7 días)</option>
+                  <option value="import_sea">🚢 Bajo Pedido Internacional Marítimo (15–22 días)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="f-field" id="partOriginField" style="display:none;">
+              <label for="partOriginCountry">País / Hub de Origen</label>
+              <div class="f-box">
+                <input type="text" id="partOriginCountry" placeholder="Ej. EE. UU. (Miami, FL) / Alemania / Japón">
+              </div>
+            </div>
+
             <div class="f-field full">
               <label for="partDesc">Descripción técnica</label>
               <div class="f-box">
@@ -2442,7 +2499,7 @@
             <div class="f-field full">
               <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-muted);">
                 <input type="checkbox" id="partTerms" checked required style="margin-top:3px; accent-color:var(--orange);">
-                <span>Confirmo que esta pieza está disponible para entrega/envío en RD y acepto facturación e intermediación mediante <strong>Green Mile RD</strong>.</span>
+                <span>Confirmo que esta pieza está disponible para entrega/importación a RD y acepto facturación e intermediación mediante <strong>Green Mile RD</strong>.</span>
               </label>
             </div>
           </div>
@@ -2450,6 +2507,231 @@
         <div class="sheet-foot" style="gap:8px;">
           <button type="button" class="btn btn-ghost" onclick="closeSheet('publishPartSheet')">Cancelar</button>
           <button type="submit" class="btn btn-primary" style="flex:1;">Publicar Pieza en el Catálogo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       BOTTOM SHEET 3B: IMPORTACIÓN INTERNACIONAL DE REPUESTOS (LANDED COST DGA + e-NCF)
+       ========================================================= -->
+  <div class="sheet-backdrop" id="importPartSheet" onclick="if(event.target===this)closeSheet('importPartSheet')">
+    <div class="sheet" style="max-width:640px;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <div>
+          <h3>🌍 Importación Internacional de Repuestos</h3>
+          <p>Compramos por ti en EE. UU., Europa o Asia • Aduanas DGA + DR-CAFTA + e-NCF local</p>
+        </div>
+        <button type="button" class="close-x" onclick="closeSheet('importPartSheet')">&times;</button>
+      </div>
+      <form id="importPartForm" onsubmit="submitImportRequest(event)" style="display:flex; flex-direction:column; overflow:hidden; flex:1;">
+        <div class="sheet-body">
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-left:4px solid #0369A1; border-radius:12px; padding:11px 13px; margin-bottom:14px; font-size:12px; color:#0D223A; line-height:1.45;">
+            <strong>🛡️ Garantía de Compatibilidad:</strong> Incluye el <strong>Número de Serie (PIN)</strong> de tu máquina o foto de la placa + Part Number. Verificamos compatibilidad técnica antes de comprar en origen.
+          </div>
+
+          <div class="f-grid">
+            <div class="f-field">
+              <label for="impBrand">Marca de la Máquina <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <input type="text" id="impBrand" placeholder="Ej. Caterpillar / Komatsu / JCB / Hitachi" required>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="impModel">Modelo de Máquina <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <input type="text" id="impModel" placeholder="Ej. CAT 416F2 / PC200-8 / JS210LC" required>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="impSerial">Serial / PIN de la Máquina <small>(Recomendado)</small></label>
+              <div class="f-box">
+                <input type="text" id="impSerial" placeholder="Ej. CAT0416FKLBF01234">
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="impPartNumber">Número de Parte (Part Number OEM)</label>
+              <div class="f-box">
+                <input type="text" id="impPartNumber" placeholder="Ej. 235-4110 / 6754-11-3011">
+              </div>
+            </div>
+
+            <div class="f-field full">
+              <label for="impTitle">Pieza / Repuesto que necesitas importar <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <input type="text" id="impTitle" placeholder="Ej. Módulo ECM motor CAT C4.4, bomba hidráulica principal, kit de inyectores..." required>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="impQty">Cantidad</label>
+              <div class="f-box">
+                <input type="number" id="impQty" min="1" max="100" value="1" oninput="updateImportCostPreview()" required>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="impQuality">Calidad Preferida</label>
+              <div class="f-box">
+                <select id="impQuality">
+                  <option value="best_option">Cotizar OEM + Aftermarket (Comparar)</option>
+                  <option value="oem">Original de Fábrica (OEM)</option>
+                  <option value="aftermarket">Aftermarket Heavy Duty (CTP / ITR / Berco)</option>
+                  <option value="used_reman">Usada / Remanufacturada Verificada</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="impOrigin">País / Región de Compra</label>
+              <div class="f-box">
+                <select id="impOrigin" onchange="updateImportCostPreview()">
+                  <option value="usa_miami">🇺🇸 EE. UU. (Miami / Houston · DR-CAFTA)</option>
+                  <option value="europe">🇪🇺 Europa (Alemania / Italia / UK)</option>
+                  <option value="asia">🌏 Asia (Japón / Corea / China)</option>
+                  <option value="any">🌍 Mejor origen disponible (Green Mile busca)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="impShipping">Modalidad de Envío</label>
+              <div class="f-box">
+                <select id="impShipping" onchange="updateImportCostPreview()">
+                  <option value="air">✈️ Aéreo Express (4–7 días · Urgencias)</option>
+                  <option value="sea">🚢 Marítimo Consolidado LCL (12–25 días · Pesado)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="f-field full">
+              <label for="impRefUrl">Enlace web de referencia en el exterior <small>(Opcional — ej. Costex, eBay, distribuidor OEM)</small></label>
+              <div class="f-box">
+                <input type="url" id="impRefUrl" placeholder="https://...">
+              </div>
+            </div>
+
+            <!-- CALCULADORA LANDED COST EN TIEMPO REAL -->
+            <div class="f-field full" style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:14px; padding:13px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+                <strong style="font-size:13px; color:var(--navy);">🧮 Calculadora Estimada "Puesto en Obra RD" (Opcional)</strong>
+                <span style="font-size:10.5px; font-weight:700; color:#0369A1; background:#E0F2FE; padding:2px 8px; border-radius:99px;">Regla DGA ≤ US$200 + DR-CAFTA</span>
+              </div>
+              <div class="f-grid" style="gap:10px;">
+                <div class="f-field">
+                  <label for="impFobUsd">Precio estimado en exterior (US$ c/u)</label>
+                  <div class="f-box" style="background:#fff;">
+                    <span class="f-prefix">US$</span>
+                    <input type="number" id="impFobUsd" min="0" step="1" placeholder="Ej. 450 (o dejar vacío)" oninput="updateImportCostPreview()">
+                  </div>
+                </div>
+                <div class="f-field">
+                  <label for="impWeightLb">Peso estimado por unidad (lb)</label>
+                  <div class="f-box" style="background:#fff;">
+                    <input type="number" id="impWeightLb" min="1" max="5000" step="0.5" value="8" oninput="updateImportCostPreview()">
+                    <span class="f-prefix" style="padding-left:0; padding-right:10px;">lb</span>
+                  </div>
+                </div>
+              </div>
+              <label style="display:flex; align-items:center; gap:7px; margin-top:8px; font-size:11.5px; color:var(--text-muted); cursor:pointer;">
+                <input type="checkbox" id="impApplyCafta" checked onchange="updateImportCostPreview()" style="accent-color:#0369A1;">
+                <span>Aplicar exención arancelaria <strong>DR-CAFTA / Partida 8431 (0%)</strong> si el origen es EE. UU.</span>
+              </label>
+              <div id="impCostPreviewBox" style="margin-top:10px;"></div>
+            </div>
+
+            <div class="f-field full">
+              <label>Fotos de la placa serial o pieza dañada <small>(Opcional, hasta 4 fotos — acelera la cotización)</small></label>
+              <label class="cam-drop" id="impCamDrop" style="padding:12px;">
+                <input type="file" id="impPhotoInput" accept="image/*" multiple style="display:none;" onchange="onImportPhotoPicked(event)">
+                <div id="impCamText">
+                  <strong style="color:var(--navy); display:block; font-size:13px;">📷 Subir foto de la pieza / placa serial (0/4)</strong>
+                  <span style="font-size:11.5px; color:var(--text-muted);">Ayuda a confirmar el Part Number exacto sin errores</span>
+                </div>
+              </label>
+              <div class="photos-grid" id="impPhotosGrid" style="margin-top:8px;"></div>
+            </div>
+
+            <div class="f-field">
+              <label for="impReqName">Tu Nombre o Empresa <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <input type="text" id="impReqName" placeholder="Ej. Constructora Cibao, S.R.L." required>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="impReqRnc">RNC / Cédula (para e-NCF) <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <input type="text" id="impReqRnc" inputmode="numeric" placeholder="Ej. 1-31-00000-1" required>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="impReqPhone">Teléfono / WhatsApp RD <small>* Obligatorio</small></label>
+              <div class="f-box">
+                <span class="f-prefix">🇩🇴 +1</span>
+                <input type="tel" id="impReqPhone" placeholder="809-555-0199" required>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="impCity">Ciudad / Obra de Entrega en RD</label>
+              <div class="f-box">
+                <select id="impCity">
+                  <option value="Santo Domingo">Santo Domingo / DN</option>
+                  <option value="Santiago">Santiago</option>
+                  <option value="Punta Cana">Punta Cana / Bávaro</option>
+                  <option value="La Romana">La Romana</option>
+                  <option value="San Cristóbal">San Cristóbal</option>
+                  <option value="Puerto Plata">Puerto Plata</option>
+                  <option value="La Vega">La Vega</option>
+                  <option value="San Pedro de Macorís">San Pedro de Macorís</option>
+                  <option value="Higüey">Higüey</option>
+                  <option value="Bonao">Bonao</option>
+                  <option value="Barahona">Barahona</option>
+                  <option value="Samaná">Samaná</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="impNcfType">Comprobante Fiscal Local</label>
+              <div class="f-box">
+                <select id="impNcfType">
+                  <option value="E31">E31 • Crédito Fiscal (Empresas)</option>
+                  <option value="E32">E32 • Consumo</option>
+                  <option value="E45">E45 • Gubernamental (Estado RD)</option>
+                  <option value="E44">E44 • Regímenes Especiales (0% ITBIS)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="f-field">
+              <label for="impUrgency">Nivel de Urgencia</label>
+              <div class="f-box">
+                <select id="impUrgency">
+                  <option value="alta">🔴 Máquina detenida en obra (Urgente)</option>
+                  <option value="media" selected>🟡 Mantenimiento programado (Normal)</option>
+                  <option value="baja">🟢 Reposición de inventario (Flexible)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="f-field full">
+              <label for="impNotes">Detalles técnicos adicionales (Opcional)</label>
+              <div class="f-box">
+                <textarea id="impNotes" rows="2" placeholder="Medidas, voltaje (12V/24V), número de motor, o notas para el equipo de compras internacionales..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="sheet-foot" style="gap:8px;">
+          <button type="button" class="btn btn-ghost" onclick="closeSheet('importPartSheet')">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="flex:1;">✈️ Enviar Solicitud de Importación</button>
         </div>
       </form>
     </div>
@@ -2528,15 +2810,17 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
-  <script src="js/catalog-data.js?v=20261122-8"></script>
-  <script src="js/firebase-config.js?v=20261122-8"></script>
-  <script src="js/native-bridge.js?v=20261122-8"></script>
-  <script src="js/dgii-validator.js?v=20261122-8"></script>
-  <script src="js/billing-engine.js?v=20261122-8"></script>
-  <script src="js/geo-map.js?v=20261122-8"></script>
-  <script src="js/reviews.js?v=20261122-8"></script>
+  <script src="js/catalog-data.js?v=20261122-11"></script>
+  <script src="js/firebase-config.js?v=20261122-11"></script>
+  <script src="js/native-bridge.js?v=20261122-11"></script>
+  <script src="js/dgii-validator.js?v=20261122-11"></script>
+  <script src="js/billing-engine.js?v=20261122-11"></script>
+  <script src="js/import-engine.js?v=20261122-11"></script>
+  <script src="js/geo-map.js?v=20261122-11"></script>
+  <script src="js/reviews.js?v=20261122-11"></script>
   <script>
     const GM = window.GM_CATALOG;
+    const IMP = window.GM_IMPORT;
     const LOGO_URI = document.getElementById('brandLogo').src;
     const DEFAULT_EQUIPMENT = GM.DEFAULT_EQUIPMENT || [];
     const DEFAULT_REQUESTS = GM.DEFAULT_REQUESTS || [];
@@ -2565,6 +2849,9 @@
     let productChats = (window.GM_FIREBASE && window.GM_FIREBASE.getLocalProductChats)
       ? window.GM_FIREBASE.getLocalProductChats()
       : [];
+    let importRequests = (window.GM_FIREBASE && window.GM_FIREBASE.getLocalImportRequests)
+      ? window.GM_FIREBASE.getLocalImportRequests()
+      : [];
 
     let activeBidReqId = null;
     let allCloudReviews = {};
@@ -2577,6 +2864,7 @@
     let activeCat = 'Todos';
     let activePartCat = 'Todos';
     let activeMarketCond = 'all'; // 'all' | 'nueva' | 'usada'
+    let activePartFulfill = 'all'; // 'all' | 'local' | 'import'
     let wizStep = 1;
 
     let currentOwner = (window.GM_FIREBASE && window.GM_FIREBASE.getCurrentOwner)
@@ -2585,6 +2873,7 @@
     let pendingAuthAction = null; // { type: 'publish' | 'publishPart' | 'tab' | 'tracking' | 'save', payload: any }
     let photoList = [];
     let partPhotoList = [];
+    let importPhotoList = [];
 
     const fmtRD = GM.fmtRD;
     const cleanWA = GM.cleanWA;
@@ -2742,6 +3031,10 @@
           <span class="drawer-item-left">⚙️ Catálogo de Piezas y Repuestos</span>
           <span class="drawer-pill">${partsCount}</span>
         </button>
+        <button type="button" class="drawer-item" onclick="closeMenuDrawer(); openImportPartSheet();">
+          <span class="drawer-item-left">🌍 Importar Pieza del Extranjero</span>
+          <span class="drawer-pill" style="background:#E0F2FE; color:#0369A1;">DGA + e-NCF</span>
+        </button>
         <button type="button" class="drawer-item" onclick="closeMenuDrawer(); switchTab('requests');">
           <span class="drawer-item-left">👷 Obras RD (Se Busca)</span>
           <span class="drawer-pill">${requests.length}</span>
@@ -2886,6 +3179,9 @@
       const partCatChips = document.getElementById('partCatChips');
       const rentSub = document.getElementById('rentSubToggles');
       const condPills = document.getElementById('marketCondPills');
+      const fulfillPills = document.getElementById('partFulfillPills');
+      const quickImportBtn = document.getElementById('btnQuickImportPart');
+      const importBanner = document.getElementById('partsImportBanner');
       const quickPartBtn = document.getElementById('btnQuickSellPart');
       const quickMachBtn = document.getElementById('btnQuickSellMachine');
 
@@ -2893,6 +3189,9 @@
       if (partCatChips) partCatChips.style.display = isParts ? 'flex' : 'none';
       if (rentSub) rentSub.style.display = isRent ? 'flex' : 'none';
       if (condPills) condPills.style.display = isRent ? 'none' : 'inline-flex';
+      if (fulfillPills) fulfillPills.style.display = isParts ? 'inline-flex' : 'none';
+      if (quickImportBtn) quickImportBtn.style.display = isParts ? 'inline-flex' : 'none';
+      if (importBanner) importBanner.style.display = isParts ? 'block' : 'none';
       if (quickPartBtn) quickPartBtn.style.display = isParts ? 'inline-flex' : 'none';
       if (quickMachBtn) quickMachBtn.style.display = isSale ? 'inline-flex' : 'none';
 
@@ -2903,6 +3202,14 @@
       activeMarketCond = cond;
       document.querySelectorAll('#marketCondPills .cond-pill').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.cond === cond);
+      });
+      renderCatalog();
+    }
+
+    function setPartFulfillFilter(mode) {
+      activePartFulfill = mode;
+      document.querySelectorAll('#partFulfillPills .cond-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.fulfill === mode);
       });
       renderCatalog();
     }
@@ -3049,26 +3356,27 @@
     function partCardHTML(part) {
       const isNew = String(part.condition || 'nueva').toLowerCase() === 'nueva';
       const cover = part.img || getPartCategoryCover(part.category);
-      const stockNum = Number(part.stock) || 1;
       const url = `./producto.html?kind=part&id=${encodeURIComponent(part.id)}`;
+      const fulfill = IMP ? IMP.getFulfillmentMeta(part) : { isImport: false, badgeText: `Stock: ${Number(part.stock) || 1}`, pillBg: '#0D223A', pillColor: '#fff', originCountry: part.city || 'Santo Domingo' };
+      const isIntl = Boolean(fulfill.isImport);
       return `
         <article class="eq-card" onclick="window.location.href='${url}'">
           <div class="eq-media">
             <img src="${cover}" alt="${escHtml(part.title)}" loading="lazy" onerror="this.onerror=null;this.src='${getPartCategoryCover(part.category)}'">
-            <span class="pill-city">${escHtml(part.city || 'Santo Domingo')}</span>
+            <span class="pill-city">${isIntl ? `🌍 ${escHtml(fulfill.originCountry)}` : escHtml(part.city || 'Santo Domingo')}</span>
             <span class="${isNew ? 'pill-cond-new' : 'pill-cond-used'}">${isNew ? '✨ Nueva' : '🔧 Usada'}</span>
-            <span class="pill-sale-tag">${stockNum > 1 ? `Stock: ${stockNum}` : '1 disp.'}</span>
+            <span class="pill-sale-tag" style="background:${fulfill.pillBg}; color:${fulfill.pillColor};">${escHtml(fulfill.badgeText)}</span>
           </div>
           <div class="eq-body">
             <div class="eq-cat">${escHtml(part.category)}${part.partNumber ? ' • ' + escHtml(part.partNumber) : ''}</div>
             <div class="eq-title"><a href="${url}" onclick="event.stopPropagation()" style="color:var(--navy); text-decoration:none;">${escHtml(part.title)}</a></div>
             <div class="eq-owner" style="flex-direction:column; align-items:flex-start; gap:2px;">
               <span style="font-size:11.5px; color:var(--text-muted);">${escHtml(part.compatibleWith || part.brand || 'Maquinaria Pesada RD')}</span>
-              <span style="font-size:11px; font-weight:700; color:#065F46;">✓ ${escHtml(part.owner || 'Vendedor Verificado')}</span>
+              <span style="font-size:11px; font-weight:700; color:${isIntl ? '#0369A1' : '#065F46'};">${isIntl ? '✈️ ' : '✓ '}${escHtml(part.owner || 'Vendedor Verificado')}</span>
             </div>
             <div class="eq-foot">
-              <div class="eq-price">${fmtRD(part.price || 0)} <small>c/u</small></div>
-              <a class="btn btn-navy" href="${url}" onclick="event.stopPropagation()" style="padding:8px 13px; font-size:12px; text-decoration:none;">Ver / Comprar</a>
+              <div class="eq-price">${fmtRD(part.price || 0)} <small>${isIntl ? 'puesto RD' : 'c/u'}</small></div>
+              <a class="btn ${isIntl ? 'btn-primary' : 'btn-navy'}" href="${url}" onclick="event.stopPropagation()" style="padding:8px 13px; font-size:12px; text-decoration:none;">${isIntl ? 'Importar / Ver' : 'Ver / Comprar'}</a>
             </div>
           </div>
         </article>
@@ -3083,9 +3391,11 @@
       activeCat = 'Todos';
       activePartCat = 'Todos';
       activeMarketCond = 'all';
+      activePartFulfill = 'all';
       document.querySelectorAll('#catChips .app-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === 'Todos'));
       document.querySelectorAll('#partCatChips .app-chip').forEach(c => c.classList.toggle('active', c.dataset.pcat === 'Todos'));
       document.querySelectorAll('#marketCondPills .cond-pill').forEach(b => b.classList.toggle('active', b.dataset.cond === 'all'));
+      document.querySelectorAll('#partFulfillPills .cond-pill').forEach(b => b.classList.toggle('active', b.dataset.fulfill === 'all'));
       renderCatalog();
     }
 
@@ -3097,33 +3407,38 @@
     }
 
     function renderCatalog() {
-      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const qRaw = document.getElementById('searchInput').value.trim();
+      const q = qRaw.toLowerCase();
       const city = document.getElementById('cityFilter').value;
       const sort = document.getElementById('fSort').value;
       const box = document.getElementById('catalogFeed');
 
       if (activeMarketMode === 'parts') {
         let list = partsCatalog.filter(p => {
-          const hay = `${p.title || ''} ${p.desc || ''} ${p.category || ''} ${p.partNumber || ''} ${p.brand || ''} ${p.compatibleWith || ''} ${p.owner || ''}`.toLowerCase();
+          const hay = `${p.title || ''} ${p.desc || ''} ${p.category || ''} ${p.partNumber || ''} ${p.brand || ''} ${p.compatibleWith || ''} ${p.owner || ''} ${p.originCountry || ''}`.toLowerCase();
           const mq = !q || hay.includes(q);
           const mc = activePartCat === 'Todos' || p.category === activePartCat;
-          const mcity = !city || p.city === city;
+          const isIntl = p.fulfillment === 'import_air' || p.fulfillment === 'import_sea';
+          const mcity = !city || isIntl || p.city === city;
           const mcond = activeMarketCond === 'all' || String(p.condition || 'nueva').toLowerCase() === activeMarketCond;
-          return mq && mc && mcity && mcond;
+          const mfulfill = activePartFulfill === 'all' || (activePartFulfill === 'import' ? isIntl : !isIntl);
+          return mq && mc && mcity && mcond && mfulfill;
         });
 
         if (sort === 'asc') list.sort((a, b) => (a.price || 0) - (b.price || 0));
         if (sort === 'desc') list.sort((a, b) => (b.price || 0) - (a.price || 0));
 
         if (list.length === 0) {
+          const safeQAttr = qRaw.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
           box.innerHTML = `
             <div class="empty-state">
-              <div class="empty-badge">⚙️</div>
-              <h3>No encontramos piezas con esos filtros</h3>
-              <p>Prueba cambiando la categoría o condición (Nueva / Usada), o publica tus propios repuestos disponibles en RD.</p>
+              <div class="empty-badge">🌍</div>
+              <h3>${qRaw ? `No encontramos «${escHtml(qRaw)}» en inventario local` : 'No encontramos piezas con esos filtros'}</h3>
+              <p>Si la pieza no está disponible en República Dominicana, podemos <strong>comprarla e importarla por ti desde EE. UU., Europa o Asia</strong> con cálculo Landed Cost, Aduanas DGA y e-NCF local.</p>
               <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="openImportPartSheet('${safeQAttr}')">✈️ Solicitar Importación${qRaw ? ` de «${escHtml(qRaw)}»` : ' Internacional'}</button>
                 <button class="btn btn-navy" onclick="clearCatalogFilters()">Ver Todas las Piezas</button>
-                <button class="btn btn-primary" onclick="openPublishPartSheet()">+ Publicar Pieza en Venta</button>
+                <button class="btn btn-ghost" onclick="openPublishPartSheet()">+ Publicar Pieza</button>
               </div>
             </div>
           `;
@@ -3361,6 +3676,12 @@
       renderPartPhotosGrid();
     }
 
+    function togglePartImportFields() {
+      const val = document.getElementById('partFulfillment')?.value || 'local_rd';
+      const field = document.getElementById('partOriginField');
+      if (field) field.style.display = val === 'local_rd' ? 'none' : 'block';
+    }
+
     async function submitPublishPart(e) {
       e.preventDefault();
       if (!currentOwner) {
@@ -3373,6 +3694,13 @@
       const title = document.getElementById('partTitle').value.trim();
       const price = Number(document.getElementById('partPrice').value);
       const stock = Math.max(1, Number(document.getElementById('partStock').value) || 1);
+      const fulfillment = document.getElementById('partFulfillment')?.value || 'local_rd';
+      const originCountry = fulfillment === 'local_rd'
+        ? 'República Dominicana'
+        : ((document.getElementById('partOriginCountry')?.value || '').trim() || 'EE. UU. (Miami, FL)');
+      const leadTimeDays = fulfillment === 'import_air'
+        ? '4–7 días hábiles'
+        : (fulfillment === 'import_sea' ? '15–22 días hábiles' : '24–48 horas');
       if (title.length < 3) { toast('Ingresa el nombre de la pieza o repuesto'); return; }
       if (!(price >= 100)) { toast('Ingresa un precio de venta válido en RD$'); return; }
 
@@ -3381,6 +3709,9 @@
         ownerId: currentOwner.id,
         category: cat,
         condition,
+        fulfillment,
+        originCountry,
+        leadTimeDays,
         title,
         partNumber: document.getElementById('partNumber').value.trim(),
         brand: document.getElementById('partBrand').value.trim() || 'OEM / Heavy Duty',
@@ -3389,7 +3720,7 @@
         stock,
         city: document.getElementById('partCity').value,
         warranty: document.getElementById('partWarranty').value.trim() || (condition === 'nueva' ? 'Nueva con factura e-NCF' : 'Usada operativa verificada'),
-        desc: document.getElementById('partDesc').value.trim() || 'Disponible para entrega inmediata en República Dominicana.',
+        desc: document.getElementById('partDesc').value.trim() || (fulfillment === 'local_rd' ? 'Disponible para entrega inmediata en República Dominicana.' : `Bajo pedido internacional desde ${originCountry} con entrega en RD y e-NCF.`),
         owner: currentOwner.name,
         rnc: currentOwner.rncFormatted,
         phone: currentOwner.phone,
@@ -3416,6 +3747,257 @@
       syncCounters();
       renderCurrentTab();
       toast('Pieza eliminada del catálogo');
+    }
+
+    /* =========================================================
+       IMPORTACIÓN INTERNACIONAL DE REPUESTOS (LANDED COST DGA + e-NCF)
+       ========================================================= */
+    function renderImportPhotosGrid() {
+      const grid = document.getElementById('impPhotosGrid');
+      const txt = document.getElementById('impCamText');
+      if (txt) {
+        txt.innerHTML = `<strong style="color:var(--navy); display:block; font-size:13px;">📷 Subir foto de la pieza / placa serial (${importPhotoList.length}/4)</strong>
+          <span style="font-size:11.5px; color:var(--text-muted);">${importPhotoList.length >= 4 ? 'Límite de 4 fotos alcanzado' : 'Ayuda a confirmar el Part Number exacto sin errores'}</span>`;
+      }
+      if (!grid) return;
+      grid.innerHTML = importPhotoList.map((src, idx) => `
+        <div class="photo-thumb">
+          <img src="${src}" alt="Foto ${idx + 1}" />
+          <button type="button" class="photo-del" onclick="removeImportPhoto(${idx})" aria-label="Quitar foto">&times;</button>
+        </div>
+      `).join('');
+    }
+
+    function removeImportPhoto(idx) {
+      importPhotoList.splice(idx, 1);
+      renderImportPhotosGrid();
+    }
+
+    async function onImportPhotoPicked(e) {
+      const files = Array.from(e.target.files || []);
+      const slotsLeft = Math.max(0, 4 - importPhotoList.length);
+      for (const file of files.slice(0, slotsLeft)) {
+        let dataUrl = null;
+        if (window.GM_FIREBASE && window.GM_FIREBASE.compressImageFile) {
+          dataUrl = await window.GM_FIREBASE.compressImageFile(file, 860, 0.72);
+        }
+        if (!dataUrl) {
+          dataUrl = await new Promise((resolve) => {
+            const r = new FileReader();
+            r.onload = (ev) => resolve(ev.target.result);
+            r.onerror = () => resolve(null);
+            r.readAsDataURL(file);
+          });
+        }
+        if (dataUrl && importPhotoList.length < 4) importPhotoList.push(dataUrl);
+      }
+      e.target.value = '';
+      renderImportPhotosGrid();
+    }
+
+    function openImportPartSheet(prefillQuery = '') {
+      const form = document.getElementById('importPartForm');
+      if (form) form.reset();
+      importPhotoList = [];
+      renderImportPhotosGrid();
+
+      if (prefillQuery && typeof prefillQuery === 'string') {
+        const cleanQ = prefillQuery.trim();
+        const looksLikePN = /^[A-Z0-9-]{4,}$/i.test(cleanQ) && /\d/.test(cleanQ);
+        if (looksLikePN) {
+          const pnEl = document.getElementById('impPartNumber');
+          if (pnEl) pnEl.value = cleanQ;
+        }
+        const titleEl = document.getElementById('impTitle');
+        if (titleEl) titleEl.value = cleanQ;
+      }
+
+      if (currentOwner) {
+        const nEl = document.getElementById('impReqName');
+        const rEl = document.getElementById('impReqRnc');
+        const pEl = document.getElementById('impReqPhone');
+        const cEl = document.getElementById('impCity');
+        if (nEl && currentOwner.name) nEl.value = currentOwner.name;
+        if (rEl && (currentOwner.rncFormatted || currentOwner.rncDigits)) rEl.value = currentOwner.rncFormatted || currentOwner.rncDigits;
+        if (pEl && currentOwner.phone) pEl.value = currentOwner.phone;
+        if (cEl && currentOwner.city && Array.from(cEl.options).some(o => o.value === currentOwner.city)) {
+          cEl.value = currentOwner.city;
+        }
+      }
+
+      updateImportCostPreview();
+      openSheet('importPartSheet');
+    }
+
+    function updateImportCostPreview() {
+      const box = document.getElementById('impCostPreviewBox');
+      if (!box || !IMP) return;
+
+      const fobUsd = Number(document.getElementById('impFobUsd')?.value || 0);
+      const qty = Math.max(1, Number(document.getElementById('impQty')?.value || 1));
+      const weightLb = Math.max(0.5, Number(document.getElementById('impWeightLb')?.value || 8));
+      const origin = document.getElementById('impOrigin')?.value || 'usa_miami';
+      const shippingMode = document.getElementById('impShipping')?.value || 'air';
+      const applyCafta = Boolean(document.getElementById('impApplyCafta')?.checked);
+
+      const est = IMP.calculateLandedCost({ fobUsd, qty, weightLb, origin, shippingMode, applyCafta });
+
+      if (!est.hasPriceEstimate) {
+        box.innerHTML = `
+          <div style="background:#fff; border:1px dashed #94A3B8; border-radius:10px; padding:10px 12px; font-size:12px; color:var(--text-muted); line-height:1.45;">
+            <strong style="color:var(--navy); display:block; margin-bottom:2px;">⏱️ Tiempo estimado (${escHtml(est.origin.flag)} ${escHtml(est.origin.shortLabel)} • ${shippingMode === 'sea' ? 'Marítimo LCL' : 'Aéreo Express'}): ${escHtml(est.etaLabel)}</strong>
+            ¿No conoces el precio en el exterior? Déjalo vacío: nuestro equipo en compras internacionales buscará opciones <strong>OEM y Aftermarket</strong> y te enviará la cotización formal en <strong>Mi Panel</strong>.
+          </div>
+        `;
+        return;
+      }
+
+      const dgaTag = est.deMinimisExempt
+        ? `<span style="background:#ECFDF5; color:#065F46; padding:2px 8px; border-radius:99px; font-size:10.5px; font-weight:800;">✓ Exento DGA (≤ US$ 200 · Decreto 402-05)</span>`
+        : (est.caftaApplied
+            ? `<span style="background:#E0F2FE; color:#0369A1; padding:2px 8px; border-radius:99px; font-size:10.5px; font-weight:800;">✓ DR-CAFTA Arancel ${est.tariffPct}% + ITBIS 18%</span>`
+            : `<span style="background:#FEF3C7; color:#92400E; padding:2px 8px; border-radius:99px; font-size:10.5px; font-weight:800;">Arancel est. ${est.tariffPct}% + ITBIS 18% DGA</span>`);
+
+      box.innerHTML = `
+        <div style="background:#fff; border:1px solid #CBD5E1; border-radius:12px; padding:12px; font-size:12px; color:var(--navy);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+            <strong style="font-size:12.5px;">Desglose Estimado Puesto en RD (${escHtml(est.etaLabel)})</strong>
+            ${dgaTag}
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px; color:var(--text-muted);">
+            <div style="display:flex; justify-content:space-between;"><span>Pieza(s) FOB (${est.qty} × ${IMP.fmtUSD(est.unitFobUsd)})</span><strong style="color:var(--navy);">${IMP.fmtUSD(est.subtotalFobUsd)}</strong></div>
+            <div style="display:flex; justify-content:space-between;"><span>Flete ${shippingMode === 'sea' ? 'marítimo LCL' : 'aéreo express'} (${est.totalWeightLb} lb) + manejo origen</span><span>${IMP.fmtUSD(est.freightUsd + est.originHandlingUsd)}</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>Seguro de carga internacional</span><span>${IMP.fmtUSD(est.insuranceUsd)}</span></div>
+            ${est.deMinimisExempt
+              ? `<div style="display:flex; justify-content:space-between; color:#059669;"><span>Aduanas DGA (Arancel + ITBIS ≤ US$200)</span><strong>US$ 0.00</strong></div>`
+              : `<div style="display:flex; justify-content:space-between;"><span>Aduanas DGA (Arancel ${est.tariffPct}% + ITBIS 18% + Corredor)</span><span>${IMP.fmtUSD(est.tariffUsd + est.dgaItbisUsd + est.customsBrokerUsd)}</span></div>`}
+            <div style="display:flex; justify-content:space-between;"><span>Gestión Green Mile RD (${est.managementFeePct}%) + Entrega local RD</span><span>${IMP.fmtUSD(est.managementFeeUsd + est.localDeliveryUsd)}</span></div>
+          </div>
+          <div style="border-top:1.5px solid #E2E8F0; margin-top:8px; padding-top:8px; display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap;">
+            <div>
+              <span style="font-size:11px; color:var(--text-muted); display:block;">Total Estimado Puesto en RD (Tasa ${est.usdToDop})</span>
+              <strong style="font-size:16.5px; color:var(--navy);">${IMP.fmtRD(est.totalRD)}</strong>
+              <span style="font-size:11.5px; color:#0369A1; font-weight:700;"> (${IMP.fmtUSD(est.totalUsd)})</span>
+            </div>
+            <div style="text-align:right; font-size:11px; color:#065F46;">
+              ${est.depositPct < 100
+                ? `<strong>Anticipo ${est.depositPct}%:</strong> ${IMP.fmtRD(est.depositRD)}<br><span style="color:var(--text-muted);">Saldo contra entrega: ${IMP.fmtRD(est.balanceRD)}</span>`
+                : `<strong>Pago único express:</strong> ${IMP.fmtRD(est.totalRD)}`}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function submitImportRequest(e) {
+      e.preventDefault();
+      const machineBrand = (document.getElementById('impBrand')?.value || '').trim();
+      const machineModel = (document.getElementById('impModel')?.value || '').trim();
+      const partTitle = (document.getElementById('impTitle')?.value || '').trim();
+      const requesterName = (document.getElementById('impReqName')?.value || '').trim();
+      const requesterRnc = (document.getElementById('impReqRnc')?.value || '').trim();
+      const requesterPhone = (document.getElementById('impReqPhone')?.value || '').trim();
+
+      if (!machineBrand || !machineModel || partTitle.length < 3) {
+        toast('Completa la marca, modelo de máquina y nombre de la pieza');
+        return;
+      }
+      if (!requesterName || !requesterRnc || requesterPhone.replace(/\D/g, '').length < 7) {
+        toast('Completa tu nombre/empresa, RNC/Cédula y teléfono en RD');
+        return;
+      }
+
+      const qty = Math.max(1, Number(document.getElementById('impQty')?.value || 1));
+      const origin = document.getElementById('impOrigin')?.value || 'usa_miami';
+      const shippingMode = document.getElementById('impShipping')?.value || 'air';
+      const fobUsd = Math.max(0, Number(document.getElementById('impFobUsd')?.value || 0));
+      const weightLb = Math.max(0.5, Number(document.getElementById('impWeightLb')?.value || 8));
+      const applyCafta = Boolean(document.getElementById('impApplyCafta')?.checked);
+
+      const estimate = IMP
+        ? IMP.calculateLandedCost({ fobUsd, qty, weightLb, origin, shippingMode, applyCafta })
+        : null;
+
+      const reqId = Date.now();
+      const reqCode = `IMP-${String(reqId).slice(-5)}`;
+      const rec = {
+        id: reqId,
+        requestCode: reqCode,
+        accountId: currentOwner ? currentOwner.id : null,
+        machineBrand,
+        machineModel,
+        machineSerial: (document.getElementById('impSerial')?.value || '').trim(),
+        partNumber: (document.getElementById('impPartNumber')?.value || '').trim(),
+        partTitle,
+        qty,
+        qualityPref: document.getElementById('impQuality')?.value || 'best_option',
+        origin,
+        shippingMode,
+        referenceUrl: (document.getElementById('impRefUrl')?.value || '').trim(),
+        fobUsd,
+        weightLb,
+        applyCafta,
+        estimatedTotalUsd: estimate ? estimate.totalUsd : 0,
+        estimatedTotalRD: estimate ? estimate.totalRD : 0,
+        estimatedDepositRD: estimate ? estimate.depositRD : 0,
+        estimatedEta: estimate ? estimate.etaLabel : '5–9 días hábiles',
+        requesterName,
+        requesterRnc,
+        requesterPhone,
+        deliveryCity: document.getElementById('impCity')?.value || 'Santo Domingo',
+        ncfType: document.getElementById('impNcfType')?.value || 'E31',
+        urgency: document.getElementById('impUrgency')?.value || 'media',
+        notes: (document.getElementById('impNotes')?.value || '').trim(),
+        photos: importPhotoList.slice(0, 4),
+        stage: 'requested',
+        quotes: [],
+        selectedQuoteIndex: null,
+        trackingNumber: '',
+        carrierName: '',
+        encfNumber: '',
+        adminNotes: '',
+        createdAtIso: new Date().toISOString()
+      };
+
+      importRequests = [rec, ...importRequests.filter(r => String(r.id) !== String(rec.id))];
+      if (window.GM_FIREBASE && window.GM_FIREBASE.saveImportRequest) {
+        await window.GM_FIREBASE.saveImportRequest(rec);
+      }
+      closeSheet('importPartSheet');
+      if (currentOwner) {
+        switchTab('profile');
+      }
+      toast(`✓ Solicitud ${reqCode} enviada • Te cotizaremos puesto en obra RD`);
+    }
+
+    async function approveImportQuote(reqId, quoteIdx = 0) {
+      const target = importRequests.find(r => String(r.id) === String(reqId));
+      if (!target || !Array.isArray(target.quotes) || !target.quotes[quoteIdx]) return;
+      const chosen = target.quotes[quoteIdx];
+      const patch = {
+        stage: 'approved_paid',
+        selectedQuoteIndex: quoteIdx,
+        approvedQuote: chosen,
+        approvedTotalRD: Number(chosen.totalRD || 0),
+        approvedTotalUsd: Number(chosen.totalUsd || 0),
+        approvedAtIso: new Date().toISOString()
+      };
+      importRequests = importRequests.map(r => (String(r.id) === String(reqId) ? Object.assign({}, r, patch) : r));
+      if (window.GM_FIREBASE && window.GM_FIREBASE.updateImportRequest) {
+        await window.GM_FIREBASE.updateImportRequest(reqId, patch);
+      }
+      renderProfile();
+      toast(`✅ Cotización aprobada (${chosen.label || 'Opción seleccionada'}) • Coordinando compra en origen`);
+    }
+
+    async function cancelImportRequest(reqId) {
+      const patch = { stage: 'cancelled', cancelledAtIso: new Date().toISOString() };
+      importRequests = importRequests.map(r => (String(r.id) === String(reqId) ? Object.assign({}, r, patch) : r));
+      if (window.GM_FIREBASE && window.GM_FIREBASE.updateImportRequest) {
+        await window.GM_FIREBASE.updateImportRequest(reqId, patch);
+      }
+      renderProfile();
+      toast('Solicitud de importación cancelada');
     }
 
     /* =========================================================
@@ -4119,6 +4701,80 @@
         }
       }
 
+      // 2C. International Spare Parts Import Requests (Landed Cost + 8-Stage Tracker + Quote Approval)
+      const impBox = document.getElementById('profileImports');
+      if (impBox) {
+        const myRnc = digitsOnly(currentOwner.rncDigits || currentOwner.rncFormatted);
+        const myImports = importRequests.filter(r =>
+          (r.accountId && String(r.accountId) === String(currentOwner.id)) ||
+          (myRnc && digitsOnly(r.requesterRnc) === myRnc)
+        );
+        if (myImports.length === 0) {
+          impBox.innerHTML = `<p style="font-size:13px; color:var(--text-muted);">¿Necesitas una pieza que no existe en RD? Toca <strong>+ Solicitar Importación</strong> y te cotizamos puesto en obra desde EE. UU., Europa o Asia con DGA y e-NCF.</p>`;
+        } else {
+          impBox.innerHTML = myImports.map(r => {
+            const st = IMP ? IMP.getStageMeta(r.stage || 'requested') : { icon: '📥', label: 'Solicitud Recibida', bg: '#EFF6FF', color: '#1E40AF' };
+            const orig = IMP ? IMP.getOriginMeta(r.origin) : { flag: '🌍', shortLabel: 'Intl.' };
+            const ship = IMP ? IMP.getShippingMeta(r.shippingMode) : { shortLabel: '✈️ Aéreo' };
+            const trackHtml = IMP ? IMP.renderProgressTrackHtml(r.stage || 'requested') : '';
+            const quotes = Array.isArray(r.quotes) ? r.quotes : [];
+            const quotesHtml = (r.stage === 'quoted' && quotes.length > 0)
+              ? `<div style="margin-top:10px; background:#FFFBEB; border:1.5px solid #FCD34D; border-radius:11px; padding:10px;">
+                  <strong style="font-size:12px; color:#92400E; display:block; margin-bottom:7px;">💬 Cotización Oficial Lista — Elige una opción para iniciar la compra:</strong>
+                  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:8px;">
+                    ${quotes.map((q, idx) => `
+                      <div style="background:#fff; border:1px solid #FDE68A; border-radius:10px; padding:9px; display:flex; flex-direction:column; justify-content:space-between; gap:6px;">
+                        <div>
+                          <span style="font-size:10px; font-weight:800; color:#0369A1; background:#E0F2FE; padding:2px 7px; border-radius:99px;">${escHtml(q.label || `Opción ${idx + 1}`)}</span>
+                          <div style="font-size:16px; font-weight:800; color:var(--navy); margin-top:4px;">${fmtRD(q.totalRD || 0)} <small style="font-size:11px; color:var(--text-muted); font-weight:600;">(${IMP ? IMP.fmtUSD(q.totalUsd || 0) : ''})</small></div>
+                          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Proveedor: ${escHtml(q.supplier || 'Verificado')} • Plazo: ${escHtml(q.eta || r.estimatedEta || '')}</div>
+                          ${q.notes ? `<div style="font-size:11px; color:#475569; margin-top:2px;">${escHtml(q.notes)}</div>` : ''}
+                        </div>
+                        <button type="button" class="btn btn-primary" style="padding:7px 10px; font-size:11.5px; width:100%;" onclick="approveImportQuote('${escHtml(r.id)}', ${idx})">✅ Aprobar esta Opción</button>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>`
+              : '';
+            const approvedInfo = r.approvedQuote
+              ? `<div style="margin-top:6px; font-size:11.5px; color:#065F46; background:#ECFDF5; border:1px solid #A7F3D0; border-radius:8px; padding:6px 9px;">
+                  ✅ <strong>Opción aprobada:</strong> ${escHtml(r.approvedQuote.label || 'Cotización')} — <strong>${fmtRD(r.approvedTotalRD || r.approvedQuote.totalRD || 0)}</strong> (${IMP ? IMP.fmtUSD(r.approvedTotalUsd || r.approvedQuote.totalUsd || 0) : ''})
+                </div>`
+              : '';
+
+            return `
+              <div style="border:1px solid var(--border); border-left:4px solid ${st.color}; border-radius:12px; padding:12px; margin-bottom:10px; background:#fff;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+                  <div>
+                    <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:4px;">
+                      <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:var(--navy); color:#fff;">${escHtml(r.requestCode || 'IMP')}</span>
+                      <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:99px; background:${st.bg}; color:${st.color};">${st.icon} ${escHtml(st.label)}</span>
+                      <span style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:99px; background:#F1F5F9; color:#334155;">${orig.flag} ${escHtml(orig.shortLabel)} • ${escHtml(ship.shortLabel)}</span>
+                    </div>
+                    <strong style="font-size:14px; color:var(--navy); display:block;">${escHtml(r.partTitle)} ${Number(r.qty) > 1 ? `× ${r.qty}` : ''}</strong>
+                    <span style="font-size:11.5px; color:var(--text-muted); display:block;">
+                      Máquina: <strong>${escHtml(r.machineBrand)} ${escHtml(r.machineModel)}</strong>${r.machineSerial ? ` • Serial: <code>${escHtml(r.machineSerial)}</code>` : ''}${r.partNumber ? ` • P/N: <code>${escHtml(r.partNumber)}</code>` : ''}
+                    </span>
+                    <span style="font-size:11.5px; color:var(--text-muted); display:block;">
+                      Entrega: ${escHtml(r.deliveryCity || 'RD')} • ${escHtml(r.ncfType || 'E31')}${r.estimatedTotalRD > 0 && !r.approvedTotalRD ? ` • Est. Puesto RD: <strong>${fmtRD(r.estimatedTotalRD)}</strong>` : ''}
+                    </span>
+                  </div>
+                  ${['requested', 'quoted'].includes(r.stage || 'requested')
+                    ? `<button type="button" class="btn btn-ghost" style="padding:5px 9px; font-size:11px; color:#DC2626;" onclick="cancelImportRequest('${escHtml(r.id)}')">Cancelar</button>`
+                    : ''}
+                </div>
+                ${trackHtml}
+                ${approvedInfo}
+                ${r.trackingNumber ? `<div style="margin-top:6px; font-size:11.5px; color:#0369A1; background:#E0F2FE; border-radius:8px; padding:6px 9px;">📦 <strong>Guía Internacional:</strong> <code>${escHtml(r.trackingNumber)}</code>${r.carrierName ? ` (${escHtml(r.carrierName)})` : ''}</div>` : ''}
+                ${r.encfNumber ? `<div style="margin-top:5px; font-size:11.5px; color:#065F46;">🧾 <strong>Factura e-NCF Emitida:</strong> <code>${escHtml(r.encfNumber)}</code></div>` : ''}
+                ${r.adminNotes ? `<div style="margin-top:5px; font-size:11.5px; color:#334155;">📝 <strong>Nota Green Mile:</strong> ${escHtml(r.adminNotes)}</div>` : ''}
+                ${quotesHtml}
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
       // 3. Purchase Orders (Machinery Sales & Spare Parts)
       const oBox = document.getElementById('profileOrders');
       if (oBox) {
@@ -4657,20 +5313,22 @@
     }
 
     function exportBackup() {
-      const blob = new Blob([JSON.stringify({ equipment, salesCatalog, partsCatalog, requests, proposals, bookings, orders, productChats }, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify({ equipment, salesCatalog, partsCatalog, requests, proposals, bookings, orders, productChats, importRequests }, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'green-mile-app-rd.json';
       a.click();
     }
 
-    /* Apply optional ?cat= / ?city= / ?tab= / ?mode= / ?login=1&next= parameters */
+    /* Apply optional ?cat= / ?city= / ?tab= / ?mode= / ?action=import&q= / ?login=1&next= parameters */
     function applyUrlParams() {
       const params = new URLSearchParams(window.location.search);
       const cat = params.get('cat');
       const city = params.get('city');
       const tab = params.get('tab');
       const mode = params.get('mode');
+      const action = params.get('action');
+      const prefillQ = params.get('q') || '';
       const loginFlag = params.get('login');
       const nextTarget = params.get('next');
 
@@ -4700,6 +5358,11 @@
         }
         switchOwnerAuthMode('login');
         openSheet('ownerAuthSheet');
+      }
+
+      if (action === 'import') {
+        switchMarketMode('parts');
+        setTimeout(() => openImportPartSheet(prefillQ), 80);
       }
 
       if (tab && ['catalog', 'requests', 'saved', 'profile'].includes(tab)) {
@@ -4763,7 +5426,23 @@
       });
     }
 
+    if (window.GM_FIREBASE && window.GM_FIREBASE.subscribeImportRequests) {
+      window.GM_FIREBASE.subscribeImportRequests((list) => {
+        importRequests = Array.isArray(list) ? list : [];
+        if (activeTab === 'profile') renderProfile();
+      });
+    }
+
     if (window.GM_FIREBASE && window.GM_FIREBASE.isReady()) {
+      if (window.GM_FIREBASE.subscribeAdminConfig) {
+        window.GM_FIREBASE.subscribeAdminConfig((cloudCfg) => {
+          if (cloudCfg && window.GM_BILLING) {
+            const merged = Object.assign({}, window.GM_BILLING.DEFAULT_ADMIN_CONFIG, cloudCfg);
+            try { localStorage.setItem('gm_rd_admin_config_v1', JSON.stringify(merged)); } catch (_) {}
+          }
+        });
+      }
+
       window.GM_FIREBASE.subscribeEquipment((cloudList) => {
         equipment = cloudList;
         syncCounters();

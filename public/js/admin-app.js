@@ -2,11 +2,16 @@
 (function () {
   const GM = window.GM_CATALOG;
   const BILL = window.GM_BILLING;
+  const IMP = window.GM_IMPORT;
   const API = window.GM_API;
   const ADMIN_SESSION_KEY = 'gm_rd_admin_session_v1';
 
   let state = GM.loadState();
   let ownersList = [];
+  let importRequests = (window.GM_FIREBASE && window.GM_FIREBASE.getLocalImportRequests)
+    ? window.GM_FIREBASE.getLocalImportRequests()
+    : [];
+  let importFilter = 'all';
   let adminConfig = BILL.loadAdminConfig();
   let activeSection = 'overview';
   let orderFilter = 'all';
@@ -26,6 +31,10 @@
       title: 'Facturación e-CF, Órdenes y Cobros',
       sub: 'Validación de pagos (Tarjeta / Transferencia / OC), emisión de e-NCF y control de conduces'
     },
+    imports: {
+      title: 'Importaciones Internacionales de Repuestos (EE. UU. / Europa / Asia)',
+      sub: 'Cotizaciones Landed Cost (DGA + DR-CAFTA), aprobación del cliente y tracking internacional hasta obra en RD'
+    },
     gov: {
       title: 'Gestión Gubernamental — Comprobante e-CF 45 (Ley 340-06)',
       sub: 'Expedientes públicos, Orden de Compra DGCP, Retención 5% ISR (Art. 309) y Libramientos SIGEF'
@@ -44,7 +53,7 @@
     },
     config: {
       title: 'Configuración Corporativa, Cuentas Bancarias y Cumplimiento',
-      sub: 'Datos fiscales de Green Mile RD, RPE Estado, certificaciones DGII/TSS, comisiones y PIN'
+      sub: 'Datos fiscales de Green Mile RD, RPE Estado, certificaciones DGII/TSS, tarifas de importación y PIN'
     }
   };
 
@@ -105,11 +114,14 @@
     const list = getBookings().filter((b) => b.stage !== 'cancelled');
     const govList = list.filter((b) => b.ncfType === 'E45');
     const pendingPayouts = list.filter((b) => b.settlement.status !== 'paid');
+    const openImports = (importRequests || []).filter((r) => r.stage !== 'delivered' && r.stage !== 'cancelled');
 
     const elOrders = document.getElementById('navCountOrders');
+    const elImports = document.getElementById('navCountImports');
     const elGov = document.getElementById('navCountGov');
     const elPay = document.getElementById('navCountPayouts');
     if (elOrders) elOrders.textContent = String(list.length);
+    if (elImports) elImports.textContent = String(openImports.length);
     if (elGov) elGov.textContent = String(govList.length);
     if (elPay) elPay.textContent = String(pendingPayouts.length);
   }
@@ -212,11 +224,418 @@
     if (!root) return;
     if (activeSection === 'overview') root.innerHTML = renderOverview();
     else if (activeSection === 'orders') root.innerHTML = renderOrders();
+    else if (activeSection === 'imports') root.innerHTML = renderImportsModule();
     else if (activeSection === 'gov') root.innerHTML = renderGovModule();
     else if (activeSection === 'payouts') root.innerHTML = renderPayoutsModule();
     else if (activeSection === 'fiscal') root.innerHTML = renderFiscalModule();
     else if (activeSection === 'sop') root.innerHTML = renderSopModule();
     else if (activeSection === 'config') root.innerHTML = renderConfigModule();
+  }
+
+  /* =========================================================
+     MÓDULO: IMPORTACIONES INTERNACIONALES DE REPUESTOS
+     ========================================================= */
+  function setImportFilter(flt) {
+    importFilter = flt || 'all';
+    renderSection();
+  }
+
+  function persistImportRequest(reqId, patch) {
+    importRequests = importRequests.map((r) => (String(r.id) === String(reqId) ? Object.assign({}, r, patch) : r));
+    if (window.GM_FIREBASE && window.GM_FIREBASE.updateImportRequest) {
+      window.GM_FIREBASE.updateImportRequest(reqId, patch).catch(() => {});
+    }
+    syncNavCounts();
+    renderSection();
+  }
+
+  function renderImportsModule() {
+    const all = Array.isArray(importRequests) ? importRequests : [];
+    const active = all.filter((r) => r.stage !== 'cancelled');
+    const pendingQuote = active.filter((r) => (r.stage || 'requested') === 'requested');
+    const inTransit = active.filter((r) => ['approved_paid', 'purchased_origin', 'warehouse_origin', 'in_transit', 'customs_dga'].includes(r.stage));
+    const totalVolRD = active.reduce((acc, r) => acc + Number(r.approvedTotalRD || r.estimatedTotalRD || 0), 0);
+
+    const filtered = all.filter((r) => {
+      const st = r.stage || 'requested';
+      if (importFilter === 'requested') return st === 'requested';
+      if (importFilter === 'quoted') return st === 'quoted';
+      if (importFilter === 'transit') return ['approved_paid', 'purchased_origin', 'warehouse_origin', 'in_transit', 'customs_dga'].includes(st);
+      if (importFilter === 'delivered') return st === 'delivered';
+      return true;
+    });
+
+    const rowsHtml = filtered.length === 0
+      ? `<div class="panel-body" style="text-align:center; padding:34px 18px; color:var(--text-muted);">
+          <div style="font-size:32px; margin-bottom:8px;">🌍</div>
+          <strong style="color:var(--navy); display:block; margin-bottom:4px;">No hay solicitudes de importación en esta vista</strong>
+          <p style="font-size:12.5px; margin-bottom:14px;">Cuando un cliente solicite importar una pieza desde EE. UU., Europa o Asia desde el catálogo, aparecerá aquí en tiempo real.</p>
+          <button type="button" class="btn btn-primary" onclick="window.GM_ADMIN.seedDemoImportRequest()">+ Cargar Caso Demo de Importación (CAT Miami)</button>
+        </div>`
+      : filtered.map((r) => {
+          const st = IMP ? IMP.getStageMeta(r.stage || 'requested') : { icon: '📥', label: 'Solicitada', bg: '#EFF6FF', color: '#1E40AF' };
+          const orig = IMP ? IMP.getOriginMeta(r.origin) : { flag: '🌍', shortLabel: 'Intl.' };
+          const ship = IMP ? IMP.getShippingMeta(r.shippingMode) : { shortLabel: '✈️ Aéreo' };
+          const trackBar = IMP ? IMP.renderProgressTrackHtml(r.stage || 'requested') : '';
+          const amountRD = Number(r.approvedTotalRD || (r.quotes && r.quotes[0] && r.quotes[0].totalRD) || r.estimatedTotalRD || 0);
+          const urgencyBadge = r.urgency === 'alta'
+            ? '<span class="pill" style="background:#FEE2E2; color:#991B1B;">🔴 Urgente (Máquina Detenida)</span>'
+            : (r.urgency === 'baja' ? '<span class="pill" style="background:#ECFDF5; color:#065F46;">🟢 Flexible</span>' : '<span class="pill" style="background:#FEF3C7; color:#92400E;">🟡 Normal</span>');
+          const cleanPhone = String(r.requesterPhone || '').replace(/\D/g, '');
+          const waHref = cleanPhone
+            ? `https://wa.me/${cleanPhone.length === 10 ? '1' + cleanPhone : cleanPhone}?text=${encodeURIComponent(`Hola ${r.requesterName || ''}, te contactamos de Green Mile Construction RD sobre tu solicitud de importación ${r.requestCode || ''} (${r.partTitle || ''}).`)}`
+            : '';
+
+          return `
+            <div style="border-bottom:1px solid var(--border); padding:15px 18px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:8px;">
+                <div style="flex:1; min-width:240px;">
+                  <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:5px;">
+                    <span class="pill" style="background:var(--navy); color:#fff;">${esc(r.requestCode || 'IMP')}</span>
+                    <span class="pill" style="background:${st.bg}; color:${st.color};">${st.icon} ${esc(st.label)}</span>
+                    <span class="pill" style="background:#F1F5F9; color:#334155;">${orig.flag} ${esc(orig.shortLabel)} • ${esc(ship.shortLabel)}</span>
+                    ${urgencyBadge}
+                  </div>
+                  <strong style="font-size:15px; color:var(--navy); display:block;">${esc(r.partTitle)} ${Number(r.qty) > 1 ? `× ${r.qty}` : ''}</strong>
+                  <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                    Máquina: <strong>${esc(r.machineBrand)} ${esc(r.machineModel)}</strong>
+                    ${r.machineSerial ? ` • Serial/PIN: <code>${esc(r.machineSerial)}</code>` : ''}
+                    ${r.partNumber ? ` • P/N: <code>${esc(r.partNumber)}</code>` : ''}
+                  </div>
+                  <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                    Cliente: <strong>${esc(r.requesterName)}</strong> (${esc(r.requesterRnc || 'N/A')}) • Tel: ${esc(r.requesterPhone || '')} • Entrega: ${esc(r.deliveryCity || 'RD')} • ${esc(r.ncfType || 'E31')}
+                  </div>
+                  ${r.trackingNumber ? `<div style="font-size:11.5px; color:#0369A1; margin-top:3px;">📦 Guía: <code>${esc(r.trackingNumber)}</code> ${r.carrierName ? `(${esc(r.carrierName)})` : ''}</div>` : ''}
+                </div>
+                <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                  <div style="font-size:16px; font-weight:800; color:var(--navy);">${amountRD > 0 ? BILL.fmtRD(amountRD) : 'Por cotizar'}</div>
+                  <div style="font-size:11px; color:var(--text-muted);">${r.approvedQuote ? `Aprobada: ${esc(r.approvedQuote.label)}` : (r.quotes && r.quotes.length ? `${r.quotes.length} opción(es) cotizada(s)` : 'Sin cotización enviada')}</div>
+                  <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+                    <button type="button" class="btn btn-primary" style="padding:7px 12px; font-size:12px;" onclick="window.GM_ADMIN.openManageImportModal('${esc(r.id)}')">✏️ Cotizar / Gestionar</button>
+                    ${waHref ? `<a class="btn btn-ghost" style="padding:7px 10px; font-size:12px; text-decoration:none;" href="${waHref}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
+                  </div>
+                </div>
+              </div>
+              ${trackBar}
+            </div>
+          `;
+        }).join('');
+
+    return `
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Solicitudes Activas</div>
+          <div class="kpi-val">${active.length}</div>
+          <div class="kpi-sub">Encargos internacionales registrados</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Pendientes de Cotizar</div>
+          <div class="kpi-val" style="color:var(--orange);">${pendingQuote.length}</div>
+          <div class="kpi-sub">Requieren cotización FOB + DGA</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">En Compra / Tránsito / DGA</div>
+          <div class="kpi-val" style="color:#0369A1;">${inTransit.length}</div>
+          <div class="kpi-sub">Miami Hub, tránsito o Aduanas RD</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Volumen Puesto en RD</div>
+          <div class="kpi-val">${BILL.fmtRD(totalVolRD)}</div>
+          <div class="kpi-sub">Tasa activa: RD$ ${(adminConfig.importConfig && adminConfig.importConfig.usdToDop) || 60.5}/US$</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head" style="flex-wrap:wrap; gap:10px;">
+          <div>
+            <h3>🌍 Gestión de Importaciones Internacionales de Repuestos</h3>
+            <p>Envía cotizaciones comparativas (OEM vs Aftermarket) y actualiza el tracker de 8 etapas visible en Mi Panel del cliente</p>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            ${[
+              ['all', `Todas (${all.length})`],
+              ['requested', `Por Cotizar (${pendingQuote.length})`],
+              ['quoted', 'Cotizadas'],
+              ['transit', `En Tránsito/DGA (${inTransit.length})`],
+              ['delivered', 'Entregadas']
+            ].map(([k, lbl]) => `
+              <button type="button" class="btn ${importFilter === k ? 'btn-navy' : 'btn-ghost'}" style="padding:6px 11px; font-size:11.5px;" onclick="window.GM_ADMIN.setImportFilter('${k}')">${lbl}</button>
+            `).join('')}
+          </div>
+        </div>
+        ${rowsHtml}
+      </div>
+    `;
+  }
+
+  function openManageImportModal(reqId) {
+    const r = (importRequests || []).find((x) => String(x.id) === String(reqId));
+    if (!r) return;
+
+    const titleEl = document.getElementById('impModalTitle');
+    const subEl = document.getElementById('impModalSub');
+    const bodyEl = document.getElementById('manageImportBody');
+    if (titleEl) titleEl.textContent = `Importación ${r.requestCode || ''} — ${r.partTitle}`;
+    if (subEl) subEl.textContent = `${r.machineBrand} ${r.machineModel} • Cliente: ${r.requesterName} (${r.requesterRnc || 'N/A'})`;
+
+    const impCfg = Object.assign({}, IMP ? IMP.DEFAULT_IMPORT_CONFIG : {}, adminConfig.importConfig || {});
+    const q1 = (r.quotes && r.quotes[0]) || {};
+    const q2 = (r.quotes && r.quotes[1]) || {};
+    const photosHtml = Array.isArray(r.photos) && r.photos.length
+      ? `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+          ${r.photos.map((src) => `<img src="${src}" alt="Foto pieza" style="width:88px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />`).join('')}
+        </div>`
+      : '';
+
+    const stageOptions = (IMP ? IMP.IMPORT_STAGES : []).map((st) =>
+      `<option value="${st.id}" ${(r.stage || 'requested') === st.id ? 'selected' : ''}>${st.step}. ${st.icon} ${st.label}</option>`
+    ).join('') + `<option value="cancelled" ${r.stage === 'cancelled' ? 'selected' : ''}>✕ Cancelada</option>`;
+
+    bodyEl.innerHTML = `
+      <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:14px; font-size:12.5px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:8px;">
+          <div><strong>Máquina:</strong> ${esc(r.machineBrand)} ${esc(r.machineModel)}</div>
+          <div><strong>Serial / PIN:</strong> <code>${esc(r.machineSerial || 'No indicado')}</code></div>
+          <div><strong>Part Number:</strong> <code>${esc(r.partNumber || 'Por confirmar')}</code></div>
+          <div><strong>Cantidad / Peso est.:</strong> ${r.qty || 1} u. • ~${r.weightLb || 8} lb</div>
+          <div><strong>Origen / Envío:</strong> ${esc(IMP ? IMP.getOriginMeta(r.origin).label : r.origin)} • ${r.shippingMode === 'sea' ? '🚢 Marítimo LCL' : '✈️ Aéreo Express'}</div>
+          <div><strong>Calidad pedida:</strong> ${esc(IMP ? IMP.getQualityLabel(r.qualityPref) : r.qualityPref)}</div>
+          <div><strong>Cliente / Tel:</strong> ${esc(r.requesterName)} • ${esc(r.requesterPhone || '')}</div>
+          <div><strong>Entrega / Fiscal:</strong> ${esc(r.deliveryCity || 'RD')} • ${esc(r.ncfType || 'E31')}</div>
+        </div>
+        ${r.referenceUrl ? `<div style="margin-top:6px;"><strong>Enlace cliente:</strong> <a href="${esc(r.referenceUrl)}" target="_blank" rel="noopener" style="color:#0369A1;">${esc(r.referenceUrl)}</a></div>` : ''}
+        ${r.notes ? `<div style="margin-top:6px;"><strong>Notas del cliente:</strong> ${esc(r.notes)}</div>` : ''}
+        ${photosHtml}
+      </div>
+
+      <form onsubmit="window.GM_ADMIN.saveAdminImportQuote(event, '${esc(r.id)}')" style="border:1.5px solid #BFDBFE; background:#EFF6FF; border-radius:12px; padding:14px; margin-bottom:14px;">
+        <h4 style="margin:0 0 8px; color:var(--navy); font-size:14px;">💬 1. Enviar / Actualizar Cotización Oficial al Cliente (Landed Cost RD)</h4>
+        <p style="margin:0 0 10px; font-size:11.5px; color:#334155;">Ingresa el costo FOB del proveedor y el motor calcula automáticamente flete, DGA (Decreto 402-05 / DR-CAFTA + ITBIS 18%), comisión y total en USD/RD$ (tasa ${impCfg.usdToDop}). Puedes incluir una segunda opción Aftermarket.</p>
+        <div class="f-grid">
+          <div class="f-field">
+            <label>Opción 1 — Etiqueta</label>
+            <div class="f-box" style="background:#fff;"><input type="text" id="impQ1Label" value="${esc(q1.label || 'Original OEM (Recomendada)')}" required /></div>
+          </div>
+          <div class="f-field">
+            <label>Opción 1 — Proveedor Exterior</label>
+            <div class="f-box" style="background:#fff;"><input type="text" id="impQ1Supplier" value="${esc(q1.supplier || 'Distribuidor Oficial Miami')}" required /></div>
+          </div>
+          <div class="f-field">
+            <label>Opción 1 — Precio FOB Unitario (US$)</label>
+            <div class="f-box" style="background:#fff;"><input type="number" id="impQ1Fob" min="1" step="0.01" value="${q1.fobUsd || r.fobUsd || ''}" placeholder="Ej. 480" required /></div>
+          </div>
+          <div class="f-field">
+            <label>Opción 1 — Peso Unitario (lb) / Plazo</label>
+            <div style="display:flex; gap:6px;">
+              <div class="f-box" style="background:#fff; width:92px;"><input type="number" id="impQ1Weight" min="0.5" step="0.5" value="${q1.weightLb || r.weightLb || 8}" required /></div>
+              <div class="f-box" style="background:#fff; flex:1;"><input type="text" id="impQ1Eta" value="${esc(q1.eta || r.estimatedEta || '5–7 días hábiles')}" required /></div>
+            </div>
+          </div>
+          <div class="f-field full">
+            <label>Opción 1 — Notas / Garantía</label>
+            <div class="f-box" style="background:#fff;"><input type="text" id="impQ1Notes" value="${esc(q1.notes || 'Pieza original garantizada • Incluye flete, aduanas DGA y e-NCF local')}" /></div>
+          </div>
+
+          <div class="f-field full" style="border-top:1px dashed #93C5FD; padding-top:10px; margin-top:4px;">
+            <strong style="font-size:12px; color:#1E3A8A;">Opción 2 Alternativa (Opcional — ej. Aftermarket / Usada Verificada)</strong>
+          </div>
+          <div class="f-field">
+            <label>Opción 2 — Etiqueta</label>
+            <div class="f-box" style="background:#fff;"><input type="text" id="impQ2Label" value="${esc(q2.label || 'Aftermarket Heavy Duty (CTP / ITR)')}" /></div>
+          </div>
+          <div class="f-field">
+            <label>Opción 2 — Proveedor Exterior</label>
+            <div class="f-box" style="background:#fff;"><input type="text" id="impQ2Supplier" value="${esc(q2.supplier || 'Costex Tractor Parts (Miami)')}" /></div>
+          </div>
+          <div class="f-field">
+            <label>Opción 2 — Precio FOB Unitario (US$ — vacío = no incluir)</label>
+            <div class="f-box" style="background:#fff;"><input type="number" id="impQ2Fob" min="0" step="0.01" value="${q2.fobUsd || ''}" placeholder="Opcional" /></div>
+          </div>
+          <div class="f-field">
+            <label>Opción 2 — Plazo estimado</label>
+            <div class="f-box" style="background:#fff;"><input type="text" id="impQ2Eta" value="${esc(q2.eta || r.estimatedEta || '5–8 días hábiles')}" /></div>
+          </div>
+        </div>
+        <div style="margin-top:12px; display:flex; justify-content:flex-end;">
+          <button type="submit" class="btn btn-primary">📤 Publicar Cotización al Cliente (Estado: Cotizada)</button>
+        </div>
+      </form>
+
+      <form onsubmit="window.GM_ADMIN.saveAdminImportTracking(event, '${esc(r.id)}')" style="border:1px solid var(--border); border-radius:12px; padding:14px;">
+        <h4 style="margin:0 0 10px; color:var(--navy); font-size:14px;">📦 2. Control de Etapas, Tracking Internacional y Factura e-NCF</h4>
+        <div class="f-grid">
+          <div class="f-field full">
+            <label>Etapa Actual de la Importación</label>
+            <div class="f-box"><select id="impTrackStage">${stageOptions}</select></div>
+          </div>
+          <div class="f-field">
+            <label>Guía Internacional / AWB / BL</label>
+            <div class="f-box"><input type="text" id="impTrackNum" value="${esc(r.trackingNumber || '')}" placeholder="Ej. MIA-GM-882410 / 1Z999AA1..." /></div>
+          </div>
+          <div class="f-field">
+            <label>Courier / Forwarder / Almacén</label>
+            <div class="f-box"><input type="text" id="impTrackCarrier" value="${esc(r.carrierName || '')}" placeholder="Ej. Hub Miami Aéreo / Consolidado LCL" /></div>
+          </div>
+          <div class="f-field">
+            <label>Comprobante Fiscal e-NCF Emitido (opcional)</label>
+            <div class="f-box"><input type="text" id="impTrackEncf" value="${esc(r.encfNumber || '')}" placeholder="Ej. E310000000105" /></div>
+          </div>
+          <div class="f-field">
+            <label>Notas visibles para el cliente en Mi Panel</label>
+            <div class="f-box"><input type="text" id="impTrackNotes" value="${esc(r.adminNotes || '')}" placeholder="Ej. Recibida en Miami, saliendo en vuelo de mañana hacia SDQ" /></div>
+          </div>
+        </div>
+        <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-ghost" style="color:#DC2626;" onclick="window.GM_ADMIN.deleteAdminImport('${esc(r.id)}')">🗑️ Eliminar Solicitud</button>
+          <button type="submit" class="btn btn-navy">💾 Guardar Etapa y Tracking</button>
+        </div>
+      </form>
+    `;
+
+    openModal('manageImportModal');
+  }
+
+  function saveAdminImportQuote(e, reqId) {
+    e.preventDefault();
+    const r = (importRequests || []).find((x) => String(x.id) === String(reqId));
+    if (!r || !IMP) return;
+
+    const impCfg = Object.assign({}, IMP.DEFAULT_IMPORT_CONFIG, adminConfig.importConfig || {});
+    const qty = Math.max(1, Number(r.qty || 1));
+
+    const fob1 = Number(document.getElementById('impQ1Fob')?.value || 0);
+    const weight1 = Math.max(0.5, Number(document.getElementById('impQ1Weight')?.value || r.weightLb || 8));
+    if (!(fob1 > 0)) { toast('Ingresa un precio FOB válido para la Opción 1'); return; }
+
+    const calc1 = IMP.calculateLandedCost({
+      fobUsd: fob1,
+      qty,
+      weightLb: weight1,
+      origin: r.origin || 'usa_miami',
+      shippingMode: r.shippingMode || 'air',
+      applyCafta: r.applyCafta !== false,
+      config: impCfg
+    });
+
+    const quotes = [{
+      label: (document.getElementById('impQ1Label')?.value || 'Original OEM').trim(),
+      supplier: (document.getElementById('impQ1Supplier')?.value || 'Proveedor Verificado').trim(),
+      fobUsd: fob1,
+      weightLb: weight1,
+      eta: (document.getElementById('impQ1Eta')?.value || calc1.etaLabel).trim(),
+      notes: (document.getElementById('impQ1Notes')?.value || '').trim(),
+      totalUsd: calc1.totalUsd,
+      totalRD: calc1.totalRD,
+      depositRD: calc1.depositRD,
+      freightUsd: calc1.freightUsd,
+      customsUsd: +(calc1.tariffUsd + calc1.dgaItbisUsd + calc1.customsBrokerUsd).toFixed(2)
+    }];
+
+    const fob2 = Number(document.getElementById('impQ2Fob')?.value || 0);
+    if (fob2 > 0) {
+      const calc2 = IMP.calculateLandedCost({
+        fobUsd: fob2,
+        qty,
+        weightLb: weight1,
+        origin: r.origin || 'usa_miami',
+        shippingMode: r.shippingMode || 'air',
+        applyCafta: r.applyCafta !== false,
+        config: impCfg
+      });
+      quotes.push({
+        label: (document.getElementById('impQ2Label')?.value || 'Aftermarket Heavy Duty').trim(),
+        supplier: (document.getElementById('impQ2Supplier')?.value || 'Costex Miami').trim(),
+        fobUsd: fob2,
+        weightLb: weight1,
+        eta: (document.getElementById('impQ2Eta')?.value || calc2.etaLabel).trim(),
+        notes: 'Opción alternativa Heavy Duty • Incluye flete, DGA y e-NCF local',
+        totalUsd: calc2.totalUsd,
+        totalRD: calc2.totalRD,
+        depositRD: calc2.depositRD,
+        freightUsd: calc2.freightUsd,
+        customsUsd: +(calc2.tariffUsd + calc2.dgaItbisUsd + calc2.customsBrokerUsd).toFixed(2)
+      });
+    }
+
+    persistImportRequest(reqId, {
+      stage: 'quoted',
+      quotes,
+      estimatedTotalUsd: quotes[0].totalUsd,
+      estimatedTotalRD: quotes[0].totalRD,
+      quotedAtIso: new Date().toISOString()
+    });
+    closeModal('manageImportModal');
+    toast(`✅ Cotización oficial (${quotes.length} opción/es) enviada al cliente en Mi Panel`);
+  }
+
+  function saveAdminImportTracking(e, reqId) {
+    e.preventDefault();
+    const patch = {
+      stage: document.getElementById('impTrackStage')?.value || 'requested',
+      trackingNumber: (document.getElementById('impTrackNum')?.value || '').trim(),
+      carrierName: (document.getElementById('impTrackCarrier')?.value || '').trim(),
+      encfNumber: (document.getElementById('impTrackEncf')?.value || '').trim().toUpperCase(),
+      adminNotes: (document.getElementById('impTrackNotes')?.value || '').trim()
+    };
+    persistImportRequest(reqId, patch);
+    closeModal('manageImportModal');
+    toast('✓ Etapa y tracking internacional actualizados');
+  }
+
+  function deleteAdminImport(reqId) {
+    importRequests = importRequests.filter((r) => String(r.id) !== String(reqId));
+    if (window.GM_FIREBASE && window.GM_FIREBASE.deleteImportRequest) {
+      window.GM_FIREBASE.deleteImportRequest(reqId).catch(() => {});
+    }
+    closeModal('manageImportModal');
+    syncNavCounts();
+    renderSection();
+    toast('Solicitud de importación eliminada');
+  }
+
+  function seedDemoImportRequest() {
+    const now = Date.now();
+    const demo = {
+      id: now,
+      requestCode: `IMP-${String(now).slice(-5)}`,
+      machineBrand: 'Caterpillar',
+      machineModel: 'CAT 320D2 GC',
+      machineSerial: 'CAT0320DKZBM04812',
+      partNumber: '372-2905',
+      partTitle: 'Módulo ECM / Computadora de Motor CAT C7.1 (Programada por Serial)',
+      qty: 1,
+      qualityPref: 'best_option',
+      origin: 'usa_miami',
+      shippingMode: 'air',
+      fobUsd: 1650,
+      weightLb: 8,
+      applyCafta: true,
+      estimatedTotalUsd: 2436.2,
+      estimatedTotalRD: 147390,
+      estimatedEta: '4–7 días hábiles',
+      requesterName: 'Constructora del Cibao Central, S.R.L.',
+      requesterRnc: '1-31-88420-9',
+      requesterPhone: '809-555-0188',
+      deliveryCity: 'Santiago',
+      ncfType: 'E31',
+      urgency: 'alta',
+      notes: 'Máquina parada en proyecto vial. Necesitamos cotización OEM y Aftermarket urgente vía aérea desde Miami.',
+      photos: [],
+      stage: 'requested',
+      quotes: [],
+      trackingNumber: '',
+      carrierName: '',
+      encfNumber: '',
+      adminNotes: '',
+      createdAtIso: new Date().toISOString()
+    };
+    importRequests = [demo, ...importRequests];
+    if (window.GM_FIREBASE && window.GM_FIREBASE.saveImportRequest) {
+      window.GM_FIREBASE.saveImportRequest(demo).catch(() => {});
+    }
+    syncNavCounts();
+    renderSection();
+    toast('✓ Caso demo de importación cargado');
   }
 
   /* =========================================================
@@ -1726,6 +2145,39 @@
                 <div class="f-box"><input type="number" step="0.1" id="cfgCardRet" value="${c.cardItbisRetentionPct}" required /></div>
               </div>
 
+              ${(() => {
+                const ic = Object.assign({}, IMP ? IMP.DEFAULT_IMPORT_CONFIG : {}, c.importConfig || {});
+                return `
+                  <div class="f-field full" style="margin-top:8px; padding-top:12px; border-top:1px solid var(--border);">
+                    <label style="color:#0369A1;">🌍 Tarifas de Importación Internacional de Repuestos (Calculadora Landed Cost DGA)</label>
+                  </div>
+                  <div class="f-field">
+                    <label>Tasa de Cambio USD → RD$</label>
+                    <div class="f-box"><input type="number" step="0.1" id="cfgImpUsdRate" value="${ic.usdToDop || 60.5}" required /></div>
+                  </div>
+                  <div class="f-field">
+                    <label>Flete Aéreo Express (US$ / lb)</label>
+                    <div class="f-box"><input type="number" step="0.25" id="cfgImpAirLb" value="${ic.airRateUsdPerLb || 7.5}" required /></div>
+                  </div>
+                  <div class="f-field">
+                    <label>Flete Marítimo LCL (US$ / lb)</label>
+                    <div class="f-box"><input type="number" step="0.1" id="cfgImpSeaLb" value="${ic.seaRateUsdPerLb || 2.25}" required /></div>
+                  </div>
+                  <div class="f-field">
+                    <label>Comisión Gestión Importación (%)</label>
+                    <div class="f-box"><input type="number" step="0.5" id="cfgImpMgmtPct" value="${ic.managementFeePct || 12}" required /></div>
+                  </div>
+                  <div class="f-field">
+                    <label>Corredor Aduanal DGA > US$200 (US$)</label>
+                    <div class="f-box"><input type="number" step="5" id="cfgImpBrokerUsd" value="${ic.customsBrokerUsd || 95}" required /></div>
+                  </div>
+                  <div class="f-field">
+                    <label>Entrega Local a Obra en RD (RD$)</label>
+                    <div class="f-box"><input type="number" step="100" id="cfgImpLocalRD" value="${ic.localDeliveryRD || 2500}" required /></div>
+                  </div>
+                `;
+              })()}
+
               <div class="f-field full" style="margin-top:8px;">
                 <label>Cuentas Bancarias Corporativas (Popular / Banreservas SIGEF / BHD)</label>
                 <div style="display:flex; flex-direction:column; gap:8px;">
@@ -1763,6 +2215,16 @@
       }
     }
 
+    const prevImportCfg = Object.assign({}, IMP ? IMP.DEFAULT_IMPORT_CONFIG : {}, adminConfig.importConfig || {});
+    const nextImportCfg = Object.assign({}, prevImportCfg, {
+      usdToDop: Number(document.getElementById('cfgImpUsdRate')?.value) || prevImportCfg.usdToDop || 60.5,
+      airRateUsdPerLb: Number(document.getElementById('cfgImpAirLb')?.value) || prevImportCfg.airRateUsdPerLb || 7.5,
+      seaRateUsdPerLb: Number(document.getElementById('cfgImpSeaLb')?.value) || prevImportCfg.seaRateUsdPerLb || 2.25,
+      managementFeePct: Number(document.getElementById('cfgImpMgmtPct')?.value) || prevImportCfg.managementFeePct || 12,
+      customsBrokerUsd: Number(document.getElementById('cfgImpBrokerUsd')?.value) || prevImportCfg.customsBrokerUsd || 95,
+      localDeliveryRD: Number(document.getElementById('cfgImpLocalRD')?.value) || prevImportCfg.localDeliveryRD || 2500
+    });
+
     adminConfig = Object.assign({}, adminConfig, {
       companyName: document.getElementById('cfgCompanyName').value.trim(),
       rnc: document.getElementById('cfgRnc').value.trim(),
@@ -1777,12 +2239,13 @@
       govCommissionPct: Number(document.getElementById('cfgGovComm').value) || 15,
       cardFeePct: Number(document.getElementById('cfgCardFee').value) || 3.25,
       cardItbisRetentionPct: Number(document.getElementById('cfgCardRet').value) || 2.0,
+      importConfig: nextImportCfg,
       banks: nextBanks.length ? nextBanks : adminConfig.banks
     });
 
     BILL.saveAdminConfigLocal(adminConfig);
     renderSection();
-    toast('✓ Configuración corporativa guardada y sincronizada');
+    toast('✓ Configuración corporativa y tarifas de importación guardadas');
   }
 
   /* =========================================================
@@ -2131,11 +2594,27 @@
     switchPrintDocTab,
     export607,
     export606,
-    exportFullJson
+    exportFullJson,
+    setImportFilter,
+    openManageImportModal,
+    saveAdminImportQuote,
+    saveAdminImportTracking,
+    deleteAdminImport,
+    seedDemoImportRequest
   };
 
   if (isUnlocked()) {
     showApp();
+  }
+
+  if (window.GM_FIREBASE && window.GM_FIREBASE.subscribeImportRequests) {
+    window.GM_FIREBASE.subscribeImportRequests((list) => {
+      importRequests = Array.isArray(list) ? list : [];
+      if (isUnlocked()) {
+        syncNavCounts();
+        if (activeSection === 'imports') renderSection();
+      }
+    });
   }
 
   if (window.GM_FIREBASE && window.GM_FIREBASE.isReady && window.GM_FIREBASE.isReady()) {
@@ -2158,6 +2637,7 @@
       window.GM_FIREBASE.subscribeAdminConfig((cloudCfg) => {
         adminConfig = Object.assign({}, BILL.DEFAULT_ADMIN_CONFIG, cloudCfg);
         adminConfig.sequences = Object.assign({}, BILL.DEFAULT_ADMIN_CONFIG.sequences, cloudCfg.sequences || {});
+        adminConfig.importConfig = Object.assign({}, BILL.DEFAULT_ADMIN_CONFIG.importConfig || {}, cloudCfg.importConfig || {});
         try { localStorage.setItem('gm_rd_admin_config_v1', JSON.stringify(adminConfig)); } catch (_) {}
         if (isUnlocked()) renderSection();
       });
