@@ -1075,51 +1075,12 @@
     const box = document.getElementById('reviewComposerBox');
     if (!box) return;
 
-    if (eligibility.status === 'owner') {
-      box.innerHTML = `
-        <div class="review-gate-card is-owner" id="reviewOwnerNotice">
-          <div class="review-gate-head">🏢 Eres el propietario de este equipo</div>
-          <p class="review-gate-copy">
-            Al igual que en Airbnb, las calificaciones con estrellas están reservadas exclusivamente para los clientes que solicitan y confirman un alquiler de esta máquina en <strong>Green Mile RD</strong>.
-          </p>
-        </div>
-      `;
-      return;
-    }
-
-    if (eligibility.status === 'already_reviewed') {
-      const lastB = eligibility.reviewedBookings[0];
-      const code = lastB ? `#GM-${String(lastB.id).slice(-6)}` : '';
-      box.innerHTML = `
-        <div class="review-gate-card is-done" id="reviewDoneNotice">
-          <div class="review-gate-head" style="color:#065F46;">✓ Ya calificaste tu alquiler verificado ${esc(code)}</div>
-          <p class="review-gate-copy" style="color:#047857;">
-            ¡Gracias por compartir tu experiencia en obra! Se permite 1 valoración verificada por cada contrato de alquiler completado o confirmado.
-          </p>
-        </div>
-      `;
-      return;
-    }
-
     if (eligibility.status !== 'eligible') {
-      const loginHref = `${BASE}index.html?login=1&next=profile`;
-      const panelHref = `${BASE}index.html?tab=profile`;
-      box.innerHTML = `
-        <div class="review-gate-card" id="reviewLockedNotice">
-          <div class="review-gate-head">🔒 Solo clientes que alquilaron este equipo pueden calificar</div>
-          <p class="review-gate-copy">
-            Para garantizar reseñas 100% reales (tipo Airbnb), únicamente el contratista o cliente que solicitó y confirmó un alquiler de esta máquina en <strong>Green Mile RD</strong> puede dejar estrellas y comentarios.
-          </p>
-          <div class="review-gate-actions">
-            ${!eligibility.acc
-              ? `<a class="btn btn-navy" href="${loginHref}" style="padding:8px 13px; font-size:12px; text-decoration:none;">👤 Iniciar sesión para verificar mis alquileres</a>`
-              : `<a class="btn btn-ghost" href="${panelHref}" style="padding:8px 13px; font-size:12px; text-decoration:none;">📄 Ver mis contratos en Mi Panel</a>`}
-            <button type="button" class="btn btn-primary" onclick="window.GM_DETAIL.scrollToBookingBox()" style="padding:8px 13px; font-size:12px;">🚜 Cotizar / Alquilar este Equipo</button>
-          </div>
-        </div>
-      `;
+      box.innerHTML = '';
+      box.style.display = 'none';
       return;
     }
+    box.style.display = 'block';
 
     // Eligible renter! Pre-select ?reviewBooking if matching, else newest pending booking
     const pending = eligibility.pendingBookings;

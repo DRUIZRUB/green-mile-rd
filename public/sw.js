@@ -1,5 +1,5 @@
 /* Green Mile RD — Service Worker (PWA Shell + Network-First Freshness) */
-const CACHE_NAME = 'green-mile-rd-v8';
+const CACHE_NAME = 'green-mile-rd-v9';
 const CORE_ASSETS = [
   './',
   './index.html',
